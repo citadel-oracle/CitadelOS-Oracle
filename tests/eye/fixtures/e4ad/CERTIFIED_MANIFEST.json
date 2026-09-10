@@ -1,0 +1,15 @@
+{
+  "fixture_id": "E4AD_VOB_1M_CERTIFIED_20260806",
+  "fixture_path": "tests/eye/fixtures/e4ad/vob_1m_candles_snapshot_20260806.json",
+  "fixture_sha256": "41f77bcea60d0e47c97442dea99a5056139f34f672ea840da1e0f41c4acc1ee2",
+  "source_sha256": "41f77bcea60d0e47c97442dea99a5056139f34f672ea840da1e0f41c4acc1ee2",
+  "size_bytes": 1956945,
+  "source_provenance": {
+    "original_snapshot_path": "/Users/ayushmudgal/Documents/trading/citadel_quant_engine/data_snapshots/eye_e4ad/vob_1m_candles_snapshot_20260806.json",
+    "original_source_path": "/Users/ayushmudgal/Developer/CitadelOS/logs/vob_1m_candles.json",
+    "original_snapshot_created_utc": "2026-08-06T18:23:18.476109+00:00",
+    "original_candle_row_count": 19125,
+    "license_and_use": "CITADEL internal certified regression fixture"
+  },
+  "immutability": "Byte-identical copy of the certified E4AD snapshot. Replace only through explicit provenance and a new SHA-256 manifest."
+}

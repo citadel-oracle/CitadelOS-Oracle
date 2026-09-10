@@ -1,0 +1,9 @@
+{
+  "schema_version": "5a.1.0",
+  "policy_version": "oracle-knowledge-ingestion-5a.1.0",
+  "generated_at": "2026-08-01T12:00:00+00:00",
+  "counts": {"accepted_sources": 9, "accepted_cards": 37, "principle_cards": 29, "strategy_research_cards": 8, "pending_sources": 5, "rejected_candidates": 8, "conflicts": 8, "books_ingested": 0},
+  "domain_counts": {"price_action": 4, "market_structure": 3, "liquidity_smc": 4, "options": 7, "microstructure": 4, "trade_construction": 3, "systematic_validation": 4, "strategy_research": 8},
+  "pipeline": ["DISCOVERED", "SOURCE_VERIFIED", "RIGHTS/ACCESS_CHECKED", "DUPLICATE_CHECKED", "EXTRACTED", "REVIEWED", "CARD_VALIDATED", "REGISTERED", "RETRIEVAL_TESTED"],
+  "truth": {"internally_validated_cards": 0, "historical_probabilities_created": 0, "strategies_promoted": 0, "execution_influence": "ZERO", "whole_sources_loaded_at_runtime": false}
+}

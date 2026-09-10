@@ -1,0 +1,63 @@
+{
+  "schema_version": "5a.1.0",
+  "defaults": {
+    "version": "1.0.0", "card_type": "PRINCIPLE", "optional_confirmations": [], "timeframes": ["5m", "3m", "1m"],
+    "instruments": ["NIFTY", "BANKNIFTY"], "option_buying_relevance": "HIGH",
+    "data_availability": {"bid_ask": "AVAILABLE_WHEN_FRESH", "depth": "PARTIAL", "l2_order_events": "FUTURE"},
+    "execution_influence": "ZERO", "knowledge_policy_version": "oracle-knowledge-advisory-5a.1.0", "regimes": [], "setup_types": [], "research_only": false, "research_fields": {}
+  },
+  "cards": [
+    {
+      "card_id": "micro-ofi-price-impact", "concept": "Order-flow imbalance can explain short-horizon price changes", "domain": "microstructure",
+      "definition_principle": "In the cited limit-order-book study, short-interval price changes related more strongly to order-flow imbalance across limit, market, and cancellation events than to trade imbalance alone.",
+      "measurable_predicates": ["best bid/ask event stream is complete", "limit additions, cancellations, and trades are signed", "aggregation window is fixed"],
+      "required_evidence": ["authoritative L2 or top-of-book event history", "event timestamps", "market depth", "mid-price changes"],
+      "valid_conditions": ["The exact OFI definition and event completeness policy are implemented."],
+      "failure_conditions": ["Only candle volume, OI, or trade prints are available."],
+      "contradictions": ["CITADEL currently lacks production-authoritative L2 order-event history for this predicate."],
+      "when_not_to_use": ["Do not approximate OFI with volume, OI, CVD, or candle color."],
+      "relevant_citadel_fields": ["future_l2_events", "bid", "ask", "depth", "event_timestamp"],
+      "source_id": "arxiv-cont-kukanov-stoikov-2011", "exact_locator": "Section 4.1 > Trade imbalance vs order flow imbalance", "short_excerpt": "order flow imbalance explains price movements better than the imbalance of trades", "paraphrase": "Keep OFI future-data-dependent until complete order events exist; never substitute lower-quality proxies.",
+      "source_quality": "PEER_REVIEWED_PRIMARY", "source_hash_version": "40d1d5f0baf7944a1b9f4c12d3644038e657acf4a3dfb500b2057c2269edd25f", "validation_status": "FUTURE_DATA_DEPENDENT", "empirical_status": "SOURCE_STUDY_NOT_CITADEL_VALIDATED", "contradicts_card_ids": ["micro-volume-not-ofi"], "setup_types": ["ORDER_FLOW_IMBALANCE"]
+    },
+    {
+      "card_id": "micro-depth-scales-impact", "concept": "Market depth conditions short-horizon impact", "domain": "microstructure",
+      "definition_principle": "The cited model found the price-impact slope inversely related to market depth, so liquidity state belongs in any executable-quality explanation.",
+      "measurable_predicates": ["depth units and levels are declared", "depth and quote timestamps align", "impact window is fixed"],
+      "required_evidence": ["bid depth", "ask depth", "bid", "ask", "event timestamp"],
+      "valid_conditions": ["Depth is authoritative and sufficiently complete."],
+      "failure_conditions": ["Depth is missing, stale, or only a single unverified display value."],
+      "contradictions": ["A deep displayed book may change or cancel; depth does not guarantee fill."],
+      "when_not_to_use": ["Do not infer execution quality from spread alone when size/depth is unavailable."],
+      "relevant_citadel_fields": ["bid_depth", "ask_depth", "spread", "quote_freshness", "data_completeness"],
+      "source_id": "arxiv-cont-kukanov-stoikov-2011", "exact_locator": "Abstract", "short_excerpt": "a slope inversely proportional to the market depth", "paraphrase": "Include fresh depth and completeness in liquidity explanations while preserving fill uncertainty.",
+      "source_quality": "PEER_REVIEWED_PRIMARY", "source_hash_version": "40d1d5f0baf7944a1b9f4c12d3644038e657acf4a3dfb500b2057c2269edd25f", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "TRANSFER_UNVALIDATED", "contradicts_card_ids": ["micro-displayed-depth-not-fill"]
+    },
+    {
+      "card_id": "micro-volume-not-ofi", "concept": "Volume is not order-flow imbalance", "domain": "microstructure",
+      "definition_principle": "Traded volume omits limit-order additions and cancellations; it must not be relabeled as OFI or institutional flow.",
+      "measurable_predicates": ["input lineage distinguishes trades from quote events", "missing order events remain missing"],
+      "required_evidence": ["trade volume lineage", "order-event availability status"],
+      "valid_conditions": ["Volume is described only as volume."],
+      "failure_conditions": ["Volume, OI, or CVD is renamed OFI."],
+      "contradictions": ["The cited paper found volume-based relations noisier and less robust than OFI."],
+      "when_not_to_use": ["Do not infer aggressive buyer/seller intent from aggregate volume alone."],
+      "relevant_citadel_fields": ["volume", "oi", "future_l2_events", "missing_evidence"],
+      "source_id": "arxiv-cont-kukanov-stoikov-2011", "exact_locator": "Abstract", "short_excerpt": "trade volume is found to be noisy and less robust", "paraphrase": "Preserve semantic separation among volume, OI, trade imbalance, and full OFI.",
+      "source_quality": "PEER_REVIEWED_PRIMARY", "source_hash_version": "40d1d5f0baf7944a1b9f4c12d3644038e657acf4a3dfb500b2057c2269edd25f", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "COUNTER_PRINCIPLE", "contradicts_card_ids": ["micro-ofi-price-impact"]
+    },
+    {
+      "card_id": "micro-displayed-depth-not-fill", "concept": "Displayed liquidity does not guarantee execution", "domain": "microstructure",
+      "definition_principle": "Order-book evidence is conditional and dynamic; displayed depth supports an execution-quality estimate but cannot be reported as a fill.",
+      "measurable_predicates": ["quote and depth are fresh", "submitted quantity is compared with available depth", "fills come only from paper/broker events"],
+      "required_evidence": ["bid/ask", "depth", "quantity", "actual fill events"],
+      "valid_conditions": ["Analysis, submission, and fill truth remain separate."],
+      "failure_conditions": ["A quote or depth snapshot is reported as filled quantity."],
+      "contradictions": ["Orders may be cancelled or consumed before simulated or real execution."],
+      "when_not_to_use": ["Do not claim broker-style fill certainty from a market-data snapshot."],
+      "relevant_citadel_fields": ["bid_depth", "ask_depth", "paper_order_state", "fill_events", "average_fill"],
+      "source_id": "arxiv-cont-kukanov-stoikov-2011", "exact_locator": "Section 2.3 > Model specification", "short_excerpt": null, "paraphrase": "Use depth as bounded evidence and reserve fill truth for immutable execution events.",
+      "source_quality": "PEER_REVIEWED_PRIMARY", "source_hash_version": "40d1d5f0baf7944a1b9f4c12d3644038e657acf4a3dfb500b2057c2269edd25f", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "EXECUTION_BOUNDARY", "contradicts_card_ids": ["micro-depth-scales-impact"]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": "5a.2.0",
+  "registry_version": "oracle-knowledge-corpus-5a.2.0",
+  "counts": {
+    "accepted_sources": 27,
+    "cards": 105,
+    "new_cards": 76,
+    "research_only_setups": 10,
+    "user_fvg_cards": 25,
+    "pending": 28,
+    "rejected": 8,
+    "conflicts": 17,
+    "new_conflicts": 9,
+    "future_data_dependent_cards": 7
+  },
+  "truth": {
+    "internally_validated_cards": 0,
+    "historical_probabilities_created": 0,
+    "strategies_promoted": 0,
+    "youtube_sources_verified": 0,
+    "same_trade_execution_influence": "ZERO",
+    "runtime_network_required": false
+  },
+  "user_sources": {
+    "fvg_sha256": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+    "strategy_sha256": "dccf62ee374392d9c0fd5d722b9a65d98f41ebae5ab2862d1d9e421bd957c525"
+  },
+  "known_limitations": [
+    "Two academic candidates were inaccessible and remain pending.",
+    "YouTube references remain pending without verified transcripts.",
+    "No CITADEL OOS outcome validation was performed by ingestion."
+  ]
+}

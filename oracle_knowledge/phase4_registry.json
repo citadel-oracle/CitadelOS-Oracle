@@ -1,0 +1,87 @@
+{
+  "schema_version": "4.0.0",
+  "registry_version": "oracle-knowledge-4.0.0",
+  "generated_at": "2026-08-01T00:00:00+00:00",
+  "sources": [
+    {
+      "source_id": "sec-investor-options-introduction-2026",
+      "title": "Investor Bulletin: An Introduction to Options",
+      "author_organisation": "U.S. Securities and Exchange Commission, Office of Investor Education and Assistance",
+      "edition_version": "Updated 2026-07-16",
+      "publication_date": "2026-07-16",
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "4bc4a3096a751a9a21f35596aaffb9e5a91d2500c6a4a7ee765322d8e8fbe47e",
+      "source_location": "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins-63",
+      "ingestion_status": "VERIFIED",
+      "validation_status": "SOURCE_VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "official-web-short-excerpt-1.0.0",
+        "excerpt_allowed": true,
+        "maximum_words": 25,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "known_locators": [
+        "Basic Options Terminology > premium paragraph beginning 'The amount of the premium'",
+        "What are some of the risks associated with trading options? > option holders paragraph"
+      ],
+      "limitations": [
+        "Educational bulletin, not a trading strategy and not a source of CITADEL probabilities.",
+        "The examples concern listed U.S. stock options; CITADEL must verify applicability to the exact Indian index-option contract."
+      ],
+      "contradictions": []
+    }
+  ],
+  "cards": [
+    {
+      "card_id": "option-premium-multiple-drivers",
+      "version": "1.0.0",
+      "source_id": "sec-investor-options-introduction-2026",
+      "document_hash": "4bc4a3096a751a9a21f35596aaffb9e5a91d2500c6a4a7ee765322d8e8fbe47e",
+      "concept": "Option premium has multiple drivers",
+      "principle": "An option premium depends on moneyness, time to expiry and underlying volatility; underlying direction alone is insufficient evidence for premium response.",
+      "required_evidence": ["exact expiry", "strike relation", "underlying price", "implied volatility or truthful unavailability", "executable bid and ask"],
+      "valid_conditions": ["The exact option contract identity and quote are fresh."],
+      "failure_conditions": ["Greeks, volatility, expiry or executable quote inputs are unavailable or stale."],
+      "contradictions": ["A favorable underlying move need not produce the assumed premium response after time, volatility and spread effects."],
+      "when_not_to_use": ["Do not use as a standalone directional signal or probability."],
+      "option_buying_relevance": "HIGH",
+      "relevant_timeframes": ["MULTI", "15m", "5m", "3m", "1m"],
+      "relevant_citadel_fields": ["expiry", "strike", "distance_atm", "iv", "bid", "ask", "theta", "vega"],
+      "locator": "Basic Options Terminology > premium paragraph beginning 'The amount of the premium'",
+      "permitted_excerpt": "The amount of the premium is determined by several factors",
+      "paraphrased_interpretation": "Require contract-specific expiry, moneyness, volatility and executable quote evidence before claiming premium confirmation.",
+      "validation_status": "SOURCE_VERIFIED",
+      "linked_empirical_evidence_ids": [],
+      "domains": ["option volatility", "premium confirmation", "executable price"],
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": ["option-premium-no-guarantee"]
+    },
+    {
+      "card_id": "option-premium-no-guarantee",
+      "version": "1.0.0",
+      "source_id": "sec-investor-options-introduction-2026",
+      "document_hash": "4bc4a3096a751a9a21f35596aaffb9e5a91d2500c6a4a7ee765322d8e8fbe47e",
+      "concept": "Option-buyer loss boundary",
+      "principle": "An option holder can lose the entire premium; a principle that describes premium drivers does not guarantee a profitable response.",
+      "required_evidence": ["exact premium paid or executable ask", "expiry", "costs", "structural invalidation"],
+      "valid_conditions": ["Any contemplated long-option purchase."],
+      "failure_conditions": ["Risk, costs, or expiry are omitted from the explanation."],
+      "contradictions": ["No source-backed principle alone establishes edge, calibration or a live probability."],
+      "when_not_to_use": ["Do not convert this general risk statement into a setup-specific probability."],
+      "option_buying_relevance": "HIGH",
+      "relevant_timeframes": ["MULTI", "1D", "4H", "1H", "15m", "5m", "3m", "1m"],
+      "relevant_citadel_fields": ["ask", "estimated_round_trip_cost", "expiry", "premium_hard_stop_candidate"],
+      "locator": "What are some of the risks associated with trading options? > option holders paragraph",
+      "permitted_excerpt": "Option holders risk the entire amount of the premium paid",
+      "paraphrased_interpretation": "Treat every long-option thesis as loss-capable and require explicit invalidation, cost and expiry evidence.",
+      "validation_status": "SOURCE_VERIFIED",
+      "linked_empirical_evidence_ids": [],
+      "domains": ["option volatility", "failure analysis", "costs"],
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": ["option-premium-multiple-drivers"]
+    }
+  ]
+}

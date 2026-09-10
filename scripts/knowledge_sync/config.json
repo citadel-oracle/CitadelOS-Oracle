@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "repository": "/Users/ayushmudgal/Developer/CitadelOS-Worktrees/rc2-backend",
+  "vault": "/Users/ayushmudgal/Documents/CITADEL Knowledge Base",
+  "mcp_server": "obsidian",
+  "test_connection_note": "TEST_CONNECTION.md",
+  "max_diff_bytes": 160000,
+  "codex_timeout_seconds": 600,
+  "ignored_paths": [
+    "scripts/knowledge_sync/**",
+    "reports/**",
+    "scratch/**",
+    "**/*.png",
+    "**/*.jpg",
+    "**/*.jpeg",
+    "**/*.gif",
+    "**/*.webp",
+    "**/*.bundle"
+  ],
+  "targets": {
+    "changelog": "00 - CITADEL HQ/Changelog.md",
+    "release_notes": "00 - CITADEL HQ/Release Notes.md",
+    "decision_log": "08 - Decisions/Architecture Decision Log.md",
+    "incident_register": "09 - Bugs & Incidents/Incident Register.md",
+    "validation_folder": "10 - Validation & Proofs"
+  },
+  "module_rules": [
+    {
+      "module": "ARGUS",
+      "paths": ["src/argus/**", "src/api/argus_api.py", "scripts/run_*argus*.py"],
+      "notes": ["02 - Modules/ARGUS/ARGUS Overview.md", "02 - Modules/ARGUS/ARGUS Validation Status.md"]
+    },
+    {
+      "module": "VOB",
+      "paths": ["src/vob/**", "citadel-dashboard/src/**/*VOB*"],
+      "notes": ["02 - Modules/VOB/VOB Overview.md", "02 - Modules/VOB/VOB Validation Status.md"]
+    },
+    {
+      "module": "OSE",
+      "paths": ["src/ose/**", "citadel-dashboard/src/**/*OSE*"],
+      "notes": ["02 - Modules/OSE/OSE Overview.md", "02 - Modules/OSE/OSE Validation Status.md"]
+    },
+    {
+      "module": "Backtest Engine",
+      "paths": ["src/backtest/**", "scripts/run_*replay.py", "scripts/run_*validation.py"],
+      "notes": ["02 - Modules/Backtest Engine/Backtest Engine Overview.md", "04 - Backtests/Backtest Index.md"]
+    },
+    {
+      "module": "Analyzer",
+      "paths": ["src/analyzer/**", "src/**/*openalgo*", "scripts/**/*analy*"],
+      "notes": ["02 - Modules/Analyzer/Analyzer Overview.md", "05 - Data & Broker/OpenAlgo Integration.md"]
+    },
+    {
+      "module": "Data & Broker",
+      "paths": ["src/broker/**", "src/dhan*", "src/data/**", "config/**"],
+      "notes": ["05 - Data & Broker/Data Sources.md", "05 - Data & Broker/Dhan Integration.md"]
+    },
+    {
+      "module": "Execution & Risk",
+      "paths": ["src/execution/**", "src/risk/**", "src/trade_manager.py", "src/order*"],
+      "notes": ["02 - Modules/Execution & Risk/Execution and Risk Overview.md", "01 - System Architecture/Safety Boundaries.md"]
+    },
+    {
+      "module": "Strategies",
+      "paths": ["src/strategy_lab/**", "src/strategies/**", "src/strategy_manager.py"],
+      "notes": ["03 - Strategies/Strategy Registry.md", "02 - Modules/Backtest Engine/Backtest Engine Overview.md"]
+    },
+    {
+      "module": "Dashboard",
+      "paths": ["citadel-dashboard/**"],
+      "notes": ["06 - Dashboard/Dashboard Overview.md", "06 - Dashboard/Route Registry.md", "06 - Dashboard/Module Visibility Matrix.md"]
+    },
+    {
+      "module": "Backend Architecture",
+      "paths": ["app/**", "src/api/**", "src/dashboard/**"],
+      "notes": ["01 - System Architecture/Backend Architecture.md", "01 - System Architecture/Data Flow.md"]
+    },
+    {
+      "module": "Operations",
+      "paths": ["ops/**", "scripts/run-citadel-*.sh", "scripts/citadel-supervisor.sh", "scripts/watch-citadel-env.sh"],
+      "notes": ["11 - Operations/Runbook.md", "11 - Operations/Service Registry.md", "11 - Operations/Restart and Recovery.md"]
+    },
+    {
+      "module": "Shared Infrastructure",
+      "paths": ["tests/**", "src/**/*test*.py", "src/timeframe/**", "src/fvg/**"],
+      "notes": ["02 - Modules/Shared Infrastructure/Shared Infrastructure Overview.md"]
+    }
+  ]
+}

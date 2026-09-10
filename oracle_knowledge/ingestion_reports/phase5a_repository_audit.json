@@ -1,0 +1,30 @@
+{
+  "schema_version": "5a.1.0",
+  "audited_at": "2026-08-01",
+  "repositories": [
+    {
+      "url": "https://github.com/paperswithbacktest/awesome-systematic-trading",
+      "commit": "1ce1eb2b7752aae1a7357afa47885c8bb8291404",
+      "role": "DISCOVERY_INDEX_ONLY",
+      "categories_inspected": ["Libraries and packages", "Backtesting and Live Trading", "Analytics", "Data Sources", "Strategies", "Books"],
+      "links_inspected": ["Time Series Momentum Effect paper", "Short Term Reversal paper", "QuantConnect examples", "backtesting frameworks", "55-book catalog"],
+      "useful_discoveries": ["Primary systematic-strategy papers as research leads", "Event-driven/replay terminology", "Need to distinguish implementations from papers"],
+      "rejected": ["Repository Sharpe values as evidence", "Code examples as CITADEL-compatible logic", "Book catalog as licensed content", "Any automatic framework adoption"],
+      "relevance": "Useful for research discovery and negative controls; not cited by accepted cards."
+    },
+    {
+      "url": "https://github.com/LabinatorSolutions/awesome-institutional-trading",
+      "commit": "b81807bf06e5795169ad47330325fa10ebbe38e4",
+      "role": "DISCOVERY_INDEX_ONLY",
+      "categories_inspected": ["Options, Volatility & GEX", "Market Profile & Volume Profile", "Order Flow & Footprint Charts", "Market Microstructure & Academic Reading", "Systematic & Algorithmic Trading", "Glossary"],
+      "links_inspected": ["Cboe/OIC resources", "order-flow and microstructure resources", "BIS/SSRN links", "vendor GEX whitepaper", "AlgoStorm educational links", "platform listings"],
+      "useful_discoveries": ["OIC official Greeks documentation", "Primary order-flow-imbalance literature", "Need for future L2 data policy"],
+      "rejected": ["Promotional GEX causality", "Vendor definitions", "Platform marketing", "Unlicensed commercial books", "Glossary claims without original citations"],
+      "relevance": "Led to original OIC and arXiv sources; never used as source authority."
+    }
+  ],
+  "network_runtime_policy": "LOCAL_CORPUS_ONLY_AFTER_INGESTION",
+  "repositories_cloned": 0,
+  "frameworks_installed": 0,
+  "books_ingested": 0
+}

@@ -1,0 +1,10 @@
+{
+  "schema_version": "5a.1.0",
+  "pending": [
+    {"candidate_id": "white-reality-check-2000", "title": "A Reality Check for Data Snooping", "source_location": "https://doi.org/10.1111/1468-0262.00152", "status": "PENDING_SOURCE", "reason": "Publisher page was discoverable but automated source-byte retrieval returned 403; no accepted card created without a locally reproducible content hash."},
+    {"candidate_id": "occ-odd-june-2024", "title": "Characteristics and Risks of Standardized Options", "source_location": "https://www.theocc.com/company-information/documents-and-archives/options-disclosure-document", "status": "PENDING_SOURCE", "reason": "Official document located; exact PDF version/hash was not pinned in this bounded pass."},
+    {"candidate_id": "nse-equity-derivatives-contract-specifications-2026", "title": "Equity Derivatives Contract Specifications", "source_location": "https://www.nseindia.com/static/products-services/equity-derivatives-contract-specifications", "status": "PENDING_SOURCE", "reason": "Official page verified through search but direct byte retrieval was blocked; current Dhan/NSE instrument master remains contract truth."},
+    {"candidate_id": "wilder-new-concepts-technical-trading-systems", "title": "New Concepts in Technical Trading Systems", "source_location": null, "status": "PENDING_SOURCE", "reason": "No licensed local edition with exact page locators was available; no ATR excerpt or card ingested."},
+    {"candidate_id": "natenberg-option-volatility-pricing", "title": "Option Volatility and Pricing", "source_location": null, "status": "PENDING_SOURCE", "reason": "Commercial book discovered only through catalog links; no licensed local copy or locator verification."}
+  ]
+}

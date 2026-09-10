@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "strategy_id": "breakout-main-pine-v5",
+  "runtime_registration": true,
+  "scheduler_enabled": true,
+  "runtime_activation": true,
+  "paper_execution": true,
+  "status": "PAPER_ACTIVE",
+  "activation_reason": null,
+  "live_trading_enabled": false,
+  "broker_submission": false
+}

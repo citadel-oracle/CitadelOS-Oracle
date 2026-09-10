@@ -1,0 +1,31 @@
+config/.env
+__pycache__/
+*.pyc
+.DS_Store
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.venv-kronos-alpha/
+
+# Local model runtimes and caches
+models/kronos-alpha/
+.cache/huggingface/
+
+# Node / Next
+node_modules/
+.next/
+out/
+
+# Local runtime data
+logs/
+*.log
+
+# macOS / editors
+.DS_Store
+.vscode/

@@ -1,0 +1,214 @@
+.shell {
+  position: relative;
+  z-index: 50;
+  min-width: 0;
+  height: 48px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid rgba(105, 226, 214, .12);
+  background: rgba(4, 8, 12, .96);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, .22);
+}
+
+.identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+}
+
+.mark {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(99, 241, 230, .25);
+  border-radius: 6px;
+  color: #72d6cc;
+  background: rgba(20, 184, 166, .055);
+  box-shadow: inset 0 0 16px rgba(45, 212, 191, .04);
+  font: 700 9px var(--font-mono);
+}
+
+.identity > div {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.identity strong {
+  color: #d5dde5;
+  font: 700 9px var(--font-mono);
+  letter-spacing: .12em;
+}
+
+.identity div span {
+  max-width: 260px;
+  overflow: hidden;
+  color: #62707d;
+  font: 600 7px var(--font-mono);
+  text-overflow: ellipsis;
+}
+
+.identity em {
+  padding-left: 9px;
+  border-left: 1px solid rgba(255, 255, 255, .08);
+  color: #5fc6ae;
+  font: 650 6.5px var(--font-mono);
+  font-style: normal;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.navigationGroup {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.environment,
+.routes a,
+.routes button {
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 4px;
+  color: #6f7c88;
+  background: transparent;
+  cursor: pointer;
+  font: 650 7px var(--font-mono);
+  letter-spacing: .075em;
+  text-decoration: none;
+  transition: color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+
+.environment {
+  gap: 6px;
+  border: 1px solid rgba(16, 185, 129, .16);
+  color: #6ebc9b;
+  background: rgba(16, 185, 129, .035);
+}
+
+.environment i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, .48);
+}
+
+.environmentActive {
+  color: #8be0b9;
+  background: rgba(16, 185, 129, .08);
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, .09);
+}
+
+.routes {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.routes::-webkit-scrollbar {
+  display: none;
+}
+
+.routes a:hover,
+.routes button:hover,
+.routes .active {
+  color: #b9ccc9;
+  background: rgba(99, 241, 230, .045);
+}
+
+.routes .active {
+  color: #75d8cf;
+  box-shadow: inset 0 -1px rgba(99, 241, 230, .42);
+}
+
+.environment:focus-visible,
+.routes a:focus-visible,
+.routes button:focus-visible {
+  outline: 1px solid #67d4ca;
+  outline-offset: 2px;
+}
+
+.oracleShell {
+  border-bottom-color: rgba(255, 59, 84, .16);
+  background: rgba(5, 5, 6, .98);
+}
+
+.oracleShell .mark {
+  color: #ff3b54;
+  border-color: rgba(255, 59, 84, .28);
+  background: rgba(255, 59, 84, .045);
+  box-shadow: inset 0 0 16px rgba(255, 59, 84, .05);
+}
+
+.oracleShell .identity em { color: #b9bcc2; }
+.oracleShell .routes a:hover,
+.oracleShell .routes button:hover,
+.oracleShell .routes .active { color: #f3f1ee; background: rgba(255, 59, 84, .045); }
+.oracleShell .routes .active { color: #ff3b54; box-shadow: inset 0 -1px rgba(255, 59, 84, .48); }
+.oracleShell .routes a:focus-visible,
+.oracleShell .routes button:focus-visible { outline-color: #ff3b54; }
+
+@media (max-width: 1050px) {
+  .shell {
+    gap: 12px;
+    padding-inline: 12px;
+  }
+
+  .identity div span {
+    max-width: 150px;
+  }
+
+  .identity em {
+    display: none;
+  }
+
+  .environment,
+  .routes a,
+  .routes button {
+    padding-inline: 7px;
+    font-size: 6.5px;
+  }
+}
+
+@media (max-width: 760px) {
+  .shell {
+    height: auto;
+    min-height: 48px;
+    padding-block: 7px;
+    align-items: flex-start;
+  }
+
+  .identity > div {
+    display: grid;
+    gap: 2px;
+  }
+
+  .identity div span {
+    max-width: 110px;
+  }
+
+  .navigationGroup {
+    max-width: 68vw;
+  }
+}

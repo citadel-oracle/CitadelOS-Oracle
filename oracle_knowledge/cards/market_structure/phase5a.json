@@ -1,0 +1,50 @@
+{
+  "schema_version": "5a.1.0",
+  "defaults": {
+    "version": "1.0.0", "card_type": "PRINCIPLE", "optional_confirmations": ["VOB zone interaction", "higher-timeframe alignment"],
+    "timeframes": ["1D", "4H", "1H", "15m", "5m", "3m"], "instruments": ["NIFTY", "BANKNIFTY"],
+    "option_buying_relevance": "HIGH", "data_availability": {"canonical_candles": "AVAILABLE", "vob": "AVAILABLE_WHEN_FRESH"},
+    "execution_influence": "ZERO", "knowledge_policy_version": "oracle-knowledge-advisory-5a.1.0", "regimes": [], "setup_types": [], "research_only": false, "research_fields": {}
+  },
+  "cards": [
+    {
+      "card_id": "structure-bounce-frequency-definition", "concept": "Acceptance and rejection require a fixed observation window", "domain": "market_structure",
+      "definition_principle": "A level interaction becomes measurable only when reach, post-touch direction, and evaluation window are defined before observation.",
+      "measurable_predicates": ["level reached within tolerance", "trend interruption or continuation evaluated over fixed completed bars", "denominator includes every qualifying reach"],
+      "required_evidence": ["exact level", "completed candles", "fixed post-touch window", "all qualifying touches"],
+      "valid_conditions": ["The same rule is applied to positive and failed interactions."],
+      "failure_conditions": ["Only successful examples are retained or the window is changed after the result."],
+      "contradictions": ["A touch is not itself acceptance, rejection, or causality."],
+      "when_not_to_use": ["Do not infer rejection from a wick alone."],
+      "relevant_citadel_fields": ["structural_trigger", "structural_invalidation", "canonical_candle_refs", "vob_zone_ids"],
+      "source_id": "frbny-osler-support-resistance-2000", "exact_locator": "PDF p.64 > Conclusion", "short_excerpt": null, "paraphrase": "Evaluate every predeclared level interaction with a consistent completed-bar window.",
+      "source_quality": "PEER_REVIEWED_PRIMARY", "source_hash_version": "dd1eb1b3100aa5cc56532bd49e631c1dcf7a459a83c0d225d21ce681bc4d2740", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "SOURCE_STUDY_NOT_CITADEL_VALIDATED", "contradicts_card_ids": ["structure-transfer-boundary"]
+    },
+    {
+      "card_id": "structure-breakout-momentum-context", "concept": "Crossing a mapped level can change continuation context", "domain": "market_structure",
+      "definition_principle": "Crossing a predeclared support or resistance level may be followed by momentum, but only a completed-candle rule and fresh context can classify the event.",
+      "measurable_predicates": ["completed close crosses exact level and tolerance", "follow-through window is fixed", "reclaim or failure boundary is explicit"],
+      "required_evidence": ["completed close", "pre-cross level", "follow-through candles", "fresh VOB/OSE/ARGUS context"],
+      "valid_conditions": ["The level existed before the crossing event."],
+      "failure_conditions": ["The level is defined after the breakout or follow-through is absent."],
+      "contradictions": ["The cited microstructural explanation is based on historical FX bank orders, not NIFTY option order truth."],
+      "when_not_to_use": ["Do not label every range exit a validated breakout."],
+      "relevant_citadel_fields": ["structural_trigger", "completed_candle", "vob_state", "ose_state", "argus_state"],
+      "source_id": "frbny-osler-currency-orders-2001", "exact_locator": "Abstract > two familiar predictions", "short_excerpt": null, "paraphrase": "Treat level crossing as a testable continuation hypothesis with explicit failure, not automatic momentum.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "d72bc0a020d04f0b7dd423c0f4f2dcebc83b34ebd160ca8eca75b52d69e1341d", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "TRANSFER_UNVALIDATED", "contradicts_card_ids": ["structure-transfer-boundary"], "setup_types": ["BREAKOUT_CONTINUATION", "BREAKOUT_RETEST"]
+    },
+    {
+      "card_id": "structure-transfer-boundary", "concept": "Market-structure findings require instrument and regime validation", "domain": "market_structure",
+      "definition_principle": "A source-study finding is bounded by its instruments, period, market design, and data; cross-market use remains an unvalidated hypothesis.",
+      "measurable_predicates": ["source and current instrument identities differ", "calibration state remains unavailable until CITADEL OOS evidence exists"],
+      "required_evidence": ["source sample definition", "current instrument identity", "CITADEL OOS cohort"],
+      "valid_conditions": ["Transfer limitations are shown beside the principle."],
+      "failure_conditions": ["FX evidence is described as direct Indian option evidence."],
+      "contradictions": ["Source-backed does not mean internally validated."],
+      "when_not_to_use": ["Do not promote or execute a structure rule from literature alone."],
+      "relevant_citadel_fields": ["instrument_id", "dataset_version", "calibration_state", "execution_authority"],
+      "source_id": "frbny-osler-support-resistance-2000", "exact_locator": "PDF p.64 > Conclusion", "short_excerpt": "predictive power varies considerably across firms and across exchange rates", "paraphrase": "Expose transfer limits and require fresh CITADEL validation for NIFTY/BANKNIFTY.",
+      "source_quality": "PEER_REVIEWED_PRIMARY", "source_hash_version": "dd1eb1b3100aa5cc56532bd49e631c1dcf7a459a83c0d225d21ce681bc4d2740", "validation_status": "CONFLICTED", "empirical_status": "COUNTER_PRINCIPLE", "contradicts_card_ids": ["structure-bounce-frequency-definition", "structure-breakout-momentum-context"]
+    }
+  ]
+}

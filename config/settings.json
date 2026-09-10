@@ -1,0 +1,16 @@
+{
+  "mode": "paper",
+  "broker": "dhan",
+  "strategy": "pullback_v3",
+  "symbol": "NIFTY",
+  "timeframe": "5m",
+  "live_trading_enabled": false,
+  "max_trades_per_day": 3,
+  "max_daily_loss": 1000,
+  "max_consecutive_losses": 2,
+  "max_risk_per_trade": 500,
+  "max_position_quantity": 1,
+  "max_open_positions": 1,
+  "max_market_data_age_seconds": 10,
+  "max_volatility": null
+}

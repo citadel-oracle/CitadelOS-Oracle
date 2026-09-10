@@ -1,0 +1,122 @@
+.editorModal {
+  width: min(980px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  border: 1px solid rgba(129, 231, 221, .2);
+  border-radius: 9px;
+  background: #070b10;
+  box-shadow: 0 30px 90px #000;
+}
+
+.editorModal > header {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #17212b;
+}
+
+.editorModal > header > div {
+  display: grid;
+  gap: 3px;
+}
+
+.editorModal > header span,
+.editorField > span,
+.jsonEditorGrid label > span {
+  color: #5d6a76;
+  font: 650 6.5px var(--font-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.editorModal > header span {
+  color: #72cfc6;
+}
+
+.editorModal h2 {
+  margin: 0;
+  color: #d9dee9;
+  font-size: 17px;
+}
+
+.editorModal p {
+  margin: 0;
+  color: #5c6874;
+  font-size: 8px;
+}
+
+.editorModal header button {
+  border: 0;
+  color: #74818e;
+  background: none;
+}
+
+.editorGrid,
+.jsonEditorGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 14px;
+}
+
+.jsonEditorGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.editorField,
+.jsonEditorGrid label {
+  display: grid;
+  gap: 6px;
+}
+
+.editorField input,
+.editorField select,
+.jsonEditorGrid textarea {
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 8px;
+  border: 1px solid #19232d;
+  border-radius: 5px;
+  color: #c4ccd7;
+  background: #080d12;
+  font: 8px var(--font-mono);
+  outline: none;
+}
+
+.jsonEditorGrid textarea {
+  min-height: 180px;
+  padding: 9px;
+  font-size: 7px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.editorField input:focus,
+.editorField select:focus,
+.jsonEditorGrid textarea:focus {
+  border-color: rgba(45, 212, 191, .35);
+}
+
+.editorModal > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 11px 14px;
+  border-top: 1px solid #17212b;
+}
+
+.editorModal > footer button {
+  padding: 7px 10px;
+  border: 1px solid #1b2732;
+  border-radius: 5px;
+  color: #7b8794;
+  background: #0a1016;
+  font: 650 7px var(--font-mono);
+}
+
+@media (max-width: 760px) {
+  .editorGrid,
+  .jsonEditorGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "schema_version": "5a.2.0",
+  "audit_date": "2026-08-01",
+  "source_families_inspected": 12,
+  "source_family_names": [
+    "Adam H. Grimes official",
+    "Al Brooks official",
+    "Federal Reserve Bank of New York",
+    "National Bureau of Economic Research",
+    "OIC/OCC",
+    "SEC",
+    "open microstructure papers",
+    "PBO/DSR/data-snooping/CFTC",
+    "user FVG notes",
+    "user strategy notes",
+    "GitHub discovery indexes",
+    "original candlestick research candidates"
+  ],
+  "network_fetch_attempts": 18,
+  "network_sources_accepted": 16,
+  "network_sources_pending": 2,
+  "user_sources": 2,
+  "books_ingested": 0,
+  "youtube_transcripts_verified": 0,
+  "github_repositories": [
+    {
+      "repository": "TA-Lib/ta-lib-python",
+      "role": "DISCOVERY_INDEX_ONLY",
+      "reused": false
+    },
+    {
+      "repository": "kernc/backtesting.py",
+      "role": "DISCOVERY_INDEX_ONLY",
+      "reused": false
+    }
+  ],
+  "repositories_cloned": 0,
+  "frameworks_installed": 0,
+  "source_selection": "Official author/organisation pages and original/open papers only.",
+  "safety": {
+    "advisory_only": true,
+    "execution_influence": "ZERO",
+    "historical_probability": null,
+    "strategy_promotion": false,
+    "runtime_network": false,
+    "runtime_llm": false
+  }
+}

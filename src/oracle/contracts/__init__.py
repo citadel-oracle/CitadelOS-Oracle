@@ -1,0 +1,71 @@
+"""Immutable Phase-2 Oracle perception contracts."""
+
+from .perception import (
+    Availability,
+    CanonicalCandleRef,
+    CompletionStatus,
+    ContractValidationError,
+    FreshnessState,
+    MarketContextSnapshot,
+    OracleIntent,
+    TimeframeContext,
+    VerifiedVisualClaim,
+    VisualClaimCandidate,
+    VisualObservation,
+    seal,
+)
+from .analysis import (
+    AnalysisContractError, AnalysisSnapshot, EvidenceBundle, EvidenceConflict,
+    EvidenceItem, ExecutionEstimate, NaturalTarget, OptionCaptureAssessment,
+    OptionContractQuote, OracleDecisionEnvelope, StructuralInvalidation,
+    StructuralTrigger, TimingAssessment, UnderlyingAssessment,
+)
+from .learning import (
+    CalibrationReport, CalibrationState, CaptureCompleteness, CitationLocator,
+    CohortDefinition, CohortStatistics, DatasetSplitManifest,
+    DecisionEvidenceEnrichment, ExcerptPolicy, HistoricalCaseReference,
+    HistoricalOutcomeRecord,
+    ImmutableLearningRecord, KnowledgeCard, KnowledgeCardReference,
+    KnowledgeConflict, KnowledgeRetrievalQuery, KnowledgeRetrievalResult,
+    KnowledgeSourceManifest, LabelRevision, LearningContractError,
+    OutcomeDefinition, RetentionPermission, SampleSufficiencyPolicy,
+    SimilarityFeatureVector, SimilarityMatch, SimilarityResult,
+    ValidationStatus, VisualArtifactReference, VisualEdgeLabel,
+    VisualEdgeObservation, VisualEdgeOutcomeLink, VisualEdgeReason,
+)
+from .tradingview import (
+    TradingViewAvailability, TradingViewCaptureReference,
+    TradingViewChartState, TradingViewContractError, TradingViewFreshness,
+    TradingViewInstrumentIdentity, TradingViewLayoutIdentity,
+    TradingViewOptionIdentity, TradingViewRoute, TradingViewStateChangeEvent,
+    TradingViewSymbolIdentity, TradingViewSyncProjection,
+)
+
+__all__ = [
+    "Availability", "CanonicalCandleRef", "CompletionStatus",
+    "ContractValidationError", "FreshnessState", "MarketContextSnapshot",
+    "OracleIntent", "TimeframeContext", "VerifiedVisualClaim",
+    "VisualClaimCandidate", "VisualObservation", "seal",
+    "AnalysisContractError", "AnalysisSnapshot", "EvidenceBundle",
+    "EvidenceConflict", "EvidenceItem", "ExecutionEstimate", "NaturalTarget",
+    "OptionCaptureAssessment", "OptionContractQuote", "OracleDecisionEnvelope",
+    "StructuralInvalidation", "StructuralTrigger", "TimingAssessment",
+    "UnderlyingAssessment",
+    "CalibrationReport", "CalibrationState", "CaptureCompleteness",
+    "CitationLocator", "CohortDefinition", "CohortStatistics",
+    "DatasetSplitManifest", "DecisionEvidenceEnrichment", "ExcerptPolicy",
+    "HistoricalCaseReference", "HistoricalOutcomeRecord", "ImmutableLearningRecord", "KnowledgeCard",
+    "KnowledgeCardReference", "KnowledgeConflict", "KnowledgeRetrievalQuery",
+    "KnowledgeRetrievalResult", "KnowledgeSourceManifest", "LabelRevision",
+    "LearningContractError", "OutcomeDefinition", "RetentionPermission",
+    "SampleSufficiencyPolicy", "SimilarityFeatureVector", "SimilarityMatch",
+    "SimilarityResult", "ValidationStatus", "VisualArtifactReference",
+    "VisualEdgeLabel", "VisualEdgeObservation", "VisualEdgeOutcomeLink",
+    "VisualEdgeReason",
+    "TradingViewAvailability", "TradingViewCaptureReference",
+    "TradingViewChartState", "TradingViewContractError",
+    "TradingViewFreshness", "TradingViewInstrumentIdentity",
+    "TradingViewLayoutIdentity", "TradingViewOptionIdentity",
+    "TradingViewRoute", "TradingViewStateChangeEvent",
+    "TradingViewSymbolIdentity", "TradingViewSyncProjection",
+]

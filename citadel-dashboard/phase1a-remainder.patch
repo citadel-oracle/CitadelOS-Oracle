@@ -1,0 +1,11 @@
+cd ~/Developer/CitadelOS/citadel-dashboard
+
+pbpaste > phase1a-remainder.patch
+
+git apply --check phase1a-remainder.patch
+
+git apply phase1a-remainder.patch
+
+npm i zod clsx tailwind-merge
+
+npm run build

@@ -1,0 +1,6 @@
+# Isolated official CHRONOS-2 runtime. Resolve/freeze transitive versions after installation.
+chronos-forecasting==2.3.1
+pandas[pyarrow]>=2.0,<4
+pytest>=8,<9
+requests>=2,<3
+python-dotenv>=1,<2

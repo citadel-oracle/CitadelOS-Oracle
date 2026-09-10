@@ -1,0 +1,178 @@
+{
+  "schema_version": "5a.2.0",
+  "pending": [
+    {
+      "candidate_id": "white-reality-check-2000",
+      "title": "A Reality Check for Data Snooping",
+      "source_location": "https://doi.org/10.1111/1468-0262.00152",
+      "status": "PENDING_SOURCE",
+      "reason": "Publisher page was discoverable but automated source-byte retrieval returned 403; no accepted card created without a locally reproducible content hash."
+    },
+    {
+      "candidate_id": "occ-odd-june-2024",
+      "title": "Characteristics and Risks of Standardized Options",
+      "source_location": "https://www.theocc.com/company-information/documents-and-archives/options-disclosure-document",
+      "status": "PENDING_SOURCE",
+      "reason": "Official document located; exact PDF version/hash was not pinned in this bounded pass."
+    },
+    {
+      "candidate_id": "nse-equity-derivatives-contract-specifications-2026",
+      "title": "Equity Derivatives Contract Specifications",
+      "source_location": "https://www.nseindia.com/static/products-services/equity-derivatives-contract-specifications",
+      "status": "PENDING_SOURCE",
+      "reason": "Official page verified through search but direct byte retrieval was blocked; current Dhan/NSE instrument master remains contract truth."
+    },
+    {
+      "candidate_id": "wilder-new-concepts-technical-trading-systems",
+      "title": "New Concepts in Technical Trading Systems",
+      "source_location": null,
+      "status": "PENDING_SOURCE",
+      "reason": "No licensed local edition with exact page locators was available; no ATR excerpt or card ingested."
+    },
+    {
+      "candidate_id": "natenberg-option-volatility-pricing",
+      "title": "Option Volatility and Pricing",
+      "source_location": null,
+      "status": "PENDING_SOURCE",
+      "reason": "Commercial book discovered only through catalog links; no licensed local copy or locator verification."
+    },
+    {
+      "candidate_id": "original-candlestick-pattern-research",
+      "status": "PENDING_SOURCE",
+      "location": "https://papers.ssrn.com/sol3/Delivery.cfm/SSRN_ID932984_code328612.pdf",
+      "reason": "HTTP 403 during byte fetch; no manifest or card created."
+    },
+    {
+      "candidate_id": "white-reality-check-original-paper",
+      "status": "PENDING_SOURCE",
+      "location": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=160330",
+      "reason": "HTTP 403 during byte fetch; no manifest or card created."
+    },
+    {
+      "candidate_id": "youtube-WEhmadJArQo",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=WEhmadJArQo",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube--uRKGucJEkE",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=-uRKGucJEkE",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-zm2CyPrD5Uk",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=zm2CyPrD5Uk",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-BFfF_Lnk9T4",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=BFfF_Lnk9T4",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-ZTMregh_428",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=ZTMregh_428",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-yFPrP6nJRYQ",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=yFPrP6nJRYQ",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-2u9oYfx5xdY",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=2u9oYfx5xdY",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-vGyREXEwLIk",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=vGyREXEwLIk",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-pMRlqE-Tngs",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=pMRlqE-Tngs",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-f18gazn0nYE",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=f18gazn0nYE",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-dnnFb9V9uLI",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=dnnFb9V9uLI",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-sSAGIzQAhuM",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=sSAGIzQAhuM",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-vtZ6hWYT_nM",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=vtZ6hWYT_nM",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-JpQybUVffVI",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=JpQybUVffVI",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-n6Z81Pmm3pc",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=n6Z81Pmm3pc",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-0UTvF4SWdQM",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=0UTvF4SWdQM",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-xH_taQ9cIRs",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=xH_taQ9cIRs",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-RE0qezm-Zvk",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=RE0qezm-Zvk",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube--XPOohUo5fY",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=-XPOohUo5fY",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-NaWpOBxdsCY",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=NaWpOBxdsCY",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    },
+    {
+      "candidate_id": "youtube-Gatya8gJdgM",
+      "status": "PENDING_SOURCE",
+      "location": "https://www.youtube.com/watch?v=Gatya8gJdgM",
+      "reason": "User-attributed video reference; transcript and source bytes were not independently reviewed."
+    }
+  ]
+}

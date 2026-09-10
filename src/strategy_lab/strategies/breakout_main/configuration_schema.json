@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BREAKOUT MAIN Configuration",
+  "type": "object",
+  "properties": {
+    "window_enabled": {"type": "boolean", "default": true},
+    "window_bars": {"type": "integer", "minimum": 1000, "default": 5000},
+    "algorithmic_logic": {"enum": ["Adjusted Points", "Extreme Points"], "default": "Adjusted Points"},
+    "pivot_length": {"type": "integer", "minimum": 2, "default": 5},
+    "build_sweeps": {"type": "boolean", "default": true},
+    "max_bars_back": {"const": 5000}
+  },
+  "additionalProperties": false,
+  "x-citadel-status": "MARKET_STRUCTURE_COMPLETE"
+}

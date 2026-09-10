@@ -1,0 +1,38 @@
+{
+  "schema_version": "5a.2.0",
+  "registry_version": "oracle-knowledge-corpus-5a.2.0",
+  "generated_at": "2026-08-01T14:30:00+00:00",
+  "source_manifests": "source_manifests/expanded_sources.json",
+  "card_files": [
+    "cards/price_action/phase5a.json",
+    "cards/market_structure/phase5a.json",
+    "cards/liquidity_smc/phase5a.json",
+    "cards/options/phase5a.json",
+    "cards/microstructure/phase5a.json",
+    "cards/trade_construction/phase5a.json",
+    "cards/systematic_validation/phase5a.json",
+    "cards/candlesticks/expanded.json",
+    "cards/liquidity_smc/expanded.json",
+    "cards/market_structure/expanded.json",
+    "cards/microstructure/expanded.json",
+    "cards/options/expanded.json",
+    "cards/order_flow/expanded.json",
+    "cards/price_action/expanded.json",
+    "cards/strategy_research/expanded.json",
+    "cards/systematic_validation/expanded.json",
+    "cards/user_fvg/expanded.json",
+    "cards/volatility/expanded.json"
+  ],
+  "conflicts": "conflicts/expanded_conflicts.json",
+  "pending_sources": "pending_sources/expanded_pending.json",
+  "rejected_sources": "rejected_sources/expanded_rejected.json",
+  "audit_report": "ingestion_reports/expanded_source_audit.json",
+  "ingestion_summary": "ingestion_reports/expanded_ingestion_summary.json",
+  "fetched_sources": "fetched_sources/expanded_fetched.json",
+  "ingestion_ledger": "ingestion_ledgers/expanded_ingestion.jsonl",
+  "retrieval_fixtures": "retrieval_fixtures/expanded_retrieval.json",
+  "user_source_files": [
+    "user_sources/fvg_strategy_notes.txt",
+    "user_sources/strategy_knowledge_base.txt"
+  ]
+}

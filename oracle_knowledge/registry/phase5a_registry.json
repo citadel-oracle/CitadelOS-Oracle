@@ -1,0 +1,21 @@
+{
+  "schema_version": "5a.1.0",
+  "registry_version": "oracle-knowledge-corpus-5a.1.0",
+  "generated_at": "2026-08-01T12:00:00+00:00",
+  "source_manifests": "source_manifests/phase5a_sources.json",
+  "card_files": [
+    "cards/price_action/phase5a.json",
+    "cards/market_structure/phase5a.json",
+    "cards/liquidity_smc/phase5a.json",
+    "cards/options/phase5a.json",
+    "cards/microstructure/phase5a.json",
+    "cards/trade_construction/phase5a.json",
+    "cards/systematic_validation/phase5a.json",
+    "cards/strategy_research/phase5a.json"
+  ],
+  "conflicts": "conflicts/phase5a_conflicts.json",
+  "pending_sources": "pending_sources/phase5a_pending.json",
+  "rejected_sources": "rejected_sources/phase5a_rejected.json",
+  "audit_report": "ingestion_reports/phase5a_repository_audit.json"
+  ,"ingestion_summary": "ingestion_reports/phase5a_ingestion_summary.json"
+}

@@ -1,0 +1,50 @@
+{
+  "schema_version": "5a.1.0",
+  "defaults": {
+    "version": "1.0.0", "card_type": "PRINCIPLE", "optional_confirmations": ["premium structure", "VOB zone"],
+    "timeframes": ["1H", "15m", "5m", "3m"], "instruments": ["NIFTY", "BANKNIFTY"], "option_buying_relevance": "HIGH",
+    "data_availability": {"canonical_structure": "AVAILABLE_WHEN_FRESH", "option_quote": "AVAILABLE_WHEN_FRESH"},
+    "execution_influence": "ZERO", "knowledge_policy_version": "oracle-knowledge-advisory-5a.1.0", "regimes": [], "setup_types": [], "research_only": false, "research_fields": {}
+  },
+  "cards": [
+    {
+      "card_id": "construction-structural-invalidation", "concept": "Stops reference the thesis invalidation", "domain": "trade_construction",
+      "definition_principle": "A trade plan should identify the exact structural observation that disproves the thesis before mapping that boundary to an option premium stop.",
+      "measurable_predicates": ["invalidation level predates entry", "completed close or precise failure predicate is fixed", "premium stop mapping status is disclosed"],
+      "required_evidence": ["structural invalidation ID", "underlying level", "option quote path", "mapping confidence", "estimated maximum loss"],
+      "valid_conditions": ["The stop cannot be loosened beyond the authorized maximum loss."],
+      "failure_conditions": ["Stop is arbitrary, fixed by desired R multiple, or moved after adverse price action."],
+      "contradictions": ["A literature principle cannot choose the numeric stop; current deterministic analysis must do so."],
+      "when_not_to_use": ["Do not use a support/resistance card as execution authorization."],
+      "relevant_citadel_fields": ["structural_invalidation_id", "premium_hard_stop_candidate", "stop_mapping_status", "estimated_maximum_loss"],
+      "source_id": "frbny-osler-support-resistance-2000", "exact_locator": "PDF p.53 > opening definition", "short_excerpt": null, "paraphrase": "Use predeclared market structure to define thesis failure, then map it transparently to premium risk.",
+      "source_quality": "PEER_REVIEWED_PRIMARY", "source_hash_version": "dd1eb1b3100aa5cc56532bd49e631c1dcf7a459a83c0d225d21ce681bc4d2740", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "CONSTRUCTION_PRINCIPLE", "contradicts_card_ids": ["construction-no-fixed-rr-targets"]
+    },
+    {
+      "card_id": "construction-natural-targets", "concept": "Targets require pre-existing market locations", "domain": "trade_construction",
+      "definition_principle": "A natural target is a pre-existing verified structure or liquidity location; it is not stretched to manufacture a desired reward-risk ratio.",
+      "measurable_predicates": ["target level exists before entry", "target source ID and freshness are recorded", "cost-adjusted RR uses executable entry"],
+      "required_evidence": ["target IDs and levels", "source timestamps", "entry bid/ask", "cost and slippage estimates", "stop"],
+      "valid_conditions": ["At least one reachable target survives fresh revalidation."],
+      "failure_conditions": ["Target disappears, becomes stale, or is created from a fixed multiple."],
+      "contradictions": ["A historical level can fail and does not guarantee a premium target."],
+      "when_not_to_use": ["Do not use unvalidated FVG/order-block targets in production."],
+      "relevant_citadel_fields": ["natural_target_ids", "target_prices", "entry_band", "estimated_round_trip_cost", "resulting_rr"],
+      "source_id": "frbny-osler-support-resistance-2000", "exact_locator": "PDF p.64 > Conclusion", "short_excerpt": null, "paraphrase": "Reference immutable current-market locations and disclose uncertainty; never back-solve a target from desired RR.",
+      "source_quality": "PEER_REVIEWED_PRIMARY", "source_hash_version": "dd1eb1b3100aa5cc56532bd49e631c1dcf7a459a83c0d225d21ce681bc4d2740", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "CONSTRUCTION_PRINCIPLE", "contradicts_card_ids": ["construction-no-fixed-rr-targets"]
+    },
+    {
+      "card_id": "construction-no-fixed-rr-targets", "concept": "Reward-risk does not create structure", "domain": "trade_construction",
+      "definition_principle": "Reward-risk is an output of executable entry, structural stop, natural targets, costs, and slippage; it cannot manufacture those inputs.",
+      "measurable_predicates": ["entry uses current ask or price band", "stop derives from immutable invalidation", "targets derive from source IDs", "costs are included"],
+      "required_evidence": ["entry", "stop", "targets", "costs", "slippage"],
+      "valid_conditions": ["RR is recomputed after every material input change."],
+      "failure_conditions": ["Stop or target is selected to force 1R/2R."],
+      "contradictions": ["A good-looking RR does not validate the thesis or fill quality."],
+      "when_not_to_use": ["Do not cite literature to override the deterministic planner or Risk Authorization."],
+      "relevant_citadel_fields": ["entry_band", "premium_hard_stop", "natural_target_premiums", "costs", "resulting_rr"],
+      "source_id": "cftc-regulation-4-41-proposal-2006", "exact_locator": "Regulation 4.41 proposed disclaimer > hypothetical performance limitations", "short_excerpt": null, "paraphrase": "Include execution and liquidity realities; never optimize a plan presentation with hindsight.",
+      "source_quality": "OFFICIAL_PRIMARY", "source_hash_version": "2a4d1c41ce9940cefe44ed2f1fee5b4fd1c8e934c618563a6cfa30d0b9fc6dd9", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "FAILURE_BOUNDARY", "contradicts_card_ids": ["construction-structural-invalidation", "construction-natural-targets"]
+    }
+  ]
+}

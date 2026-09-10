@@ -1,0 +1,63 @@
+{
+  "schema_version": "5a.1.0",
+  "defaults": {
+    "version": "1.0.0", "card_type": "PRINCIPLE", "optional_confirmations": [], "timeframes": ["MULTI"],
+    "instruments": ["NIFTY", "BANKNIFTY"], "option_buying_relevance": "HIGH",
+    "data_availability": {"research_registry": "AVAILABLE", "oos_outcomes": "LIMITED", "historical_probability": "UNAVAILABLE_UNLESS_CALIBRATED"},
+    "execution_influence": "ZERO", "knowledge_policy_version": "oracle-knowledge-advisory-5a.1.0", "regimes": [], "setup_types": [], "research_only": false, "research_fields": {}
+  },
+  "cards": [
+    {
+      "card_id": "validation-multiple-testing", "concept": "Repeated trials increase false discoveries", "domain": "systematic_validation",
+      "definition_principle": "Trying many strategy or parameter variants on the same data can select an apparently strong result that fits noise rather than persistent structure.",
+      "measurable_predicates": ["every trial and parameter set is counted", "dataset and code hashes are frozen", "selection occurs before untouched evaluation"],
+      "required_evidence": ["trial registry", "parameter search space", "dataset hash", "code hash", "selection rule"],
+      "valid_conditions": ["All attempted variants, including failures, remain in the research registry."],
+      "failure_conditions": ["Only the best variant is retained or trial count is unknown."],
+      "contradictions": ["An attractive in-sample metric can be a selection artifact."],
+      "when_not_to_use": ["Do not promote a strategy from a single optimized backtest."],
+      "relevant_citadel_fields": ["trial_registry", "dataset_version", "code_hash", "parameter_hash", "research_status"],
+      "source_id": "lbl-bailey-ger-overfitting-2015", "exact_locator": "PDF pp.3-5 > Backtest overfitting in finance and investments", "short_excerpt": null, "paraphrase": "Record every attempted variant and separate discovery from untouched evaluation.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "81f7f2cbcc1dec248894ec5b8afcdfafd1250ea2d213704796fefaf4903e7c1b", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "VALIDATION_PRINCIPLE", "contradicts_card_ids": ["validation-holdout-not-sufficient"]
+    },
+    {
+      "card_id": "validation-oos-required", "concept": "Out-of-sample evidence is required", "domain": "systematic_validation",
+      "definition_principle": "A strategy selected on one dataset must be evaluated on time-separated data not used for selection, with the split and all outcomes immutable.",
+      "measurable_predicates": ["train end precedes OOS start", "no overlapping labels or future features", "OOS metrics include costs"],
+      "required_evidence": ["dataset split manifest", "feature versions", "outcome definition", "OOS outcomes", "cost model"],
+      "valid_conditions": ["The OOS boundary is frozen before evaluation."],
+      "failure_conditions": ["OOS data is inspected during iteration or relabeled after results."],
+      "contradictions": ["A single hold-out can still be overfit through repeated reuse."],
+      "when_not_to_use": ["Do not call in-sample evidence calibrated."],
+      "relevant_citadel_fields": ["dataset_split_manifest", "train_end", "oos_start", "outcome_definition_id", "costs_included"],
+      "source_id": "lbl-bailey-ger-overfitting-2015", "exact_locator": "PDF pp.5-7 > Simple Example of Backtest Overfitting", "short_excerpt": null, "paraphrase": "Freeze time-separated evaluation and never recycle the OOS set as another tuning set.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "81f7f2cbcc1dec248894ec5b8afcdfafd1250ea2d213704796fefaf4903e7c1b", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "VALIDATION_PRINCIPLE", "contradicts_card_ids": ["validation-holdout-not-sufficient"]
+    },
+    {
+      "card_id": "validation-holdout-not-sufficient", "concept": "A reused hold-out is not guaranteed protection", "domain": "systematic_validation",
+      "definition_principle": "A hold-out split is useful but does not control repeated discovery trials or guarantee freedom from overfitting when repeatedly consulted.",
+      "measurable_predicates": ["OOS access count is recorded", "trial count is explicit", "final untouched test or walk-forward policy is versioned"],
+      "required_evidence": ["trial count", "OOS access journal", "walk-forward folds", "final evaluation policy"],
+      "valid_conditions": ["The limitation is disclosed beside OOS results."],
+      "failure_conditions": ["Any profitable OOS result is called validated without trial controls."],
+      "contradictions": ["OOS is necessary but not automatically sufficient."],
+      "when_not_to_use": ["Do not use one repeatedly viewed hold-out as final proof."],
+      "relevant_citadel_fields": ["trial_registry", "dataset_split_manifest", "walk_forward_folds", "calibration_state"],
+      "source_id": "lbl-bailey-ger-overfitting-2015", "exact_locator": "PDF pp.3-5 > Backtest overfitting in finance and investments", "short_excerpt": null, "paraphrase": "Pair time separation with trial accounting, walk-forward discipline, and immutable final evaluation.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "81f7f2cbcc1dec248894ec5b8afcdfafd1250ea2d213704796fefaf4903e7c1b", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "COUNTER_PRINCIPLE", "contradicts_card_ids": ["validation-multiple-testing", "validation-oos-required"]
+    },
+    {
+      "card_id": "validation-simulation-costs-hindsight", "concept": "Simulated results require liquidity, cost, and hindsight caveats", "domain": "systematic_validation",
+      "definition_principle": "Hypothetical results are not actual trading and may misrepresent liquidity effects or benefit from hindsight; research output must disclose those limits.",
+      "measurable_predicates": ["fixture flag is explicit", "fees and slippage are included or excluded explicitly", "no synthetic record enters production empirical evidence"],
+      "required_evidence": ["fixture/production provenance", "cost model", "slippage model", "data lineage", "hindsight controls"],
+      "valid_conditions": ["Synthetic and historical fixtures remain isolated from production statistics."],
+      "failure_conditions": ["Synthetic counts or placeholder metrics enter empirical probability."],
+      "contradictions": ["A realistic simulation still is not broker fill truth."],
+      "when_not_to_use": ["Do not market, calibrate, or promote from undisclosed hypothetical results."],
+      "relevant_citadel_fields": ["production_registry", "fixture", "costs_included", "slippage", "execution_influence"],
+      "source_id": "cftc-regulation-4-41-proposal-2006", "exact_locator": "Regulation 4.41 proposed disclaimer > hypothetical performance limitations", "short_excerpt": "these results do not represent actual trading", "paraphrase": "Label simulations, include market frictions, and isolate them from authoritative outcome evidence.",
+      "source_quality": "OFFICIAL_PRIMARY", "source_hash_version": "2a4d1c41ce9940cefe44ed2f1fee5b4fd1c8e934c618563a6cfa30d0b9fc6dd9", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "REGULATORY_DISCLOSURE_PRINCIPLE", "contradicts_card_ids": ["validation-oos-required"]
+    }
+  ]
+}

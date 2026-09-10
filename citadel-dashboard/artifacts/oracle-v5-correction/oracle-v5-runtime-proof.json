@@ -1,0 +1,144 @@
+{
+  "proof1440": {
+    "cardCollisions": [],
+    "cardOverflow": [],
+    "centerCells": [
+      {
+        "overflow": false,
+        "text": "THESIS · PUT · STALE"
+      },
+      {
+        "overflow": false,
+        "text": "ARGUS · WAIT · STALE"
+      },
+      {
+        "overflow": false,
+        "text": "VOB · PUT · STALE"
+      },
+      {
+        "overflow": false,
+        "text": "OSE · CALL · STALE"
+      },
+      {
+        "overflow": false,
+        "text": "RISK · WAIT"
+      },
+      {
+        "overflow": false,
+        "text": "GUARDIAN · STANDBY"
+      }
+    ],
+    "fonts": {
+      "argus": "\"Space Grotesk\", \"Space Grotesk Fallback\", sans-serif",
+      "body": "Inter, \"Inter Fallback\", sans-serif",
+      "hub": "\"Space Grotesk\", \"Space Grotesk Fallback\", sans-serif",
+      "loaded": {
+        "inter": true,
+        "jetbrains": true,
+        "space": true
+      },
+      "numeric": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", monospace",
+      "wordmark": "\"Space Grotesk\", \"Space Grotesk Fallback\", sans-serif"
+    },
+    "forbiddenAmber": 0,
+    "hubAnchors": 6,
+    "internalOverlaps": {
+      "argus": [],
+      "guardian": [],
+      "ose": [],
+      "risk": [],
+      "thesis": [],
+      "vob": []
+    },
+    "pageOverflowX": 0,
+    "paths": 6,
+    "providerAnchors": 6,
+    "safetyText": {
+      "advisory": true,
+      "authorityFalse": true,
+      "noOrder": true
+    },
+    "tokens": {
+      "green": "#4ade80",
+      "greenDim": "#245c3d",
+      "red": "#ff3b54",
+      "redDim": "#6e2530",
+      "redHi": "#ff7285"
+    },
+    "viewport": [
+      1440,
+      900
+    ]
+  },
+  "proof1280": {
+    "cardCollisions": [],
+    "cardOverflow": [],
+    "centerCells": [
+      {
+        "overflow": false,
+        "text": "THESIS · PUT · STALE"
+      },
+      {
+        "overflow": false,
+        "text": "ARGUS · WAIT · STALE"
+      },
+      {
+        "overflow": false,
+        "text": "VOB · PUT · STALE"
+      },
+      {
+        "overflow": false,
+        "text": "OSE · CALL · STALE"
+      },
+      {
+        "overflow": false,
+        "text": "RISK · WAIT"
+      },
+      {
+        "overflow": false,
+        "text": "GUARDIAN · STANDBY"
+      }
+    ],
+    "fonts": {
+      "argus": "\"Space Grotesk\", \"Space Grotesk Fallback\", sans-serif",
+      "body": "Inter, \"Inter Fallback\", sans-serif",
+      "hub": "\"Space Grotesk\", \"Space Grotesk Fallback\", sans-serif",
+      "loaded": {
+        "inter": true,
+        "jetbrains": true,
+        "space": true
+      },
+      "numeric": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", monospace",
+      "wordmark": "\"Space Grotesk\", \"Space Grotesk Fallback\", sans-serif"
+    },
+    "forbiddenAmber": 0,
+    "hubAnchors": 6,
+    "internalOverlaps": {
+      "argus": [],
+      "guardian": [],
+      "ose": [],
+      "risk": [],
+      "thesis": [],
+      "vob": []
+    },
+    "pageOverflowX": 0,
+    "paths": 6,
+    "providerAnchors": 6,
+    "safetyText": {
+      "advisory": true,
+      "authorityFalse": true,
+      "noOrder": true
+    },
+    "tokens": {
+      "green": "#4ade80",
+      "greenDim": "#245c3d",
+      "red": "#ff3b54",
+      "redDim": "#6e2530",
+      "redHi": "#ff7285"
+    },
+    "viewport": [
+      1280,
+      720
+    ]
+  }
+}

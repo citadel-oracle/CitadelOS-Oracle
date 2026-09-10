@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "record_type": "STRATEGY_REPLAY_ENVELOPE",
+  "evaluation_id": "pine_event.event_id",
+  "source_hash": "pine_event.source_sha256",
+  "origin_bar_index": "pine_event.bar_index",
+  "origin_candle_time": "pine_event.candle_time",
+  "closed_candle": "pine_event.candle_closed",
+  "action": "pine_event.action",
+  "entry": "pine_event.entry",
+  "exit": "pine_event.exit",
+  "stop": "pine_event.stop",
+  "target": "pine_event.target",
+  "raw_authoritative_event": "pine_event"
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": "5a.2.0",
+  "fixtures": [
+    {
+      "fixture_id": "fvg-support-and-counter",
+      "instrument": "NIFTY",
+      "timeframe": "3m",
+      "setup_type": "DISPLACEMENT_FVG_RETEST",
+      "question": "FVG displacement retest context contradiction",
+      "expected_max_cards": 5,
+      "research_only_allowed": false
+    },
+    {
+      "fixture_id": "option-executable-price",
+      "instrument": "NIFTY",
+      "timeframe": "5m",
+      "setup_type": null,
+      "question": "option bid ask spread executable price limit market",
+      "expected_max_cards": 5,
+      "research_only_allowed": false
+    },
+    {
+      "fixture_id": "overfitting",
+      "instrument": "BANKNIFTY",
+      "timeframe": "15m",
+      "setup_type": null,
+      "question": "backtest overfitting holdout multiple testing OOS",
+      "expected_max_cards": 5,
+      "research_only_allowed": false
+    }
+  ]
+}

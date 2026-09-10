@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "strategy_id": "breakout-main-pine-v5",
+  "name": "BREAKOUT MAIN",
+  "pine_version": 5,
+  "direction": "LONG_ONLY",
+  "phase": "PAPER_ACTIVATION",
+  "status": "PAPER_ACTIVE",
+  "deployment_target": "STRATEGY_LAB_ONLY",
+  "paper_execution": true,
+  "broker_submission": false,
+  "live_trading_enabled": false
+}

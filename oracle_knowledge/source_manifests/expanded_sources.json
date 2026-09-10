@@ -1,0 +1,1030 @@
+{
+  "schema_version": "5a.2.0",
+  "sources": [
+    {
+      "source_id": "sec-investor-options-introduction-2026",
+      "title": "Investor Bulletin: An Introduction to Options",
+      "author_organisation": "U.S. Securities and Exchange Commission, Office of Investor Education and Assistance",
+      "edition_version": "Updated 2026-07-16",
+      "publication_date": "2026-07-16",
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "4bc4a3096a751a9a21f35596aaffb9e5a91d2500c6a4a7ee765322d8e8fbe47e",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES_VERIFIED_IN_PHASE_4",
+      "source_location": "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins-63",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "OFFICIAL_PUBLIC_WEB_SHORT_EXCERPTS_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "official-web-short-excerpt-1.0.0",
+        "excerpt_allowed": true,
+        "maximum_words": 20,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Basic Options Terminology > premium paragraph beginning 'The amount of the premium'",
+        "What are some of the risks associated with trading options? > option holders paragraph"
+      ],
+      "provenance": {
+        "discovered_via": "PHASE_4_DIRECT_OFFICIAL_SOURCE",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "U.S. educational bulletin; exact Indian index-option applicability must be verified from current NSE/Dhan contract truth."
+      ],
+      "contradictions": [
+        "A general pricing principle is not a setup probability or execution instruction."
+      ]
+    },
+    {
+      "source_id": "oic-understanding-options-greeks-2026",
+      "title": "Understanding Options Greeks",
+      "author_organisation": "The Options Industry Council",
+      "edition_version": "Retrieved 2026-08-01",
+      "publication_date": null,
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "dc0aeff46e21e477dbbadef941715b54224567e072b8de01cfa73d9a967945fb",
+      "hash_scope": "FULL_RETRIEVED_HTML_BYTES",
+      "source_location": "https://www.optionseducation.org/advancedconcepts/understanding-options-greeks",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "OFFICIAL_EDUCATIONAL_WEB_SHORT_EXCERPTS_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "oic-short-excerpt-1.0.0",
+        "excerpt_allowed": true,
+        "maximum_words": 20,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Main article > opening paragraph",
+        "Main article > pricing input list"
+      ],
+      "provenance": {
+        "discovered_via": "AUTHORITATIVE_SOURCE_SEARCH",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "Greeks are theoretical sensitivities, not exact realized premium changes."
+      ],
+      "contradictions": [
+        "A Greek value alone does not validate direction, liquidity, costs, or outcome probability."
+      ]
+    },
+    {
+      "source_id": "oic-volatility-greeks-2026",
+      "title": "Volatility & the Greeks",
+      "author_organisation": "The Options Industry Council",
+      "edition_version": "Retrieved 2026-08-01",
+      "publication_date": null,
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "75c91bb843fec7f84729d700ace821e9e4e870afe043cb28de1e0b16f84d45cc",
+      "hash_scope": "FULL_RETRIEVED_HTML_BYTES",
+      "source_location": "https://www.optionseducation.org/advancedconcepts/volatility-the-greeks",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "OFFICIAL_EDUCATIONAL_WEB_SHORT_EXCERPTS_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "oic-short-excerpt-1.0.0",
+        "excerpt_allowed": true,
+        "maximum_words": 20,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Volatility and the Greeks > statistical and implied volatility paragraphs",
+        "Volatility and the Greeks > Greeks caution paragraph",
+        "Volatility and the Greeks > Delta paragraph",
+        "Volatility and the Greeks > Gamma paragraph",
+        "Volatility and the Greeks > Theta paragraph",
+        "Volatility and the Greeks > Vega paragraph"
+      ],
+      "provenance": {
+        "discovered_via": "AUTHORITATIVE_SOURCE_SEARCH",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "Educational definitions use model sensitivities and do not guarantee realized prices."
+      ],
+      "contradictions": [
+        "Observed option prices also depend on executable quotes, liquidity, costs, and changing inputs."
+      ]
+    },
+    {
+      "source_id": "frbny-osler-support-resistance-2000",
+      "title": "Support for Resistance: Technical Analysis and Intraday Exchange Rates",
+      "author_organisation": "Carol L. Osler; Federal Reserve Bank of New York",
+      "edition_version": "Economic Policy Review Vol. 6 No. 2",
+      "publication_date": "2000-07-01",
+      "source_type": "PAPER",
+      "document_hash": "dd1eb1b3100aa5cc56532bd49e631c1dcf7a459a83c0d225d21ce681bc4d2740",
+      "hash_scope": "FULL_RETRIEVED_PDF_BYTES",
+      "source_location": "https://www.newyorkfed.org/medialibrary/media/research/epr/00v06n2/0007osle.pdf",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "FEDERAL_RESERVE_OPEN_RESEARCH_SHORT_EXCERPTS_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "research-short-excerpt-1.0.0",
+        "excerpt_allowed": true,
+        "maximum_words": 20,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "PDF p.53 > opening definition",
+        "PDF p.64 > Conclusion",
+        "PDF p.64 > reported strength ratings conclusion"
+      ],
+      "provenance": {
+        "discovered_via": "AUTHORITATIVE_SOURCE_SEARCH",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "1996-1998 intraday FX sample; transfer to Indian index options requires CITADEL validation."
+      ],
+      "contradictions": [
+        "Predictive power varied across firms and exchange rates; published strength labels were not useful."
+      ]
+    },
+    {
+      "source_id": "frbny-osler-currency-orders-2001",
+      "title": "Currency Orders and Exchange-Rate Dynamics: Explaining the Success of Technical Analysis",
+      "author_organisation": "Carol L. Osler; Federal Reserve Bank of New York",
+      "edition_version": "Staff Report No. 125",
+      "publication_date": "2001-04-01",
+      "source_type": "PAPER",
+      "document_hash": "d72bc0a020d04f0b7dd423c0f4f2dcebc83b34ebd160ca8eca75b52d69e1341d",
+      "hash_scope": "FULL_RETRIEVED_PDF_BYTES",
+      "source_location": "https://www.newyorkfed.org/medialibrary/media/research/staff_reports/sr125.pdf",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "FEDERAL_RESERVE_OPEN_RESEARCH_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "research-paraphrase-only-1.0.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Abstract > two familiar predictions",
+        "Abstract > order clustering and round numbers"
+      ],
+      "provenance": {
+        "discovered_via": "AUTHORITATIVE_SOURCE_SEARCH",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "Single-bank FX order data; does not establish universal institutional causality."
+      ],
+      "contradictions": [
+        "CITADEL has no authoritative stop-order book and must not infer hidden orders from candles alone."
+      ]
+    },
+    {
+      "source_id": "nber-lo-mamaysky-wang-2000",
+      "title": "Foundations of Technical Analysis: Computational Algorithms, Statistical Inference, and Empirical Implementation",
+      "author_organisation": "Andrew W. Lo, Harry Mamaysky, Jiang Wang; National Bureau of Economic Research",
+      "edition_version": "Working Paper 7613",
+      "publication_date": "2000-03-01",
+      "source_type": "PAPER",
+      "document_hash": "bff74dd2efbc02ba0d0a8fd5f5d737d0ed0b26dab65af3e51be8e01db3d16fae",
+      "hash_scope": "FULL_RETRIEVED_NBER_LANDING_PAGE_HTML_BYTES",
+      "source_location": "https://www.nber.org/papers/w7613",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "NBER_ABSTRACT_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "nber-paraphrase-only-1.0.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Abstract > subjectivity and systematic recognition",
+        "Abstract > incremental information finding"
+      ],
+      "provenance": {
+        "discovered_via": "AUTHORITATIVE_SOURCE_SEARCH",
+        "retrieved_at": "2026-08-01",
+        "doi": "10.3386/w7613"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "Daily U.S. equity sample ending 1996; patterns and results do not transfer automatically to intraday Indian options."
+      ],
+      "contradictions": [
+        "Subjective visual naming is not acceptable without a deterministic predicate and new OOS evidence."
+      ]
+    },
+    {
+      "source_id": "arxiv-cont-kukanov-stoikov-2011",
+      "title": "The Price Impact of Order Book Events",
+      "author_organisation": "Rama Cont, Arseniy Kukanov, Sasha Stoikov",
+      "edition_version": "arXiv:1011.6402v3",
+      "publication_date": "2011-04-13",
+      "source_type": "PAPER",
+      "document_hash": "40d1d5f0baf7944a1b9f4c12d3644038e657acf4a3dfb500b2057c2269edd25f",
+      "hash_scope": "FULL_RETRIEVED_PDF_BYTES",
+      "source_location": "https://arxiv.org/pdf/1011.6402",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "ARXIV_OPEN_ACCESS_SHORT_EXCERPTS_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "arxiv-short-excerpt-1.0.0",
+        "excerpt_allowed": true,
+        "maximum_words": 20,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Abstract",
+        "Section 2.3 > Model specification",
+        "Section 4.1 > Trade imbalance vs order flow imbalance",
+        "Section 5 > Conclusion"
+      ],
+      "provenance": {
+        "discovered_via": "INSTITUTIONAL_INDEX_THEN_ORIGINAL_ARXIV",
+        "retrieved_at": "2026-08-01",
+        "doi": "10.1093/jjfinec/nbt003"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "NYSE TAQ top-of-book study; CITADEL currently lacks authoritative L2/order-event history for production use."
+      ],
+      "contradictions": [
+        "Trade volume alone was noisier and less robust than full order-flow imbalance in the studied data."
+      ]
+    },
+    {
+      "source_id": "lbl-bailey-ger-overfitting-2015",
+      "title": "Statistical Overfitting and Backtest Performance",
+      "author_organisation": "David H. Bailey, Stephanie Ger, Marcos Lopez de Prado, Alexander Sim, Kesheng Wu",
+      "edition_version": "2015 manuscript",
+      "publication_date": "2015-01-01",
+      "source_type": "PAPER",
+      "document_hash": "81f7f2cbcc1dec248894ec5b8afcdfafd1250ea2d213704796fefaf4903e7c1b",
+      "hash_scope": "FULL_RETRIEVED_PDF_BYTES",
+      "source_location": "https://sdm.lbl.gov/oapapers/ssrn-id2507040-bailey.pdf",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "AUTHORITATIVE_LAB_HOST_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "research-paraphrase-only-1.0.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "PDF p.1 > Abstract",
+        "PDF pp.3-5 > Backtest overfitting in finance and investments",
+        "PDF pp.5-7 > Simple Example of Backtest Overfitting"
+      ],
+      "provenance": {
+        "discovered_via": "AUTHORITATIVE_SOURCE_SEARCH",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "Illustrative research does not define CITADEL promotion thresholds."
+      ],
+      "contradictions": [
+        "A hold-out split alone does not control repeated trials or guarantee generalization."
+      ]
+    },
+    {
+      "source_id": "cftc-regulation-4-41-proposal-2006",
+      "title": "Amendments to Regulation 4.41(b): Advertising by Commodity Pool Operators, Commodity Trading Advisors, and the Principals Thereof",
+      "author_organisation": "U.S. Commodity Futures Trading Commission",
+      "edition_version": "71 FR 49387 proposed rule",
+      "publication_date": "2006-08-23",
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "2a4d1c41ce9940cefe44ed2f1fee5b4fd1c8e934c618563a6cfa30d0b9fc6dd9",
+      "hash_scope": "FULL_RETRIEVED_HTML_BYTES",
+      "source_location": "https://www.cftc.gov/LawRegulation/FederalRegister/ProposedRules/71fr49387.html",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "US_GOVERNMENT_PUBLIC_DOCUMENT",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "government-short-excerpt-1.0.0",
+        "excerpt_allowed": true,
+        "maximum_words": 20,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Regulation 4.41 proposed disclaimer > hypothetical performance limitations"
+      ],
+      "provenance": {
+        "discovered_via": "AUTHORITATIVE_SOURCE_SEARCH",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "Regulatory disclosure principle, not a statistical validation method or trading rule."
+      ],
+      "contradictions": [
+        "Simulated results can misstate liquidity effects and benefit from hindsight."
+      ]
+    },
+    {
+      "source_id": "adam-grimes-fundamental-patterns-2026",
+      "title": "Fundamental Trading Patterns",
+      "author_organisation": "Adam H. Grimes",
+      "edition_version": "Retrieved 2026-08-01",
+      "publication_date": null,
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "f8a495ae10555b9234e3c9fb6f3cab3da002e881b5907edecca689306f724e04",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.adamhgrimes.com/fundamental-trading-patterns/",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "AUTHOR_OFFICIAL_FREE_WEB_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Simple Pullback",
+        "Complex Pullback",
+        "Failure Test",
+        "Breakouts"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The source is explanatory and has not been validated on CITADEL outcomes."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "adam-grimes-market-structure-2026",
+      "title": "Elementary Market Structure",
+      "author_organisation": "Adam H. Grimes",
+      "edition_version": "Retrieved 2026-08-01",
+      "publication_date": null,
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "e0453eef62e1ca83b3c50651d996eb38690e318061d3a1f52a0455a217d24f31",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.adamhgrimes.com/market-structure/",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "AUTHOR_OFFICIAL_FREE_WEB_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Elementary Market Structure > market structure vs price action",
+        "Elementary Market Structure > trends and ranges",
+        "Elementary Market Structure > quantifiable/statistically verifiable boundary"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The source is explanatory and has not been validated on CITADEL outcomes."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "adam-grimes-breakout-failures-2026",
+      "title": "Breakouts and Breakout Failures: Real-World Trading",
+      "author_organisation": "Adam H. Grimes",
+      "edition_version": "Retrieved 2026-08-01",
+      "publication_date": "2021-04-09",
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "a178bf8ea51abd26c21743054eee3e66d7d177e82b04a69560bad488aa2f9d76",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.adamhgrimes.com/breakouts-and-breakout-failures-real-world-trading/",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "AUTHOR_OFFICIAL_FREE_WEB_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Breakouts and breakout failures > classic breakout setup",
+        "Breakouts and breakout failures > failure test",
+        "Breakouts and breakout failures > follow-through/no-bias lesson"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The source is explanatory and has not been validated on CITADEL outcomes."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "al-brooks-price-action-manual-2026",
+      "title": "How to Trade Price Action Manual",
+      "author_organisation": "Al Brooks",
+      "edition_version": "Retrieved 2026-08-01",
+      "publication_date": null,
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "5b8f6df6284a6c394a428d2cae36caa61829277c9ffe61540843f1dd2023d5d9",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.brookstradingcourse.com/how-to-trade-price-action-manual/",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "AUTHOR_OFFICIAL_FREE_MANUAL_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Opening overview > context over candle patterns",
+        "How to Trade Price Action Contents > open/public chapters",
+        "Either high probability or good risk/reward, but never both"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The source is explanatory and has not been validated on CITADEL outcomes."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "al-brooks-candlestick-context-2026",
+      "title": "Candlestick Charts",
+      "author_organisation": "Al Brooks",
+      "edition_version": "Retrieved 2026-08-01",
+      "publication_date": null,
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "20ab78e79fac62f996398ce2a629cf4ee667aba4cf2683bb7a85f9a615f1b1ac",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.brookstradingcourse.com/how-to-trade-manual/candlestick-charts/",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "AUTHOR_OFFICIAL_FREE_MANUAL_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "The lure of candlestick chart patterns",
+        "Setups and Signals",
+        "context means bars to the left"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The source is explanatory and has not been validated on CITADEL outcomes."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "al-brooks-price-action-glossary-2026",
+      "title": "Price Action Trading Terms Glossary",
+      "author_organisation": "Al Brooks",
+      "edition_version": "Retrieved 2026-08-01",
+      "publication_date": null,
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "55c9f8aeb31202e1176c26e7340c35340c9e887eac9b4d4a577d033b6ab10936",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.brookstradingcourse.com/price-action-trading-terms-glossary/",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "AUTHOR_OFFICIAL_FREE_GLOSSARY_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "breakout",
+        "breakout pullback",
+        "failure (a failed move)",
+        "follow-through",
+        "pullback",
+        "trading range"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The source is explanatory and has not been validated on CITADEL outcomes."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "al-brooks-trading-ranges-2026",
+      "title": "Trading Ranges",
+      "author_organisation": "Al Brooks",
+      "edition_version": "Retrieved 2026-08-01",
+      "publication_date": null,
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "ecd1e85fe583deaad34b52a5e9821bc7f4d906ee1d68e16e2ca4dee5bb4f7f99",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.brookstradingcourse.com/how-to-trade-manual/trading-ranges/",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "AUTHOR_OFFICIAL_FREE_MANUAL_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Market cycles between trends and trading ranges",
+        "Most breakout attempts fail",
+        "Tight Trading Ranges > Most should not trade"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The source is explanatory and has not been validated on CITADEL outcomes."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "frbny-osler-stoploss-cascades-2002",
+      "title": "Stop-Loss Orders and Price Cascades in Currency Markets",
+      "author_organisation": "Carol L. Osler; Federal Reserve Bank of New York",
+      "edition_version": "Staff Report No. 150",
+      "publication_date": "2002-07-01",
+      "source_type": "PAPER",
+      "document_hash": "0132a12fe1116a4608e437bb36212e21589fec22e925a04edb903d0f0e601904",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.newyorkfed.org/medialibrary/media/research/staff_reports/sr150.pdf",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "FEDERAL_RESERVE_OPEN_RESEARCH_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "PDF p.1 > Abstract",
+        "PDF p.6 > scope and other-factor limitation",
+        "PDF p.20 > causal-connection caveat"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The evidence is from FX stop-order data and cannot be transferred to Indian options without validation."
+      ],
+      "contradictions": [
+        "The paper explicitly preserves other-factor and causal limitations."
+      ]
+    },
+    {
+      "source_id": "oic-bid-ask-options-2024",
+      "title": "Understanding the Bid and Ask Prices for Options",
+      "author_organisation": "The Options Industry Council",
+      "edition_version": "Updated 2024-08",
+      "publication_date": "2024-08-01",
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "8ace352032241eef29870355a95fb74655e8e0b19efe1dbe1493c8def9975502",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.optionseducation.org/news/understanding-the-bid-and-ask-prices-for-options",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "OIC_OFFICIAL_EDUCATIONAL_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Main article > order routing and execution outcomes",
+        "Main article > market and limit order trade-offs",
+        "Key Takeaways"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The source is explanatory and has not been validated on CITADEL outcomes."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "oic-options-pricing-2026",
+      "title": "Options Pricing",
+      "author_organisation": "The Options Industry Council",
+      "edition_version": "Retrieved 2026-08-01",
+      "publication_date": null,
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "17f6dc2cd4744823163e0d3535114da27d0dd8f4a0485c4b82c7429175b03e5c",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.optionseducation.org/optionsoverview/options-pricing",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "OIC_OFFICIAL_EDUCATIONAL_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Intrinsic Value",
+        "Time Value",
+        "Major Factors Influencing Options Premium"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The source is explanatory and has not been validated on CITADEL outcomes."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "occ-learning-curriculum-2026",
+      "title": "OCC Learning",
+      "author_organisation": "Options Clearing Corporation",
+      "edition_version": "Retrieved 2026-08-01",
+      "publication_date": null,
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "d80060fe597d908f338042cf8cefe0a670d357de0e0fd705b56853e1a532f2b2",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.optionseducation.org/theoptionseducationcenter/occ-learning",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "OCC_OFFICIAL_EDUCATIONAL_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Options 101",
+        "Getting to Know the Greeks",
+        "Options Volatility - Forecasting the Unknown"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The source is explanatory and has not been validated on CITADEL outcomes."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "oic-open-interest-2026",
+      "title": "Open Interest: Why It Matters",
+      "author_organisation": "The Options Industry Council",
+      "edition_version": "Retrieved 2026-08-01",
+      "publication_date": null,
+      "source_type": "OFFICIAL_DOCUMENTATION",
+      "document_hash": "b60f674d6bec0951b3a0805a6e3f81fcb139a050e0935370750d5e1a9ecf5e88",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.optionseducation.org/news/open-interest-why-it-matters",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "OIC_OFFICIAL_EDUCATIONAL_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Main article > volume versus open interest",
+        "Main article > exercise/assignment removals",
+        "Key Takeaways"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The source is explanatory and has not been validated on CITADEL outcomes."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "bailey-pbo-2015",
+      "title": "The Probability of Backtest Overfitting",
+      "author_organisation": "David H. Bailey et al.",
+      "edition_version": "Journal of Computational Finance version",
+      "publication_date": "2015-02-27",
+      "source_type": "PAPER",
+      "document_hash": "d8bfbadaaedb430d9dec929646d92f3580fdf18238f34121ae7738fa1c69a63d",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "AUTHOR_HOSTED_OPEN_RESEARCH_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "PDF p.2 > Abstract",
+        "PDF pp.6-8 > hold-out limitations",
+        "PDF pp.10-13 > combinatorially symmetric cross-validation and PBO",
+        "PDF p.28 > Conclusions"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The source is explanatory and has not been validated on CITADEL outcomes."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "bailey-lopez-dsr-2014",
+      "title": "The Deflated Sharpe Ratio: Correcting for Selection Bias, Backtest Overfitting and Non-Normality",
+      "author_organisation": "David H. Bailey; Marcos López de Prado",
+      "edition_version": "2014 manuscript",
+      "publication_date": "2014-07-31",
+      "source_type": "PAPER",
+      "document_hash": "ca4a1e834a2954b84eb560776e903329cd9cef318d458aadf6d67bc8166d10b5",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://www.davidhbailey.com/dhbpapers/deflated-sharpe.pdf",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "AUTHOR_HOSTED_OPEN_RESEARCH_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "PDF p.2 > Abstract",
+        "PDF pp.3-6 > Multiple testing and selection bias",
+        "PDF p.8 > The Deflated Sharpe Ratio",
+        "PDF p.11 > Conclusions"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The source is explanatory and has not been validated on CITADEL outcomes."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "arxiv-xu-gould-howison-mlofi-2019",
+      "title": "Multi-Level Order-Flow Imbalance in a Limit Order Book",
+      "author_organisation": "Ke Xu; Martin D. Gould; Sam D. Howison",
+      "edition_version": "arXiv:1907.06230",
+      "publication_date": "2019-07-14",
+      "source_type": "PAPER",
+      "document_hash": "a4da688fe33e8bf981e96e265b89cee3e42d0ae7efd187aa3f6cbd5c27359460",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://arxiv.org/pdf/1907.06230",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "ARXIV_OPEN_ACCESS_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "PDF p.1 > Abstract",
+        "Section 2 > Multi-level order-flow imbalance definition",
+        "Section 4 > out-of-sample comparison",
+        "Section 5 > Conclusion"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "CITADEL lacks authoritative multi-level Indian option order-event history; production use is unavailable."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "arxiv-smith-farmer-gillemot-cda-2002",
+      "title": "Statistical Theory of the Continuous Double Auction",
+      "author_organisation": "Eric Smith; J. Doyne Farmer; László Gillemot; Supriya Krishnamurthy",
+      "edition_version": "arXiv:cond-mat/0210475",
+      "publication_date": "2002-10-22",
+      "source_type": "PAPER",
+      "document_hash": "3ee6de4abe6126462237f67715bc2a28337b8b8d0d64f7a44ddde4893408d345",
+      "hash_scope": "FULL_RETRIEVED_DOCUMENT_BYTES",
+      "source_location": "https://arxiv.org/pdf/cond-mat/0210475",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "ARXIV_OPEN_ACCESS_PARAPHRASE_ONLY",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "PDF p.1 > Abstract",
+        "PDF p.3 > Background: The continuous double auction",
+        "PDF pp.13-14 > fill probability and fill time",
+        "PDF p.29 > liquidity and immediate impact",
+        "PDF p.32 > dimensionless-model limitation"
+      ],
+      "provenance": {
+        "discovered_via": "DIRECT_PRIMARY_SOURCE_REVIEW",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "limitations": [
+        "The zero-intelligence model is explanatory and is not a live fill forecast."
+      ],
+      "contradictions": [
+        "No source principle creates probability or execution authority."
+      ]
+    },
+    {
+      "source_id": "user-fvg-strategy-notes-2026",
+      "title": "FVG Strategy Knowledge Notes",
+      "author_organisation": "User-provided compilation",
+      "edition_version": "Exact attachment bytes 2026-08-01",
+      "publication_date": "2026-08-01",
+      "source_type": "USER_PROVIDED",
+      "document_hash": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "hash_scope": "EXACT_USER_PROVIDED_ATTACHMENT_BYTES",
+      "source_location": "user_sources/fvg_strategy_notes.txt",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "USER_PROVIDED_RETAIN_EXACT_LOCAL_SOURCE_NO_REDISTRIBUTION",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Usable FVG Rules > rule 1",
+        "Usable FVG Rules > rules 2-7",
+        "Usable FVG Rules > rules 8-16",
+        "Entry Models For Our FVG Strategy > rules 1-7",
+        "Stop And Target Logic > rules 1-8",
+        "Filters For Indian Option Buying > rules 1-10",
+        "What Not To Do > rules 1-6"
+      ],
+      "provenance": {
+        "discovered_via": "USER_PROVIDED_ATTACHMENT",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "limitations": [
+        "Video-derived assertions were supplied by the user; linked video bytes/transcripts were not reviewed."
+      ],
+      "contradictions": [
+        "The notes mix measurable rules with discretionary terminology and fixed-RR hypotheses."
+      ]
+    },
+    {
+      "source_id": "user-strategy-knowledge-base-2026",
+      "title": "Strategy Knowledge Base",
+      "author_organisation": "User-provided compilation",
+      "edition_version": "Exact attachment bytes 2026-08-01",
+      "publication_date": "2026-08-01",
+      "source_type": "USER_PROVIDED",
+      "document_hash": "dccf62ee374392d9c0fd5d722b9a65d98f41ebae5ab2862d1d9e421bd957c525",
+      "hash_scope": "EXACT_USER_PROVIDED_ATTACHMENT_BYTES",
+      "source_location": "user_sources/strategy_knowledge_base.txt",
+      "access_status": "ACCESSIBLE",
+      "rights_status": "USER_PROVIDED_RETAIN_EXACT_LOCAL_SOURCE_NO_REDISTRIBUTION",
+      "ingestion_status": "VERIFIED",
+      "excerpt_policy": {
+        "policy_id": "expanded-paraphrase-5a.2.0",
+        "excerpt_allowed": false,
+        "maximum_words": 0,
+        "attribution_required": true,
+        "full_text_runtime_allowed": false
+      },
+      "stable_locators": [
+        "Video 2 > Main Ideas",
+        "Video 3 > Main Ideas",
+        "Video 5 > Main Rules",
+        "Video 7 > Entry Families",
+        "Video 8 > FVG Rules",
+        "Video 9 > Valid Pullback",
+        "Video 10 > Strategy Rules",
+        "Video 11 > Trade Logic",
+        "Video 13 > Rules",
+        "Video 17 > CHoCH Rules",
+        "Unified Strategy Design Notes > Context",
+        "Unified Strategy Design Notes > Zone",
+        "Unified Strategy Design Notes > Trigger",
+        "Unified Strategy Design Notes > Risk",
+        "V2 Build Blueprint > Pullback V2",
+        "V2 Build Blueprint > Breakout V2"
+      ],
+      "provenance": {
+        "discovered_via": "USER_PROVIDED_ATTACHMENT",
+        "retrieved_at": "2026-08-01"
+      },
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "limitations": [
+        "The linked video transcripts were not independently fetched or authenticated."
+      ],
+      "contradictions": [
+        "All setup descriptions remain research-only and cannot direct execution."
+      ]
+    }
+  ]
+}

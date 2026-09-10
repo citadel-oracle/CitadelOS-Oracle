@@ -1,0 +1,131 @@
+{
+  "audit_date": "2026-08-18",
+  "audit_mode": "read_only_local_evidence",
+  "heads": {
+    "pre_r3": {"commit": "db0a6e8", "tag": "ACCEPTED_CODEX_R2_R2_1_PRE_R3_BASELINE"},
+    "m1": {"commit": "50bb09b", "tag": "R3_MISSION1_PASSED"},
+    "m2_final": {"commit": "a523214", "tag": "R3_MISSION2_FINAL_PASSED", "implementation_commit": "e963ba1"},
+    "m3_current": {"commit": "e48f63a9e3108b9834c979623fed4fee7f969225", "tag": "R3_INFRA_FREEZE_VERIFIED"}
+  },
+  "worktree": {
+    "dirty": true,
+    "unreviewed_production_files": [
+      "src/oracle/market_data_gateway.py",
+      "src/oracle_development/oracle_dev_service.py"
+    ]
+  },
+  "architecture_boundaries": {
+    "market_data_gateway_isolated": "PASS",
+    "flow_isolated": "PASS",
+    "live_analytics_isolated": "PASS",
+    "strategy_lab_price_action_isolated": "PASS",
+    "latest_state_fast_lane": "PASS",
+    "heavy_analytics_off_http_path": "PARTIAL",
+    "single_dhan_gateway_owner": "UNPROVEN"
+  },
+  "r3": {
+    "mission1": {
+      "status": "PARTIAL",
+      "proven": ["worker supervision", "CURRENT_LAST_GOOD_separation", "bounded_restart", "crash_loop_protection", "rehydration_before_healthy", "persistence_degrades_not_kills", "vob_freshness_uses_evaluated_at"],
+      "blocker": "CanonicalRuntimeTruth is not wired into app readiness/current surfaces"
+    },
+    "mission2": {
+      "status": "PARTIAL",
+      "proven": ["global_3_second_dhan_option_chain_guard", "field_provenance", "mutation_copy_boundaries", "argus_formula_unchanged"],
+      "qualification": "static direct Option Chain callers prevent proof of exclusive gateway ownership"
+    },
+    "mission3": {
+      "status": "PARTIAL",
+      "proven": ["lean_live_fast_lane", "cached_on_demand_history", "no_history_recompute_on_history_http_path", "10_minute_sse_no_reconnect_or_resync"],
+      "blocker": "one-hour evidence has four health/readiness/diagnostic 8-second timeouts"
+    }
+  },
+  "final_freeze": {
+    "final_head": "e48f63a9e3108b9834c979623fed4fee7f969225",
+    "final_tag": "R3_INFRA_FREEZE_VERIFIED",
+    "oracle_infra_status": "FROZEN",
+    "runtime_truth_sole_public_authority": true,
+    "continuous_optionchain_producer_count": 1,
+    "other_reachable_continuous_producers": 0,
+    "unguarded_reachable_optionchain_calls": 0,
+    "topology_negative_control_detected_second_producer": true,
+    "exact_head_regression_suite": {"required": true, "failed": 0},
+    "production_code_changed_by_certification": false
+  },
+  "invariants": {
+    "trading_math_changed_by_r3": false,
+    "paper_only": true,
+    "live_trading_enabled": false,
+    "broker_submission": false,
+    "execution_influence": "ZERO",
+    "vob_formation_time_is_engine_freshness": false,
+    "current_requires_fresh_healthy_rehydrated": true
+  },
+  "accepted_metrics": {
+    "argus_fresh_compute_ms": {
+      "tactical_edge_pre_post_p50": [7.226, 3.242],
+      "full_analytics_pre_post_p50": [9.85, 4.54],
+      "publication_pre_post_p50": [3.45, 1.25],
+      "classification": "MEASURED"
+    },
+    "fast_lane_15m_ms": {"p50": 10.621, "p95": 25.616, "p99": 211.331, "max": 301.101, "gt_50_pct": 2.97, "gt_100_pct": 2.05, "gt_200_pct": 1.14},
+    "fast_lane_25m_ms": {"p50": 2.678, "p95": 20.146, "p99": 150.096, "max": 305.144},
+    "fast_lane_1h_ms": {"p50": 2.34, "p95": 74.01, "p99": 253.0, "max": 1743.74, "fast_lane_errors": 0},
+    "fast_lane_hydrated_payload_bytes_15m": 489580,
+    "fast_lane_hydrated_payload_bytes_1h_workload": 1186896,
+    "queue_debt": {"15m": 0, "25m_max": 1, "recorded_flow_drops": 0},
+    "sse_10m": {"frames": 1555, "reconnects": 0, "resyncs": 0, "duplicates": 0, "errors": 0},
+    "health_diagnostic_timeouts_1h": 4
+  },
+  "memory": {
+    "classification": "STABILIZING",
+    "monotonic_leak_evidence": "NO",
+    "memory_release_contraction_evidence": "YES",
+    "unbounded_container_evidence": "NO_SUPPORTED",
+    "allocator_gc_root_cause": "UNPROVEN",
+    "observer_accounting_qualification": "broad process observer can include Uvicorn/related process RSS"
+  },
+  "latency": {
+    "getting_slower_over_time": "NO",
+    "outlier_cause": "UNPROVEN_BOUNDED_OUTLIERS",
+    "real_incident": "health/readiness/diagnostic timeouts observed in one-hour raw run"
+  },
+  "data_provenance": {
+    "ltp_ltt": "WebSocket Tick",
+    "bid_ask_depth": "WebSocket Full Depth",
+    "subscribed_oi_volume": "WebSocket Quote",
+    "greeks_iv_full_chain_pcr": "REST with separate source timestamp",
+    "option_chain_guard_seconds_minimum": 3
+  },
+  "pending_certification": [
+    "next-open-session source-to-glass certification",
+    "VOB/Pine exact numerical parity",
+    "genuine stored 1M option-candle proof",
+    "Pullback V2 Track-A parity"
+  ],
+  "vob_constraints": {
+    "pine_pullback_v2_is_golden_authority": true,
+    "underlying_and_option_vob_separate": true,
+    "contract_identities_distinct": ["live_itm1", "ose_anchor", "frozen_episode", "historical_parity"],
+    "track_a_vob_only_independent_of_argus_flow": true,
+    "track_b_confirmed_reversal_separate": true,
+    "one_minute_requires_genuine_stored_option_candles": true,
+    "synthetic_one_minute_certification": false,
+    "replay_requirement": "deterministic O(N) or cached; no O(N^2) prefix replay"
+  },
+  "do_not_regress": [
+    "Dhan guard and source provenance",
+    "process isolation and persistence firewall",
+    "worker supervision and rehydration-before-healthy",
+    "CURRENT versus LAST_GOOD semantics",
+    "lean Fast Lane and cache-backed history",
+    "no heavy HTTP request-path analytics",
+    "paper-only broker safety",
+    "separate VOB content time from engine freshness"
+  ],
+  "verdict": {
+    "codex_r3_audit": "PARTIAL",
+    "oracle_infra_freeze_ready": false,
+    "ready_for_codex_vob": false
+  }
+}

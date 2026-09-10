@@ -1,0 +1,488 @@
+{
+  "schema_version": "5a.2.0",
+  "defaults": {},
+  "cards": [
+    {
+      "card_id": "grimes-simple-pullback",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Simple trend pullback",
+      "domain": "price_action",
+      "definition_principle": "A pullback is context inside a prior impulse and needs a defined trend, retracement, invalidation, and continuation trigger.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "adam-grimes-fundamental-patterns-2026",
+      "exact_locator": "Simple Pullback",
+      "short_excerpt": null,
+      "paraphrase": "A pullback is context inside a prior impulse and needs a defined trend, retracement, invalidation, and continuation trigger.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "f8a495ae10555b9234e3c9fb6f3cab3da002e881b5907edecca689306f724e04",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [
+        "TRENDING"
+      ],
+      "setup_types": [
+        "TREND_PULLBACK"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "grimes-failure-test",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Failure test and reclaim",
+      "domain": "price_action",
+      "definition_principle": "A failed break is evaluated by trade-through and return, not by a wick label alone.",
+      "measurable_predicates": [
+        "Price trades beyond a predeclared level.",
+        "A completed candle returns through the level within the fixed window."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "adam-grimes-fundamental-patterns-2026",
+      "exact_locator": "Failure Test",
+      "short_excerpt": null,
+      "paraphrase": "A failed break is evaluated by trade-through and return, not by a wick label alone.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "f8a495ae10555b9234e3c9fb6f3cab3da002e881b5907edecca689306f724e04",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "FAILED_BREAKOUT_REVERSAL",
+        "LIQUIDITY_SWEEP_RECLAIM"
+      ],
+      "contradicts_card_ids": [
+        "grimes-breakout-followthrough"
+      ],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "grimes-breakout-definition",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Breakout from defined structure",
+      "domain": "price_action",
+      "definition_principle": "A breakout requires a predeclared boundary and completed-candle movement beyond it.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "adam-grimes-fundamental-patterns-2026",
+      "exact_locator": "Breakouts",
+      "short_excerpt": null,
+      "paraphrase": "A breakout requires a predeclared boundary and completed-candle movement beyond it.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "f8a495ae10555b9234e3c9fb6f3cab3da002e881b5907edecca689306f724e04",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "BREAKOUT_ACCEPTANCE_RETEST"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "grimes-breakout-followthrough",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Breakout follow-through",
+      "domain": "price_action",
+      "definition_principle": "A break requires subsequent acceptance or follow-through before continuation is supported.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "adam-grimes-breakout-failures-2026",
+      "exact_locator": "Breakouts and breakout failures > classic breakout setup",
+      "short_excerpt": null,
+      "paraphrase": "A break requires subsequent acceptance or follow-through before continuation is supported.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "a178bf8ea51abd26c21743054eee3e66d7d177e82b04a69560bad488aa2f9d76",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "BREAKOUT_ACCEPTANCE_RETEST"
+      ],
+      "contradicts_card_ids": [
+        "grimes-failure-test"
+      ],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "grimes-breakout-no-bias",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "No bias after failed evidence",
+      "domain": "price_action",
+      "definition_principle": "If the expected follow-through is absent, evidence must be reassessed rather than defended.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "adam-grimes-breakout-failures-2026",
+      "exact_locator": "Breakouts and breakout failures > follow-through/no-bias lesson",
+      "short_excerpt": null,
+      "paraphrase": "If the expected follow-through is absent, evidence must be reassessed rather than defended.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "a178bf8ea51abd26c21743054eee3e66d7d177e82b04a69560bad488aa2f9d76",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "brooks-breakout-pullback",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Breakout pullback",
+      "domain": "price_action",
+      "definition_principle": "A breakout-retest claim requires a confirmed break, a return to the boundary, and a deterministic hold/failure rule.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "al-brooks-price-action-glossary-2026",
+      "exact_locator": "breakout pullback",
+      "short_excerpt": null,
+      "paraphrase": "A breakout-retest claim requires a confirmed break, a return to the boundary, and a deterministic hold/failure rule.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "55c9f8aeb31202e1176c26e7340c35340c9e887eac9b4d4a577d033b6ab10936",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "BREAKOUT_ACCEPTANCE_RETEST"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "brooks-failed-move",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Failed move",
+      "domain": "price_action",
+      "definition_principle": "Failure is defined relative to a declared expected move and a fixed invalidation window.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "al-brooks-price-action-glossary-2026",
+      "exact_locator": "failure (a failed move)",
+      "short_excerpt": null,
+      "paraphrase": "Failure is defined relative to a declared expected move and a fixed invalidation window.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "55c9f8aeb31202e1176c26e7340c35340c9e887eac9b4d4a577d033b6ab10936",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "FAILED_BREAKOUT_REVERSAL"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    }
+  ]
+}

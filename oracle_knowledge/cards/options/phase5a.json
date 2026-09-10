@@ -1,0 +1,102 @@
+{
+  "schema_version": "5a.1.0",
+  "defaults": {
+    "version": "1.0.0", "card_type": "PRINCIPLE", "optional_confirmations": ["OSE premium confirmation", "ARGUS option ranking"],
+    "timeframes": ["15m", "5m", "3m", "1m"], "instruments": ["NIFTY", "BANKNIFTY"], "option_buying_relevance": "HIGH",
+    "data_availability": {"dhan_option_chain": "AVAILABLE_WHEN_FRESH", "greeks": "AVAILABLE_WHEN_REPORTED", "bid_ask": "AVAILABLE_WHEN_FRESH"},
+    "execution_influence": "ZERO", "knowledge_policy_version": "oracle-knowledge-advisory-5a.1.0", "regimes": [], "setup_types": [], "research_only": false, "research_fields": {}
+  },
+  "cards": [
+    {
+      "card_id": "options-greeks-theoretical-not-guarantee", "concept": "Greeks are theoretical guideposts", "domain": "options",
+      "definition_principle": "Delta, Gamma, Theta, Vega, and Rho estimate sensitivity to pricing inputs; they do not guarantee exact realized premium changes.",
+      "measurable_predicates": ["exact contract identity is present", "Greek source timestamp is within freshness policy", "realized quote is kept separate from model estimate"],
+      "required_evidence": ["security ID", "expiry", "strike", "CE or PE", "fresh Greeks", "fresh bid and ask"],
+      "valid_conditions": ["Greeks are presented as sensitivities with current input lineage."],
+      "failure_conditions": ["A stale or missing Greek is inferred, or a model estimate is reported as executable price."],
+      "contradictions": ["Changing volatility, time, price, rates, or dividends can change the sensitivities."],
+      "when_not_to_use": ["Do not call Delta a CITADEL probability or use one Greek as contract authorization."],
+      "relevant_citadel_fields": ["delta", "gamma", "theta", "vega", "iv", "bid", "ask", "quote_timestamp"],
+      "source_id": "oic-understanding-options-greeks-2026", "exact_locator": "Main article > opening paragraph", "short_excerpt": "Greeks are not a guarantee of exact option premium changes", "paraphrase": "Use Greeks to explain sensitivity, then verify actual premium and liquidity from current quotes.",
+      "source_quality": "OFFICIAL_PRIMARY", "source_hash_version": "dc0aeff46e21e477dbbadef941715b54224567e072b8de01cfa73d9a967945fb", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "DEFINITION_ONLY", "contradicts_card_ids": ["options-premium-multiple-drivers"]
+    },
+    {
+      "card_id": "options-premium-multiple-drivers", "concept": "Option premium has multiple drivers", "domain": "options",
+      "definition_principle": "Premium response depends on underlying price, strike, time to expiry, implied volatility, rates, dividends, and executable market conditions; direction alone is insufficient.",
+      "measurable_predicates": ["exact contract fields are complete", "pricing inputs and bid/ask share an atomic freshness boundary"],
+      "required_evidence": ["underlying price", "strike", "expiry", "IV or truthful unavailability", "bid", "ask", "spread"],
+      "valid_conditions": ["The exact option contract and quote are fresh."],
+      "failure_conditions": ["Contract identity, IV, expiry, or executable quote is stale or unavailable."],
+      "contradictions": ["A favorable underlying move may not offset time decay, IV change, or spread."],
+      "when_not_to_use": ["Do not use as standalone direction, confidence, or probability."],
+      "relevant_citadel_fields": ["selected_contract_id", "expiry", "strike", "distance_atm", "iv", "bid", "ask", "spread"],
+      "source_id": "oic-understanding-options-greeks-2026", "exact_locator": "Main article > pricing input list", "short_excerpt": null, "paraphrase": "Require a fresh contract-specific option lane; underlying direction alone cannot prove premium capture.",
+      "source_quality": "OFFICIAL_PRIMARY", "source_hash_version": "dc0aeff46e21e477dbbadef941715b54224567e072b8de01cfa73d9a967945fb", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "DEFINITION_ONLY", "contradicts_card_ids": ["options-greeks-theoretical-not-guarantee", "options-long-premium-loss-boundary"]
+    },
+    {
+      "card_id": "options-delta-dynamic-sensitivity", "concept": "Delta is dynamic price sensitivity", "domain": "options",
+      "definition_principle": "Delta describes modeled premium sensitivity to underlying price and changes with price and time; it is not a fixed percentage.",
+      "measurable_predicates": ["delta belongs to exact contract snapshot", "delta age is within policy", "underlying and option timestamps are aligned"],
+      "required_evidence": ["delta", "underlying price", "contract identity", "quote timestamp"],
+      "valid_conditions": ["Delta is used as a contract sensitivity bucket, not outcome probability."],
+      "failure_conditions": ["Delta is stale, cross-contract, or converted into a win probability."],
+      "contradictions": ["Gamma, time, volatility, and liquidity can change realized response."],
+      "when_not_to_use": ["Do not select a contract from Delta alone."],
+      "relevant_citadel_fields": ["delta", "delta_bucket", "selected_contract_id", "quote_timestamp"],
+      "source_id": "oic-volatility-greeks-2026", "exact_locator": "Volatility and the Greeks > Delta paragraph", "short_excerpt": "The Delta is not a fixed percentage", "paraphrase": "Use fresh Delta as one dynamic sensitivity feature within exact-contract evidence.",
+      "source_quality": "OFFICIAL_PRIMARY", "source_hash_version": "75c91bb843fec7f84729d700ace821e9e4e870afe043cb28de1e0b16f84d45cc", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "DEFINITION_ONLY", "contradicts_card_ids": ["options-gamma-changing-delta"]
+    },
+    {
+      "card_id": "options-gamma-changing-delta", "concept": "Gamma changes Delta exposure", "domain": "options",
+      "definition_principle": "Gamma measures how Delta changes as the underlying changes, so option directional sensitivity is nonlinear and can move quickly.",
+      "measurable_predicates": ["gamma belongs to exact contract", "gamma and delta timestamps match the quote snapshot"],
+      "required_evidence": ["gamma", "delta", "underlying price", "expiry", "contract identity"],
+      "valid_conditions": ["Gamma is disclosed as a modeled local sensitivity."],
+      "failure_conditions": ["Gamma is missing or treated as a deterministic future hedge flow."],
+      "contradictions": ["Aggregate dealer Gamma exposure and dealer positioning are not observed by a single-contract Greek."],
+      "when_not_to_use": ["Do not infer GEX regime or dealer direction from contract Gamma alone."],
+      "relevant_citadel_fields": ["gamma", "delta", "expiry_bucket", "selected_contract_id"],
+      "source_id": "oic-volatility-greeks-2026", "exact_locator": "Volatility and the Greeks > Gamma paragraph", "short_excerpt": null, "paraphrase": "Disclose changing sensitivity without inventing dealer-position or GEX causality.",
+      "source_quality": "OFFICIAL_PRIMARY", "source_hash_version": "75c91bb843fec7f84729d700ace821e9e4e870afe043cb28de1e0b16f84d45cc", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "DEFINITION_ONLY", "contradicts_card_ids": ["options-delta-dynamic-sensitivity"]
+    },
+    {
+      "card_id": "options-theta-time-window", "concept": "Theta makes timing part of option buying", "domain": "options",
+      "definition_principle": "Theta represents modeled premium sensitivity to time, is not constant, and can accelerate near expiry; option-buying evidence needs an explicit holding window.",
+      "measurable_predicates": ["expiry and observation time determine time remaining", "theta belongs to exact contract snapshot", "planned window is explicit"],
+      "required_evidence": ["theta", "expiry", "time to expiry", "planned evaluation window", "fresh premium quote"],
+      "valid_conditions": ["The option thesis has a bounded time window."],
+      "failure_conditions": ["Theta or expiry is missing, or the setup has no time invalidation."],
+      "contradictions": ["Realized premium decay is not guaranteed to equal the model sensitivity."],
+      "when_not_to_use": ["Do not compare contracts across expiries without normalizing time context."],
+      "relevant_citadel_fields": ["theta", "expiry", "expiry_bucket", "time_exit_at", "premium_response"],
+      "source_id": "oic-volatility-greeks-2026", "exact_locator": "Volatility and the Greeks > Theta paragraph", "short_excerpt": "Theta values are not constant and accelerate as expiration approaches", "paraphrase": "Require expiry-aware timing and disclose model/realized differences.",
+      "source_quality": "OFFICIAL_PRIMARY", "source_hash_version": "75c91bb843fec7f84729d700ace821e9e4e870afe043cb28de1e0b16f84d45cc", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "DEFINITION_ONLY", "contradicts_card_ids": ["options-vega-iv-response"]
+    },
+    {
+      "card_id": "options-vega-iv-response", "concept": "Vega and implied volatility can oppose direction", "domain": "options",
+      "definition_principle": "Vega estimates premium sensitivity to implied volatility; a drop in IV can reduce premium even when the underlying moves in the expected direction.",
+      "measurable_predicates": ["vega and IV belong to exact contract", "pre/post IV and premium are timestamped", "bid/ask effects are separated"],
+      "required_evidence": ["vega", "implied volatility", "premium bid/ask", "underlying move", "timestamps"],
+      "valid_conditions": ["IV and premium response are compared on the same contract."],
+      "failure_conditions": ["IV is unavailable or contracts are mixed across snapshots."],
+      "contradictions": ["Vega is a local modeled sensitivity; realized response may differ."],
+      "when_not_to_use": ["Do not call IV change directional confirmation."],
+      "relevant_citadel_fields": ["vega", "iv", "iv_regime", "premium_response", "bid", "ask"],
+      "source_id": "oic-volatility-greeks-2026", "exact_locator": "Volatility and the Greeks > Vega paragraph", "short_excerpt": null, "paraphrase": "Test premium confirmation directly and treat Vega/IV as explanatory sensitivity.",
+      "source_quality": "OFFICIAL_PRIMARY", "source_hash_version": "75c91bb843fec7f84729d700ace821e9e4e870afe043cb28de1e0b16f84d45cc", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "DEFINITION_ONLY", "contradicts_card_ids": ["options-theta-time-window"], "setup_types": ["IV_CRUSH_AVOIDANCE", "PREMIUM_CONFIRMATION"]
+    },
+    {
+      "card_id": "options-long-premium-loss-boundary", "concept": "Long-option premium can be lost", "domain": "options",
+      "definition_principle": "An option holder can lose the full premium; every long-option explanation must retain costs, expiry, and invalidation rather than imply guaranteed capture.",
+      "measurable_predicates": ["maximum premium at risk is explicit", "costs and expiry are present", "hard-stop mapping status is disclosed"],
+      "required_evidence": ["executable ask", "quantity", "costs", "expiry", "premium stop candidate"],
+      "valid_conditions": ["Any contemplated long-option position."],
+      "failure_conditions": ["Risk, costs, expiry, or stop mapping is omitted."],
+      "contradictions": ["No principle or Greek establishes a guaranteed profitable response."],
+      "when_not_to_use": ["Do not convert the general loss boundary into setup probability."],
+      "relevant_citadel_fields": ["ask", "quantity", "estimated_round_trip_cost", "expiry", "premium_hard_stop_candidate"],
+      "source_id": "sec-investor-options-introduction-2026", "exact_locator": "What are some of the risks associated with trading options? > option holders paragraph", "short_excerpt": "Option holders risk the entire amount of the premium paid", "paraphrase": "Keep full-premium loss possible and require explicit time, cost, and invalidation evidence.",
+      "source_quality": "OFFICIAL_PRIMARY", "source_hash_version": "4bc4a3096a751a9a21f35596aaffb9e5a91d2500c6a4a7ee765322d8e8fbe47e", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "RISK_PRINCIPLE", "contradicts_card_ids": ["options-premium-multiple-drivers"]
+    }
+  ]
+}

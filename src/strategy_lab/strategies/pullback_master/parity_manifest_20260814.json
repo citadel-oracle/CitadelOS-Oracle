@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "authority": {
+    "pine_sha256": "4527ffb1cc5c02d4fb023d37d9801950f5c666e0b71fc376c981f0fa5d59a715",
+    "pine_name": "PULLBACK V2 - VOB STRATEGY",
+    "pine_version": 5,
+    "settings_strategy": "PULLBACK V2",
+    "settings_screenshots": [
+      "TradingView Appshot 2026-08-14T15-58-28.878Z.png",
+      "TradingView Appshot 2026-08-14T15-58-38.924Z.png",
+      "TradingView Appshot 2026-08-14T15-58-50.142Z.png",
+      "TradingView Appshot 2026-08-14T15-58-59.373Z.png",
+      "TradingView Appshot 2026-08-14T15-59-10.935Z.png",
+      "TradingView Appshot 2026-08-14T15-59-20.074Z.png",
+      "TradingView Appshot 2026-08-14T15-59-30.178Z.png",
+      "TradingView Appshot 2026-08-14T15-59-39.822Z.png",
+      "TradingView Appshot 2026-08-14T15-59-48.322Z.png"
+    ],
+    "properties_source": "PINE_STRATEGY_DECLARATION",
+    "properties_screenshot_supplied": false
+  },
+  "properties": {
+    "pyramiding": 0,
+    "process_orders_on_close": true,
+    "calc_on_every_tick": true,
+    "initial_capital": 100000,
+    "default_qty_type": "strategy.percent_of_equity",
+    "default_qty_value": 100,
+    "commission_type": "strategy.commission.percent",
+    "commission_value": 0,
+    "max_bars_back": 5000
+  },
+  "canonical_5m_supertrend": {
+    "pine_expression": "ta.supertrend(vobSTTrailFactor, vobSTTrailLen)",
+    "source_series": ["high", "low", "close"],
+    "timeframe": "5",
+    "atr_length": 10,
+    "factor": 3.5,
+    "bullish_direction": -1,
+    "request_security_gaps": "barmerge.gaps_off",
+    "request_security_lookahead": "barmerge.lookahead_off",
+    "historical_availability": "AVAILABLE_ON_LTF_BAR_WHOSE_CLOSE_REACHES_THE_COMPLETED_5M_CLOSE",
+    "forming_5m_usable_for_deterministic_replay": false,
+    "trail_requires_confirmed_chart_bar": true
+  },
+  "active_settings": {
+    "market_structure": {
+      "window": {"enabled": true, "value": 5000, "source_screenshot": "15-58-28.878", "confidence": "HIGH"},
+      "swing": {"enabled": false, "value": 100, "source_screenshot": "15-58-28.878", "confidence": "HIGH"},
+      "mapping_structure": {"enabled": false, "value": "----", "source_screenshot": "15-58-28.878", "confidence": "HIGH"},
+      "color_candles": {"enabled": false, "value": "Tiny", "source_screenshot": "15-58-28.878", "confidence": "HIGH"},
+      "algorithmic_logic": {"enabled": true, "value": "Adjusted Points", "length": 5, "source_screenshot": "15-58-28.878", "confidence": "HIGH"},
+      "build_sweep": {"enabled": true, "source_screenshot": "15-58-28.878", "confidence": "HIGH"},
+      "bubbles": {"enabled": true, "source_screenshot": "15-58-28.878", "confidence": "HIGH"}
+    },
+    "volumetric_order_blocks": {
+      "show_last": {"enabled": true, "value": 5, "source_screenshot": "15-58-28.878", "confidence": "HIGH"},
+      "show_buy_sell_activity": {"enabled": false, "source_screenshot": "15-58-28.878", "confidence": "HIGH"},
+      "show_breakers": {"enabled": false, "source_screenshot": "15-58-38.924", "confidence": "HIGH"},
+      "construction": {"enabled": true, "value": "Length", "length": 5, "source_screenshot": "15-58-38.924", "confidence": "HIGH"},
+      "mitigation_method": {"enabled": true, "value": "Close", "source_screenshot": "15-58-38.924", "confidence": "HIGH"},
+      "metric_size": {"enabled": true, "value": "Tiny", "source_screenshot": "15-58-38.924", "confidence": "HIGH"},
+      "show_metrics": {"enabled": true, "source_screenshot": "15-58-38.924", "confidence": "HIGH"},
+      "show_mid_line": {"enabled": true, "source_screenshot": "15-58-38.924", "confidence": "HIGH"},
+      "hide_overlap": {"enabled": true, "value": "Recent", "source_screenshot": "15-58-38.924", "confidence": "HIGH"}
+    },
+    "fair_value_gap": {
+      "display": {"enabled": false, "value": "FVG", "source_screenshot": "15-58-38.924", "confidence": "HIGH"},
+      "show_last": {"enabled": true, "value": 5, "source_screenshot": "15-58-38.924", "confidence": "HIGH"},
+      "mitigation": {"enabled": true, "value": "Close", "source_screenshot": "15-58-38.924", "confidence": "HIGH"},
+      "threshold": {"enabled": true, "value": 0, "source_screenshot": "15-58-38.924", "confidence": "HIGH"},
+      "hide_overlap": {"enabled": true, "source_screenshot": "15-58-38.924", "confidence": "HIGH"},
+      "show_mid_line": {"enabled": true, "source_screenshot": "15-58-38.924", "confidence": "HIGH"},
+      "extend": {"enabled": false, "source_screenshot": "15-58-49.373", "confidence": "HIGH"},
+      "display_raids": {"enabled": false, "source_screenshot": "15-58-49.373", "confidence": "HIGH"},
+      "highlight_full_candle": {"enabled": true, "trend_length": 20, "source_screenshot": "15-58-49.373", "confidence": "HIGH"}
+    },
+    "liquidity_sweeps": {
+      "show": {"enabled": true, "source_screenshot": "15-58-49.373", "confidence": "HIGH"},
+      "require_bullish_before_buy": {"enabled": false, "source_screenshot": "15-58-49.373", "confidence": "HIGH"},
+      "swing_length": {"enabled": true, "value": 5, "source_screenshot": "15-58-49.373", "confidence": "HIGH"},
+      "mode": {"enabled": true, "value": "Only Wicks", "source_screenshot": "15-58-49.373", "confidence": "HIGH"},
+      "buy_lookback_bars": {"enabled": true, "value": 5, "source_screenshot": "15-58-49.373", "confidence": "HIGH"},
+      "must_be_after_vob": {"enabled": true, "source_screenshot": "15-58-49.373", "confidence": "HIGH"},
+      "must_happen_on_touched_vob": {"enabled": false, "source_screenshot": "15-58-49.373", "confidence": "HIGH"},
+      "extend_area": {"enabled": true, "max_area_bars": 300, "source_screenshot": "15-58-59.373", "confidence": "HIGH"},
+      "show_bearish": {"enabled": true, "source_screenshot": "15-58-59.373", "confidence": "HIGH"}
+    },
+    "pullback_quality": {
+      "use_type_filter": {"enabled": false, "source_screenshot": "15-58-59.373", "confidence": "HIGH"},
+      "sweeping": {"enabled": true, "source_screenshot": "15-58-59.373", "confidence": "HIGH"},
+      "corrective": {"enabled": true, "source_screenshot": "15-58-59.373", "confidence": "HIGH"},
+      "aggressive": {"enabled": true, "body_percent": 55, "range_atr": 1, "source_screenshot": "15-58-59.373", "confidence": "HIGH"}
+    },
+    "confirmation": {
+      "use_htf": {"enabled": false, "timeframe": "15", "mode": "Supertrend Up", "supertrend_atr": 10, "supertrend_factor": 3, "fast_ema": 9, "slow_ema": 21, "source_screenshot": "15-59-10.935", "confidence": "HIGH"},
+      "use_ltf": {"enabled": false, "timeframe": "1", "mode": "Supertrend Up", "supertrend_atr": 10, "supertrend_factor": 2, "fast_ema": 5, "slow_ema": 13, "volume_ma": 20, "volume_multiplier": 1, "source_screenshot": "15-59-10.935", "confidence": "HIGH"}
+    },
+    "signals": {
+      "enable": {"enabled": true, "source_screenshot": "15-59-20.074", "confidence": "HIGH"},
+      "confirm_buy_on_close": {"enabled": false, "source_screenshot": "15-59-20.074", "confidence": "HIGH"},
+      "require_bearish_target": {"enabled": false, "source_screenshot": "15-59-20.074", "confidence": "HIGH"},
+      "entry_price": {"enabled": true, "value": "OB Top", "source_screenshot": "15-59-20.074", "confidence": "HIGH"},
+      "buy_trigger": {"enabled": true, "value": "Wick Touch", "source_screenshot": "15-59-20.074", "confidence": "HIGH"},
+      "sell_trigger": {"enabled": true, "value": "Wick Touch", "source_screenshot": "15-59-20.074", "confidence": "HIGH"},
+      "sl_trigger": {"enabled": true, "value": "Close Below VOB", "source_screenshot": "15-59-20.074", "confidence": "HIGH"},
+      "allow_reentry_used_vob": {"enabled": false, "source_screenshot": "15-59-20.074", "confidence": "HIGH"},
+      "allow_wick_reclaim": {"enabled": false, "source_screenshot": "15-59-20.074", "confidence": "HIGH"},
+      "instant_vob_touch": {"enabled": false, "source_screenshot": "15-59-20.074", "confidence": "HIGH"},
+      "require_real_pullback": {"enabled": false, "source_screenshot": "15-59-20.074", "confidence": "HIGH"},
+      "minimum_candles_after_vob": {"enabled": true, "value": 1, "source_screenshot": "15-59-20.074", "confidence": "HIGH"},
+      "move_away_buffer_points": {"enabled": true, "value": 0, "source_screenshot": "15-59-20.074", "confidence": "HIGH"},
+      "trail_to_new_bullish_vob": {"enabled": true, "source_screenshot": "15-59-30.178", "confidence": "HIGH"},
+      "require_bullish_fvg": {"enabled": false, "mode": "Touch Candle Or Previous", "source_screenshot": "15-59-30.178", "confidence": "HIGH"},
+      "broker_safe": {"enabled": true, "source_screenshot": "15-59-30.178", "confidence": "HIGH"},
+      "latest_labels_only": {"enabled": true, "source_screenshot": "15-59-30.178", "confidence": "HIGH"},
+      "draw_lines": {"enabled": true, "source_screenshot": "15-59-30.178", "confidence": "HIGH"},
+      "alerts": {"enabled": true, "buy": "BUY", "sell": "SELL", "sl": "SL", "append_details": true, "source_screenshot": "15-59-30.178", "confidence": "HIGH"}
+    },
+    "trade_timing": {
+      "use": {"enabled": false, "source_screenshot": "15-59-30.178", "confidence": "HIGH"},
+      "mode": {"enabled": true, "value": "Positional", "source_screenshot": "15-59-30.178", "confidence": "HIGH"},
+      "session": {"enabled": true, "value": "0915-1515", "timezone": "Asia/Kolkata", "source_screenshot": "15-59-39.822", "confidence": "HIGH"}
+    },
+    "exit": {
+      "target_mode": {"enabled": true, "value": "Bearish VOB", "source_screenshot": "15-59-39.822", "confidence": "HIGH"},
+      "fixed_rr": {"enabled": true, "value": 4, "source_screenshot": "15-59-39.822", "confidence": "HIGH"},
+      "require_min_target_room": {"enabled": false, "value": 3.5, "source_screenshot": "15-59-39.822", "confidence": "HIGH"},
+      "supertrend_trail": {"enabled": true, "timeframe": "5", "atr_length": 10, "factor": 3.5, "only_bullish": true, "source_screenshot": "15-59-48.322", "confidence": "HIGH"}
+    },
+    "visuals": {
+      "trade_label_style": {"enabled": true, "value": "Tags Only", "source_screenshot": "15-59-48.322", "confidence": "HIGH"},
+      "trade_label_size": {"enabled": true, "value": "Small", "source_screenshot": "15-59-48.322", "confidence": "HIGH"},
+      "trade_label_right_offset": {"enabled": true, "value": 1, "source_screenshot": "15-59-48.322", "confidence": "HIGH"},
+      "show_prices_in_labels": {"enabled": false, "source_screenshot": "15-59-48.322", "confidence": "HIGH"},
+      "label_transparency": {"enabled": true, "value": 5, "source_screenshot": "15-59-48.322", "confidence": "HIGH"},
+      "line_width": {"enabled": true, "value": 1, "source_screenshot": "15-59-48.322", "confidence": "HIGH"},
+      "line_transparency": {"enabled": true, "value": 15, "source_screenshot": "15-59-48.322", "confidence": "HIGH"}
+    }
+  },
+  "comparison_scope": {
+    "contracts": ["NIFTY260818P24400", "NIFTY260818C24300"],
+    "security_ids": ["45107", "45102"],
+    "date_range": ["2026-07-15", "2026-08-14"],
+    "session": "0915-1530 Asia/Kolkata",
+    "timeframes": ["1m", "3m", "5m"]
+  },
+  "trade_cases": [
+    {"contract": "NIFTY260818P24400", "timeframe": "5m", "trade": 10, "entry": "2026-08-13T13:55:00+05:30", "entry_price": 73.75, "exit": "2026-08-13T14:15:00+05:30", "exit_price": 84.05, "exit_signal": "SELL"},
+    {"contract": "NIFTY260818P24400", "timeframe": "5m", "trade": 9, "entry": "2026-08-12T09:15:00+05:30", "entry_price": 108.20, "exit": "2026-08-12T09:20:00+05:30", "exit_price": 102.00, "exit_signal": "SELL"},
+    {"contract": "NIFTY260818P24400", "timeframe": "3m", "trade": 17, "entry": "2026-08-13T15:18:00+05:30", "entry_price": 80.40, "exit": "2026-08-14T09:15:00+05:30", "exit_price": 112.05, "exit_signal": "SELL"},
+    {"contract": "NIFTY260818P24400", "timeframe": "3m", "trade": 16, "entry": "2026-08-13T13:54:00+05:30", "entry_price": 73.95, "exit": "2026-08-13T14:54:00+05:30", "exit_price": 89.90, "exit_signal": "SELL"},
+    {"contract": "NIFTY260818P24400", "timeframe": "1m", "trade": 60, "entry": "2026-08-14T14:24:00+05:30", "entry_price": 71.45, "exit": "2026-08-14T14:51:00+05:30", "exit_price": 69.15, "exit_signal": "SL"},
+    {"contract": "NIFTY260818P24400", "timeframe": "1m", "trade": 59, "entry": "2026-08-14T12:19:00+05:30", "entry_price": 96.05, "exit": "2026-08-14T13:40:00+05:30", "exit_price": 93.50, "exit_signal": "SL"},
+    {"contract": "NIFTY260818C24300", "timeframe": "5m", "trade": 17, "entry": "2026-08-13T11:05:00+05:30", "entry_price": 149.00, "exit": "2026-08-13T12:00:00+05:30", "exit_price": 212.85, "exit_signal": "SELL"},
+    {"contract": "NIFTY260818C24300", "timeframe": "5m", "trade": 16, "entry": "2026-08-13T09:25:00+05:30", "entry_price": 162.55, "exit": "2026-08-13T10:25:00+05:30", "exit_price": 147.35, "exit_signal": "SL"},
+    {"contract": "NIFTY260818C24300", "timeframe": "3m", "trade": 23, "entry": "2026-08-14T13:33:00+05:30", "entry_price": 118.90, "exit": "2026-08-14T13:39:00+05:30", "exit_price": 132.35, "exit_signal": "SELL"},
+    {"contract": "NIFTY260818C24300", "timeframe": "3m", "trade": 22, "entry": "2026-08-13T09:27:00+05:30", "entry_price": 162.55, "exit": "2026-08-13T10:27:00+05:30", "exit_price": 147.35, "exit_signal": "SL"},
+    {"contract": "NIFTY260818C24300", "timeframe": "1m", "trade": 47, "entry": "2026-08-14T10:31:00+05:30", "entry_price": 121.05, "exit": "2026-08-14T10:32:00+05:30", "exit_price": 116.60, "exit_signal": "SL"}
+  ]
+}

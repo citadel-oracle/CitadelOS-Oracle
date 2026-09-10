@@ -1,0 +1,70 @@
+{
+  "runtime": {
+    "cards": {
+      "argus": {
+        "emphasis": 1,
+        "headline": "NO CLEAN SIDE",
+        "state": "PENDING"
+      },
+      "guardian": {
+        "emphasis": 1,
+        "headline": "NO ACTIVE POSITION",
+        "state": "STANDBY"
+      },
+      "ose": {
+        "emphasis": 1,
+        "headline": "CLEAR CALL ADVANTAGE",
+        "state": "CALL"
+      },
+      "risk": {
+        "emphasis": 1,
+        "headline": "DISCIPLINE WAIT · RISK AVAILABLE",
+        "state": "PENDING"
+      },
+      "thesis": {
+        "emphasis": 1,
+        "headline": "↓ BEARISH · RANGING",
+        "state": "PUT"
+      },
+      "vob": {
+        "emphasis": 1,
+        "headline": "RESISTANCE 24,458.55–24,473.05 · 74.95 PTS",
+        "state": "PUT"
+      }
+    },
+    "connectors": {
+      "core": 6,
+      "highlight": 6
+    },
+    "fonts": {
+      "body": "Inter, \"Inter Fallback\", sans-serif",
+      "loaded": {
+        "inter": true,
+        "jetbrains": true,
+        "space": true
+      },
+      "metrics": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", monospace",
+      "title": "\"Space Grotesk\", \"Space Grotesk Fallback\", sans-serif"
+    },
+    "overflowX": 0,
+    "redHiSurfaces": [],
+    "synchronized": true,
+    "tokens": {
+      "green": "#4ade80",
+      "greenDim": "#245c3d",
+      "red": "#ff3b54",
+      "redDim": "#6e2530",
+      "redHi": "#ff7285"
+    },
+    "transport": "TRADINGVIEW\nNO_TRADE\nACTIVE INSTRUMENT\nNIFTY260804C24000\nEXACT IDENTITY\nNIFTY260804C24000 · 65693\nTYPE · TIMEFRAME\nEXACT_OPTION · 15m\nEXPIRY · SIDE\n2026-08-04 · CE\nCHART / MARKET SOURCE\nFRESH · 54h OLD\nCONDITION · GUARDIAN\nNONE · IDLE",
+    "viewport": [
+      1440,
+      900
+    ]
+  },
+  "geometry1280": {
+    "collisions": [],
+    "overflow": [],
+    "overflowX": 0
+  }
+}

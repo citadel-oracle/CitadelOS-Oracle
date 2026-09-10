@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "summary",
+    "affected_modules",
+    "changelog_entry",
+    "architecture_decision",
+    "incident",
+    "validation",
+    "release_notes",
+    "unsupported_claims"
+  ],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "summary": {"type": "string", "minLength": 1, "maxLength": 1200},
+    "affected_modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "change_summary", "documentation_points", "evidence_files"],
+        "properties": {
+          "name": {"type": "string"},
+          "change_summary": {"type": "string", "minLength": 1, "maxLength": 1600},
+          "documentation_points": {
+            "type": "array",
+            "items": {"type": "string", "maxLength": 600},
+            "maxItems": 12
+          },
+          "evidence_files": {
+            "type": "array",
+            "items": {"type": "string"},
+            "maxItems": 80
+          }
+        }
+      },
+      "maxItems": 20
+    },
+    "changelog_entry": {"type": "string", "minLength": 1, "maxLength": 1800},
+    "architecture_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["applicable", "title", "context", "decision", "consequences"],
+      "properties": {
+        "applicable": {"type": "boolean"},
+        "title": {"type": "string", "maxLength": 300},
+        "context": {"type": "string", "maxLength": 1800},
+        "decision": {"type": "string", "maxLength": 1800},
+        "consequences": {"type": "string", "maxLength": 1800}
+      }
+    },
+    "incident": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["applicable", "title", "symptom", "fix", "validation"],
+      "properties": {
+        "applicable": {"type": "boolean"},
+        "title": {"type": "string", "maxLength": 300},
+        "symptom": {"type": "string", "maxLength": 1800},
+        "fix": {"type": "string", "maxLength": 1800},
+        "validation": {"type": "string", "maxLength": 1800}
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence", "commands_run"],
+      "properties": {
+        "status": {"enum": ["NOT VERIFIED", "STATIC EVIDENCE", "COMMAND VERIFIED"]},
+        "evidence": {
+          "type": "array",
+          "items": {"type": "string", "maxLength": 700},
+          "maxItems": 20
+        },
+        "commands_run": {
+          "type": "array",
+          "items": {"type": "string", "maxLength": 500},
+          "maxItems": 20
+        }
+      }
+    },
+    "release_notes": {
+      "type": "array",
+      "items": {"type": "string", "maxLength": 600},
+      "minItems": 1,
+      "maxItems": 12
+    },
+    "unsupported_claims": {
+      "type": "array",
+      "items": {"type": "string", "maxLength": 600},
+      "maxItems": 20
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "strategy_id": "pullback-master-pine-v5",
+  "name": "PULLBACK MASTER",
+  "classification": "UNDERLYING_STRATEGY",
+  "deployment_target": "STRATEGY_LAB_ONLY",
+  "deployment_status": "PAPER_ACTIVE",
+  "activation_status": "ENABLED",
+  "paper_only": true,
+  "live_trading_enabled": false,
+  "broker_submission": false,
+  "production_deployment": false,
+  "development_deployment": false,
+  "source_sha256": "e75c83b50c09618fb025ad50772d2e13b04100b4b23d6db7fbc25c0638fa63eb",
+  "adapter_contract": "PULLBACK_MASTER_NATIVE_RUNTIME_V1",
+  "automatic_scheduler_activation": true,
+  "parity_status": "PROVISIONAL_PENDING_PARITY_VALIDATION",
+  "reason": "Paper-only activation; broker submission remains disabled."
+}

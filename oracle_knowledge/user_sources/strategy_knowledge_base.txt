@@ -1,0 +1,947 @@
+# Strategy Knowledge Base
+
+Purpose: build robust Pine strategies for Indian option buying by learning concepts first, then converting only clear rules into code.
+
+Working rule: do not blindly code every idea. Convert only what can be tested, backtested, and expressed without repainting.
+
+## Video 1
+
+Source: https://www.youtube.com/watch?v=2u9oYfx5xdY
+
+Title: Best Order Block Trading Strategy You Can Find!
+
+Channel: Smart Risk
+
+Core model: order block within order block.
+
+### Main Idea
+
+Use a higher timeframe order block as the main trading zone, then wait for lower timeframe market-structure confirmation before entering from a lower timeframe order block.
+
+Direct touch of a higher timeframe OB is not enough.
+
+### Definitions
+
+Order block:
+- Candle before a fair value gap / imbalance.
+- Candle color does not matter.
+- The full candle can be used as the zone.
+- If a liquidity-grab wick appears before the imbalance, include that wick in the zone.
+
+Bullish order block:
+- Candle before bullish FVG.
+- Expected demand zone.
+
+Bearish order block:
+- Candle before bearish FVG.
+- Expected supply zone.
+
+Fair value gap:
+- Fast move leaving imbalance.
+- Used to confirm that the OB matters.
+
+### Market Structure
+
+High-quality bullish setup:
+- Higher timeframe trend or reversal is bullish.
+- Price pulls back into higher timeframe bullish OB.
+- Lower timeframe shows bullish CHoCH.
+- After CHoCH, lower timeframe bullish OB forms.
+- Entry is from lower timeframe bullish OB, not immediately from higher timeframe OB.
+
+High-quality bearish setup:
+- Higher timeframe trend or reversal is bearish.
+- Price pulls back into higher timeframe bearish OB.
+- Lower timeframe shows bearish CHoCH.
+- After CHoCH, lower timeframe bearish OB forms.
+- Entry is from lower timeframe bearish OB.
+
+### Entry Rules To Code
+
+Bullish:
+1. Detect HTF bullish OB from FVG.
+2. Wait for price to touch HTF bullish OB.
+3. On LTF, wait for bullish CHoCH: break above swing high.
+4. After CHoCH, detect fresh LTF bullish OB.
+5. Buy on retest/touch of LTF bullish OB.
+
+Bearish:
+1. Detect HTF bearish OB from FVG.
+2. Wait for price to touch HTF bearish OB.
+3. On LTF, wait for bearish CHoCH: break below swing low.
+4. After CHoCH, detect fresh LTF bearish OB.
+5. Sell/short on retest/touch of LTF bearish OB.
+
+### SL Rules
+
+Bullish:
+- SL below LTF bullish OB low/wick.
+- If OB is very small, use extra buffer.
+
+Bearish:
+- SL above LTF bearish OB high/wick.
+- If OB is very small, use extra buffer.
+
+### Target Rules
+
+Target 1:
+- 1:2 risk reward.
+- Partial booking / move SL to breakeven after target 1.
+
+Final target:
+- Next important HTF zone.
+- Previous swing high/low.
+- Opposite order block or liquidity zone.
+
+### Multiple Entries
+
+Multiple lower timeframe OBs can form after confirmation.
+
+Codeable approach:
+- Allow multiple setups, but limit risk.
+- Use max open trades / max trades per day setting.
+- Use reduced position size if pyramiding is enabled.
+
+### Things Not To Code Blindly
+
+- "High quality" visual feel.
+- Messy vs clean structure unless converted into filters.
+- Important zone selection without a specific rule.
+- News/global sentiment inside Pine.
+
+### Pine Approximation Ideas
+
+Inputs:
+- HTF timeframe.
+- LTF confirmation timeframe.
+- Swing length for BOS/CHoCH.
+- FVG minimum size.
+- OB size filter.
+- Wick buffer points.
+- Minimum RR.
+- Entry mode: OB Top / Mid / Bottom / Touch / Close confirmation.
+- Intraday session.
+- Max trades per day.
+- Alerts: BUY, SELL, SL.
+
+Risk controls:
+- No repaint: use confirmed bars only.
+- Avoid `lookahead_on`.
+- Keep HTF zones only after confirmed HTF candles.
+- Strategy entries only after confirmed LTF signal.
+
+## Build Direction
+
+We will create two V2 strategies:
+
+1. Pullback V2
+- HTF OB touch.
+- LTF CHoCH confirmation.
+- Entry from LTF OB retest.
+
+2. Breakout V2
+- Breakout / CHoCH confirms direction.
+- Wait for fresh OB after breakout.
+- Entry on OB retest, not chase breakout candle.
+
+## Questions To Resolve Later
+
+- Best HTF/LTF pair for Indian options: 15m/3m, 10m/3m, 5m/1m?
+- Should entries be on option chart only, or underlying chart + option execution?
+- Should target be opposite VOB, RR, liquidity, or hybrid?
+- Should there be session-specific behavior for 9:15-10:30 vs later market?
+- How much re-entry is acceptable after SL?
+
+## Video 2
+
+Source: https://www.youtube.com/watch?v=vGyREXEwLIk
+
+Title: Every ICT Trading Strategy Explained in 13 Minutes!
+
+Channel: Smart Risk
+
+Core model: many ICT entry models reduce to liquidity sweep + market structure shift + FVG/OB retest.
+
+### Main Ideas
+
+Silver Bullet:
+- Use session-based liquidity.
+- Bullish idea: sweep below day/session low, return back into range, form bullish market structure shift, then enter from bullish FVG.
+- Bearish idea: sweep above day/session high, return back into range, form bearish market structure shift, then enter from bearish FVG.
+
+Cameron's model:
+- Start from draw on liquidity: important 1H/15m highs and lows.
+- Wait for stop raid opposite intended direction.
+- Then wait for MSS and FVG.
+- If 5m has no clean FVG, drop to 1m or lower.
+
+Inversion FVG:
+- If price closes through a FVG instead of respecting it, the FVG can flip into the opposite zone.
+- Midline of the FVG is useful: respect = zone holds; close through = possible inversion.
+
+Turtle Soup:
+- Price raids a recent high/low.
+- Entry is after price returns back inside the range.
+- SL beyond the raid wick.
+- Target next key level/liquidity.
+
+CRT / candle range:
+- First candle defines range.
+- Second candle manipulates by sweeping one side.
+- Third candle distributes toward the other side.
+
+OTE:
+- 0.618 to 0.786 retracement is preferred for deeper, less early entry.
+- Only useful when combined with direction and a real POI like OB/FVG.
+
+AMD / Power of 3:
+- Accumulation range.
+- Manipulation fakeout/sweep.
+- Distribution move.
+
+### Pine Conversion Notes
+
+Useful toggles:
+- Require liquidity sweep before entry.
+- Require MSS after sweep.
+- Entry zone type: FVG, OB, or inversion FVG.
+- Optional session window for first 60-90 minutes.
+- Optional FVG midpoint/inversion rule.
+
+Avoid:
+- Coding every model separately. They overlap heavily.
+- Taking FVG entries without a prior sweep or structure shift.
+
+## Video 3
+
+Source: https://www.youtube.com/watch?v=pMRlqE-Tngs
+
+Title: The Best Smart Money Concepts Trading Strategy Using Supply & Demand (Full Course)
+
+Channel: Smart Risk
+
+Core model: HTF supply/demand controls direction; LTF MSS gives entry; entry can be FVG, mitigation block, or breaker block.
+
+### Main Ideas
+
+Valid supply/demand zone:
+- Origin of an impulsive move.
+- Causes BOS/CHoCH.
+- Has inefficiency/FVG.
+- Prefer fresh/unmitigated zones.
+
+Bullish setup:
+1. HTF shows bullish order flow, ideally two bullish BOS events.
+2. Mark most recent unmitigated demand that caused latest BOS.
+3. Wait for price to tap HTF demand.
+4. On LTF, wait for bullish MSS/CHoCH.
+5. Entry model can be bullish FVG, mitigation block, or breaker block.
+
+Bearish setup:
+1. HTF shows bearish order flow.
+2. Mark most recent unmitigated supply that caused latest BOS.
+3. Wait for price to tap HTF supply.
+4. On LTF, wait for bearish MSS/CHoCH.
+5. Entry from bearish FVG, mitigation block, or breaker block.
+
+Entry models:
+- FVG model: after MSS, enter on FVG retest in direction of MSS.
+- Mitigation block: candle(s) between first low/high of the MSS leg.
+- Breaker block: failed opposite swing that gets broken and then retested.
+
+Targets:
+- Nearest liquidity pool.
+- Next HTF key level.
+- Opposite HTF zone.
+
+### Pine Conversion Notes
+
+For options:
+- HTF can be chart 5m/10m/15m.
+- LTF can be chart 1m/3m or synthetic confirmation using lower timeframe request.
+- A simple first version should use FVG model only; mitigation/breaker blocks can be optional later.
+
+## Video 4
+
+Source: https://www.youtube.com/watch?v=f18gazn0nYE
+
+Title: How to Identify Best Order Blocks to Trade?
+
+Channel: Smart Risk
+
+Core model: not all order blocks are equal. Score them by inefficiency, BOS/CHoCH, freshness, liquidity, trend, volatility, and lower-timeframe confirmation.
+
+### Valid OB Rules
+
+OB must:
+- Create inefficiency/FVG.
+- Lead to BOS or CHoCH.
+- Be unmitigated before trade.
+
+Backtested simple setup:
+- Entry at beginning of OB.
+- SL at far end of OB.
+- Target 1:2 RR.
+- Even sub-50% win rate can be profitable with 1:2 if rules are stable.
+
+### Quality Filters
+
+Positive OB filters:
+- OB move begins after sweeping equal highs/lows.
+- Liquidity is grabbed before price reaches the zone.
+- OB is fresh and recent.
+- OB is aligned with dominant trend.
+- Volatility is healthy.
+- LTF CHoCH confirms reaction from zone.
+
+Negative OB filters:
+- Another valid OB and FVG sit beyond the first OB, making first OB likely inducement.
+- Price has spent too much time before retesting old OB.
+- Opposite side has taken control by breaking multiple zones.
+- Market is range-bound or low liquidity.
+
+LTF confirmation:
+- After HTF OB touch, wait for CHoCH.
+- If CHoCH leg creates OB + FVG, enter retest of that LTF OB.
+- If no FVG forms, use 0.618-0.786 retracement of CHoCH leg as fallback.
+
+### Pine Conversion Notes
+
+Add OB score:
+- +1 if liquidity sweep exists before zone.
+- +1 if trend aligned.
+- +1 if recent/unmitigated.
+- -1 if deeper same-direction OB/FVG sits beyond it.
+- Skip if score below minimum.
+
+For current VOB strategies:
+- If candle touches multiple bullish VOBs, prefer deepest/highest-score zone only.
+- Do not open another trade while first related setup is active unless pyramiding is enabled.
+
+## Video 5
+
+Source: https://www.youtube.com/watch?v=dnnFb9V9uLI
+
+Title: Best Top Down Analysis Strategy - Smart Money & Price Action
+
+Channel: Smart Risk
+
+Core model: use higher timeframe for context and room, lower timeframe for execution.
+
+### Timeframe Roles
+
+Weekly/Daily:
+- Only major key levels.
+
+4H/1H:
+- Main analysis: direction, supply/demand, OB, liquidity, trading zones.
+
+15m/5m:
+- Entry confirmation and execution.
+
+For Indian option intraday, equivalent compressed map:
+- 15m = higher context.
+- 5m = trade zone.
+- 3m/1m = entry confirmation.
+
+### Main Rules
+
+Before entry:
+- Check higher timeframe direction.
+- Check if there is enough room before next HTF supply/demand.
+- Avoid buying directly below strong HTF supply.
+- Avoid selling directly above strong HTF demand.
+- If lower timeframe is confusing, zoom out; wrong timeframe may be causing noise.
+
+### Pine Conversion Notes
+
+Inputs:
+- Context TF.
+- Entry TF.
+- Minimum room-to-target in points or RR.
+- Skip trade if nearest opposite zone is too close.
+
+## Video 6
+
+Source: https://www.youtube.com/watch?v=sSAGIzQAhuM
+
+Title: Change of Character Simplified - Smart Money Course
+
+Channel: Smart Risk
+
+Core model: valid CHoCH is not a tiny structure break. It should break a meaningful swing and the latest opposite zone after price reacts from a real POI.
+
+### CHoCH Definition
+
+Bearish CHoCH:
+- Price breaks and closes below most recent major low.
+- Ideally breaks latest demand zone too.
+
+Bullish CHoCH:
+- Price breaks and closes above most recent major high.
+- Ideally breaks latest supply zone too.
+
+High-quality CHoCH:
+- Comes after HTF supply/demand mitigation.
+- Breaks meaningful structure by candle close.
+- Often breaks two or more internal zones.
+- Move is impulsive and leaves inefficiency.
+
+Invalid/weak CHoCH:
+- Minor internal break only.
+- No prior HTF POI reaction.
+- Price merely moves to mitigate another unmitigated zone.
+
+### Pine Conversion Notes
+
+Use two CHoCH strengths:
+- Minor: close beyond recent small swing.
+- Major: close beyond swing that created previous BOS and/or zone.
+
+For V2:
+- Default should require major CHoCH for conservative entries.
+- Aggressive mode can allow minor CHoCH but only with liquidity sweep + strong displacement.
+
+## Video 7
+
+Source: https://www.youtube.com/watch?v=vtZ6hWYT_nM
+
+Title: 3 Best Smart Money Trading Strategy (Advanced)
+
+Channel: Smart Risk
+
+Core model: three entry families: supply/demand flip, CHoCH reversal, and continuation entries.
+
+### Foundation
+
+Valid supply/demand:
+- Creates inefficiency.
+- Causes BOS/CHoCH.
+- Has liquidity before the zone.
+
+Valid OB:
+- Last recent candle that created inefficiency.
+- Must have inefficiency, BOS/CHoCH, and be unmitigated.
+- Wick can be used as OB when wick is dominant or next candle grabs liquidity.
+
+Control rule:
+- Always check where price came from.
+- If price comes from unmitigated HTF supply, supply controls; avoid blind demand buys.
+- Risk entry is acceptable only when price already broke opposing HTF zone or has room before next unmitigated opposite zone.
+
+### Entry Families
+
+Supply/demand flip:
+- Price tests last demand/supply.
+- Fails to continue.
+- Breaks that zone with displacement.
+- Retest of new flip zone is entry.
+
+CHoCH entry:
+- HTF zone is mitigated.
+- LTF CHoCH forms with inefficiency.
+- Entry on LTF OB retest.
+
+Continuation:
+- Clear trend.
+- Fresh valid OBs form in trend direction.
+- Entries can repeat, but risk must be managed carefully.
+
+### Pine Conversion Notes
+
+Breakout V2 can use continuation entry:
+- Break above bearish VOB.
+- Wait for fresh bullish OB/FVG.
+- Buy retest while price has not reached next unmitigated supply.
+
+Pullback V2 can use CHoCH entry:
+- Touch bullish VOB.
+- Wait for LTF major CHoCH.
+- Buy LTF OB/FVG retest.
+
+## Video 8
+
+Source: https://www.youtube.com/watch?v=BFfF_Lnk9T4
+
+Title: Fair Value Gap Simplified - Smart Money Course
+
+Channel: Smart Risk
+
+Core model: FVG is useful only if it belongs to a displacement that caused BOS/CHoCH, is in correct premium/discount, and is fresh.
+
+### FVG Rules
+
+Valid FVG:
+- Wicks of neighboring candles do not overlap.
+- Gap is tied to strong displacement.
+- If first candle is an inside bar, use a four-candle sequence with the mother candle to draw the optimized zone.
+
+Tradeable FVG must:
+- Lead to BOS/CHoCH.
+- Be in discount for buys.
+- Be in premium for sells.
+- Prefer market extremes over internal tiny gaps.
+- Be unmitigated.
+
+Market behavior:
+- If price respects FVG, it may target opposite liquidity.
+- If price ignores/fully fills FVG, continuation against that FVG becomes more likely.
+
+### Pine Conversion Notes
+
+Add FVG filters:
+- Minimum FVG size.
+- Premium/discount filter.
+- Extreme-only mode.
+- One-time use.
+- Optional four-candle inside-bar adjustment later.
+
+## Video 9
+
+Source: https://www.youtube.com/watch?v=JpQybUVffVI
+
+Title: Best Pullback Trading Strategies In Forex - The Pullback Mastery Guide
+
+Channel: Smart Risk
+
+Core model: first classify pullback quality, then decide whether OB is valid.
+
+### Valid Pullback
+
+Bullish trend:
+- Consecutive bullish candles make higher highs.
+- A valid pullback requires price to break/sweep the low of a previous candle.
+- Candle color does not matter.
+
+Bearish trend:
+- Consecutive bearish candles make lower lows.
+- A valid pullback requires price to break/sweep the high of a previous candle.
+
+If pullback is invalid:
+- Related OB/inducement zone is weak.
+- Avoid assuming continuation.
+
+### Pullback Types
+
+Aggressive pullback:
+- Fast, large candles against trend.
+- Momentum is too strong into the POI.
+- Avoid blind entries.
+
+Corrective pullback:
+- Slow, smaller candles.
+- Creates internal structure.
+- Momentum/volatility subsides near POI.
+- Better for OB retest entries.
+
+Sweeping pullback:
+- Equal lows/highs or trendline liquidity forms before POI.
+- Sweep before POI strengthens the trade.
+
+### Pine Conversion Notes
+
+Pullback V2 filters:
+- Require valid pullback sweep before OB entry.
+- Avoid entry if pullback candles are too large vs ATR.
+- Prefer corrective/sweeping pullbacks.
+
+## Video 10
+
+Source: https://www.youtube.com/watch?v=n6Z81Pmm3pc
+
+Title: Liquidity Trading strategy - Smart money concepts
+
+Channel: Smart Risk
+
+Core model: EMA trend + 1-2-3 structure + liquidity sweep.
+
+### Strategy Rules
+
+Bullish:
+1. Price breaks above EMA 50.
+2. Price makes 1-2-3 moves, with third move breaking structure.
+3. Bias remains bullish while higher low holds.
+4. Wait for support/liquidity sweep.
+5. Entry after sweep candle or confirmation candle closes higher than previous candle.
+6. SL below sweep wick.
+7. Target next structure level.
+
+Bearish:
+- Reverse rules below EMA 50.
+
+Management:
+- Partial or breakeven at 1:2.
+- Always check HTF room before entry.
+
+### Pine Conversion Notes
+
+This can become an optional momentum filter:
+- Long only if close > EMA 50 and structure bullish.
+- Entry only after sweep/reclaim.
+- Useful for option morning momentum because it avoids dead sideways chop.
+
+## Video 11
+
+Source: https://www.youtube.com/watch?v=0UTvF4SWdQM&t=252s
+
+Title: Ultimate Liquidity Sweep Trading Strategy (Full In-Depth Guide)- Smart Money Concept
+
+Channel: Smart Risk
+
+Core model: POI is safer only after liquidity is swept before it. Without sweep, zone may be inducement.
+
+### Liquidity Locations
+
+Liquidity can sit around:
+- Equal highs/lows.
+- Swing highs/lows.
+- Trendlines/channels.
+- Support/resistance.
+- Order blocks/order flow.
+- Daily candle body/wicks.
+- Session highs/lows.
+- Fibonacci levels.
+
+### Trade Logic
+
+Bullish:
+1. HTF trend/POI is bullish.
+2. Liquidity pool forms below equal lows or inducement demand.
+3. Price sweeps that liquidity and reaches extreme demand/OB.
+4. Drop to LTF and wait for bullish CHoCH with inefficiency.
+5. Entry from LTF OB/zone created by CHoCH.
+6. SL below zone.
+7. Target external liquidity or HTF structure.
+
+Bearish:
+- Reverse using equal highs above supply.
+
+### Pine Conversion Notes
+
+Add liquidity confluence:
+- Equal high/low detector.
+- Recent swing sweep detector.
+- Sweep must happen within N bars before zone touch.
+- Zones without sweep can be tagged as inducement-risk and skipped or traded smaller.
+
+## Video 12
+
+Source: https://www.youtube.com/watch?v=xH_taQ9cIRs
+
+Title: Full Smart Money Trading Plan - Step by Step
+
+Channel: Smart Risk
+
+Core model: structured two-timeframe plan: HTF direction + liquidity/FVG/OB zone + LTF CHoCH entry.
+
+### Plan
+
+Step 1: HTF direction and key levels
+- Track BOS and CHoCH.
+- Bullish until recent higher low is broken by close.
+- Bearish until recent lower high is broken by close.
+- Directionless markets are skipped.
+
+Step 2: HTF smart money zones
+- Mark FVGs.
+- Mark liquidity at equal highs/lows and latest swings.
+- Mark OB/order-flow zones where multiple concepts overlap.
+
+Step 3: LTF confirmation
+- Wait for price to mitigate HTF zone.
+- No LTF CHoCH = no trade.
+- If CHoCH leg creates OB + FVG, enter OB retest.
+- If no FVG/OB, use 0.618-0.786 retracement of CHoCH leg.
+
+Management:
+- Partial/breakeven at 1:2.
+- Final target HTF opposite zone or major structure.
+- Trail under new higher lows / above new lower highs.
+
+### Pine Conversion Notes
+
+This is the cleanest blueprint for V2:
+- `mode = Conservative` uses HTF zone + LTF CHoCH + LTF OB/FVG retest.
+- `mode = Aggressive` uses HTF zone touch + sweep + confirmation candle.
+- `fallback = Fib` optional when no FVG exists.
+
+## Video 13
+
+Source: https://www.youtube.com/watch?v=-uRKGucJEkE
+
+Title: Best Fair Value Gap Trading Strategy
+
+Channel: Smart Risk
+
+Core model: FVG and FVG. HTF FVG zone sets POI; LTF FVG after reversal confirms entry.
+
+### Rules
+
+HTF:
+- Determine direction with BOS/CHoCH and liquidity sweep.
+- Mark FVGs in impulse leg.
+- Buy only discount FVGs.
+- Sell only premium FVGs.
+
+LTF:
+- After HTF FVG touch, wait for liquidity sweep and CHoCH.
+- Then wait for new FVG.
+- Entry at start of LTF FVG.
+- SL below/above LTF FVG or nearby structure.
+
+Special cases:
+- If LTF FVG is tiny, use wider protected stop.
+- If LTF FVG is huge, entry can be mid-zone to improve RR.
+- BE/partial at 1:2.
+- Final target first important HTF level.
+
+### Pine Conversion Notes
+
+For option buying:
+- Use FVG as confirmation, not compulsory baseline.
+- Optional setting: require LTF FVG after VOB touch.
+- But earlier testing showed strict 1m FVG filter can miss trades; keep default off or relaxed.
+
+## Video 14
+
+Source: https://www.youtube.com/watch?v=RE0qezm-Zvk
+
+Title: Candle Range Theory Explained and Simplified | Easily Predict the Next Candle
+
+Channel: Smart Risk
+
+Core model: one candle's high/low is a range; next candle/s can sweep one side and then travel to the other side.
+
+### CRT Rules
+
+Bullish CRT:
+- Range candle high/low is marked.
+- Next candle or sequence sweeps below range low by wick.
+- Price closes back inside range.
+- Entry from LTF OB after price breaks above confirmation candle/high.
+- Targets: midpoint of range, then range high.
+
+Bearish CRT:
+- Sweep above range high.
+- Close back inside range.
+- Entry from LTF OB after bearish confirmation.
+- Targets: midpoint, then range low.
+
+Timing:
+- Video uses Forex key times. For Indian options, adapt to:
+  - 9:15 opening range.
+  - 9:30/9:45 first continuation window.
+  - 10:30 trend confirmation.
+  - 14:30-15:00 late move risk window.
+
+### Pine Conversion Notes
+
+Potential module:
+- Opening range candle/range.
+- Sweep and reclaim rule.
+- Buy option when range side is swept and momentum returns.
+- Useful for morning momentum strategy, not necessarily VOB pullback.
+
+## Video 15
+
+Source: https://www.youtube.com/watch?v=-XPOohUo5fY
+
+Title: Best 1 Minute Forex Scalping Strategy - Step by Step
+
+Channel: Smart Risk
+
+Core model: trade only clear trend, use 1m reversal pattern at high-probability zone.
+
+### Rules
+
+Trend filter:
+- 15m above EMA 50 + HH/HL = bullish.
+- 15m below EMA 50 + LL/LH = bearish.
+- If price chops through EMA both ways, no trade.
+
+Entry:
+- Mark strong S/R or previous market structure.
+- Drop to 1m.
+- Bullish confirmation: double bottom and close above neckline.
+- If neckline entry makes SL too wide, use 0.618 pullback.
+- SL below double bottom.
+- Target next structure.
+
+SMC scalp variation:
+- If BOS happens without FVG and there is a FVG + OB beyond the latest swing, current break may be liquidity grab.
+- Trade deeper OB after liquidity sweep.
+
+### Pine Conversion Notes
+
+For option buying:
+- Use EMA 50 + structure as trend/no-trade filter.
+- Add optional double-bottom/double-top confirmation later.
+- Morning momentum version should allow re-entry when trend momentum resumes.
+
+## Video 16
+
+Source: https://www.youtube.com/watch?v=NaWpOBxdsCY
+
+Title: Simplifying Key Order Blocks in Forex Trading
+
+Channel: Smart Risk
+
+Core model: OB works best when it has FVG, structure break, liquidity confluence, and correct marking.
+
+### OB Rules
+
+Valid OB:
+- Last candle before drastic move.
+- Candle color does not matter.
+- Move must create FVG/imbalance.
+- Move must break structure.
+
+Wick adjustment:
+- If a wick grabs liquidity before the impulse, include wick in zone.
+- If zone becomes too large, require LTF confirmation.
+
+Tiny OB adjustment:
+- If OB candle range is below 60% of ATR, extend zone using ATR.
+- This prevents stops from being too tight around tiny candles.
+
+OB types:
+- Continuation OB: aligns with trend, higher probability.
+- Reversal OB: lower probability but higher RR.
+- Ranging OB: at least four candles closing back inside a range before impulse.
+
+### Pine Conversion Notes
+
+Add:
+- ATR-based minimum zone width.
+- Continuation/reversal tag.
+- Freshness limit in bars.
+- Liquidity-before-zone filter.
+
+## Video 17
+
+Source: https://www.youtube.com/watch?v=Gatya8gJdgM
+
+Title: Smart Money Trading: Top Entry Strategies and Supply/Demand Analysis for Profitable Trading
+
+Channel: Smart Risk
+
+Core model: entry methods should be used only inside HTF supply/demand zones. Main methods: CHoCH, flip, continuation.
+
+### CHoCH Rules
+
+Valid CHoCH:
+- Happens after HTF supply/demand mitigation.
+- Breaks and closes beyond meaningful structure.
+- Major CHoCH is preferred over minor CHoCH.
+- Best when it breaks two or more supply/demand zones.
+- Displacement should use few strong candles and leave inefficiency.
+
+Aggressive entry:
+- Enter from OB created by CHoCH leg.
+- SL beyond OB.
+- Target nearest unmitigated opposite zone.
+
+Conservative entry:
+- HTF zone touch.
+- LTF major CHoCH.
+- LTF OB created by CHoCH.
+- Limit entry at that LTF OB.
+
+Flip entry:
+- Price reacts from significant zone.
+- Tests last demand/supply.
+- Fails to make new high/low.
+- Breaks that tested zone and leaves new flip zone.
+- Entry on retest of flip zone.
+
+Continuation entry:
+- After confirmed direction shift, wait for BOS in new direction.
+- Enter OBs created by BOS.
+- Only continue adding entries until next unmitigated opposite HTF zone is reached.
+
+### Pine Conversion Notes
+
+Breakout V2:
+- Use continuation entry after breakout.
+- Stop taking new entries near next HTF opposite zone.
+
+Pullback V2:
+- Use conservative CHoCH entry.
+- Aggressive touch entry should be optional.
+
+## Unified Strategy Design Notes
+
+The videos repeatedly support the same robust structure:
+
+1. Context
+- Identify trend/side in control.
+- Avoid directionless markets.
+- Check room to next opposite zone.
+
+2. Zone
+- OB/VOB/FVG must be fresh.
+- Prefer zones that caused BOS/CHoCH.
+- Prefer zones with liquidity swept before touch.
+- Prefer continuation zones in trend unless reversal has strong confirmation.
+
+3. Trigger
+- Zone touch alone is risky.
+- Better trigger is sweep + reclaim or LTF CHoCH.
+- Best trigger is LTF CHoCH that creates new OB/FVG, then retest entry.
+
+4. Risk
+- SL beyond the actual invalidation zone, not tiny candle noise.
+- ATR buffer for tiny zones.
+- Partial/BE at 1:2 or trail by new structure.
+- Stop new continuation trades when next opposite HTF zone is too close.
+
+## V2 Build Blueprint
+
+### Pullback V2
+
+Goal:
+- Buy options on strong demand/VOB pullbacks, but avoid blind touch buys.
+
+Default conservative rules:
+1. Detect bullish VOB/demand that created BOS/FVG.
+2. Zone must be fresh or recently formed.
+3. Price pulls back into zone.
+4. Optional: liquidity sweep before/into zone.
+5. Optional: pullback quality must not be aggressive.
+6. Wait for bullish confirmation:
+   - sweep/reclaim, or
+   - LTF major CHoCH, or
+   - LTF OB/FVG retest after CHoCH.
+7. Buy.
+8. SL below active demand zone plus buffer.
+9. Target next bearish VOB/supply/liquidity or RR.
+10. Trail below latest higher demand/VOB if enabled.
+
+### Breakout V2
+
+Goal:
+- Buy option momentum after bearish VOB/supply is broken, but avoid chasing weak breakouts.
+
+Default conservative rules:
+1. Detect bearish VOB/supply.
+2. Signal candle closes above bearish VOB.
+3. Signal candle becomes breakout reference.
+4. Entry only when next candle(s) cross signal high, OR after fresh bullish OB/FVG retest.
+5. SL below signal low or fresh OB low.
+6. Target next bearish VOB/supply/liquidity.
+7. Stop taking fresh longs if price is already too close to next supply.
+
+### Optional Scoring System
+
+Each setup can receive points:
+- +1 trend aligned.
+- +1 fresh zone.
+- +1 liquidity sweep.
+- +1 strong displacement/FVG.
+- +1 enough room to target.
+- +1 LTF major CHoCH.
+- -1 aggressive pullback into zone.
+- -1 opposite HTF zone too close.
+- -1 deeper same-direction zone beyond current zone suggests inducement.
+
+Trade only if score >= user input threshold.

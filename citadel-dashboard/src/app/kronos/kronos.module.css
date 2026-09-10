@@ -1,0 +1,56 @@
+.workspace {
+  min-height: 100vh;
+  display: grid;
+  align-content: start;
+  gap: var(--cds-space-2);
+  padding: var(--cds-space-2);
+  color: var(--cds-color-text);
+  background: var(--cds-color-bg);
+  font-family: var(--cds-font-sans);
+}
+
+.section {
+  min-width: 0;
+  display: grid;
+  gap: var(--cds-space-1);
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--cds-space-8) * 2), 1fr));
+  gap: var(--cds-space-1);
+}
+
+.regimeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--cds-space-8) * 3), 1fr));
+  gap: var(--cds-space-1);
+}
+
+.splitGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--cds-space-8) * 6), 1fr));
+  gap: var(--cds-space-2);
+}
+
+.intelligencePanel > div:nth-child(2) {
+  grid-template-columns: 1fr;
+}
+
+.intelligencePanel > div:nth-child(2) strong {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.operatorFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cds-space-1);
+  color: var(--cds-color-text-muted);
+  font: var(--cds-weight-medium) var(--cds-type-caption-size) / var(--cds-type-caption-line) var(--cds-font-mono);
+  letter-spacing: var(--cds-tracking-label);
+  text-transform: uppercase;
+}
+

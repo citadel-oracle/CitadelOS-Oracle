@@ -1,0 +1,274 @@
+{
+  "schema_version": "5a.2.0",
+  "defaults": {},
+  "cards": [
+    {
+      "card_id": "brooks-context-over-candle-name",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Context over candlestick name",
+      "domain": "candlesticks",
+      "definition_principle": "A candle name is not a setup; the bars and structure around it determine what can be measured.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "al-brooks-price-action-manual-2026",
+      "exact_locator": "Opening overview > context over candle patterns",
+      "short_excerpt": null,
+      "paraphrase": "A candle name is not a setup; the bars and structure around it determine what can be measured.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "5b8f6df6284a6c394a428d2cae36caa61829277c9ffe61540843f1dd2023d5d9",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [
+        "brooks-candle-pattern-alone-invalid"
+      ],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "brooks-signal-plus-context",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Signal plus context",
+      "domain": "candlesticks",
+      "definition_principle": "A signal bar is usable only as part of a defined setup and preceding context.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "al-brooks-candlestick-context-2026",
+      "exact_locator": "Setups and Signals",
+      "short_excerpt": null,
+      "paraphrase": "A signal bar is usable only as part of a defined setup and preceding context.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "20ab78e79fac62f996398ce2a629cf4ee667aba4cf2683bb7a85f9a615f1b1ac",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "brooks-bars-left-context",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Prior bars define context",
+      "domain": "candlesticks",
+      "definition_principle": "Completed bars preceding a candidate candle are required context and must not be hindsight-selected.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "al-brooks-candlestick-context-2026",
+      "exact_locator": "context means bars to the left",
+      "short_excerpt": null,
+      "paraphrase": "Completed bars preceding a candidate candle are required context and must not be hindsight-selected.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "20ab78e79fac62f996398ce2a629cf4ee667aba4cf2683bb7a85f9a615f1b1ac",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "brooks-candle-pattern-alone-invalid",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Candlestick pattern alone is insufficient",
+      "domain": "candlesticks",
+      "definition_principle": "Do not convert a candlestick label alone into trading evidence.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "al-brooks-candlestick-context-2026",
+      "exact_locator": "The lure of candlestick chart patterns",
+      "short_excerpt": null,
+      "paraphrase": "Do not convert a candlestick label alone into trading evidence.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "20ab78e79fac62f996398ce2a629cf4ee667aba4cf2683bb7a85f9a615f1b1ac",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [
+        "brooks-context-over-candle-name"
+      ],
+      "research_only": false,
+      "research_fields": {}
+    }
+  ]
+}

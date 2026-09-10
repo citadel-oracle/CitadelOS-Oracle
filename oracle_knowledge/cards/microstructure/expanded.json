@@ -1,0 +1,342 @@
+{
+  "schema_version": "5a.2.0",
+  "defaults": {},
+  "cards": [
+    {
+      "card_id": "oic-market-order-tradeoff",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Market-order execution trade-off",
+      "domain": "microstructure",
+      "definition_principle": "A market-style order prioritizes execution but does not guarantee price.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "oic-bid-ask-options-2024",
+      "exact_locator": "Main article > market and limit order trade-offs",
+      "short_excerpt": null,
+      "paraphrase": "A market-style order prioritizes execution but does not guarantee price.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "8ace352032241eef29870355a95fb74655e8e0b19efe1dbe1493c8def9975502",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [
+        "oic-limit-order-tradeoff"
+      ],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "oic-limit-order-tradeoff",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Limit-order execution trade-off",
+      "domain": "microstructure",
+      "definition_principle": "A limit constrains price but may remain unfilled or partially filled.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "oic-bid-ask-options-2024",
+      "exact_locator": "Key Takeaways",
+      "short_excerpt": null,
+      "paraphrase": "A limit constrains price but may remain unfilled or partially filled.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "8ace352032241eef29870355a95fb74655e8e0b19efe1dbe1493c8def9975502",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [
+        "oic-market-order-tradeoff"
+      ],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "cda-order-matching-context",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Continuous double-auction matching",
+      "domain": "microstructure",
+      "definition_principle": "Orders interact through price-time matching rules; a candle is not an order-book reconstruction.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "arxiv-smith-farmer-gillemot-cda-2002",
+      "exact_locator": "PDF p.3 > Background: The continuous double auction",
+      "short_excerpt": null,
+      "paraphrase": "Orders interact through price-time matching rules; a candle is not an order-book reconstruction.",
+      "source_quality": "WORKING_PAPER_PRIMARY",
+      "source_hash_version": "3ee6de4abe6126462237f67715bc2a28337b8b8d0d64f7a44ddde4893408d345",
+      "validation_status": "FUTURE_DATA_DEPENDENT",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "cda-fill-probability-model-limit",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Fill probability model boundary",
+      "domain": "microstructure",
+      "definition_principle": "Modelled fill properties depend on assumptions and cannot replace observed CITADEL paper/broker events.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "arxiv-smith-farmer-gillemot-cda-2002",
+      "exact_locator": "PDF pp.13-14 > fill probability and fill time",
+      "short_excerpt": null,
+      "paraphrase": "Modelled fill properties depend on assumptions and cannot replace observed CITADEL paper/broker events.",
+      "source_quality": "WORKING_PAPER_PRIMARY",
+      "source_hash_version": "3ee6de4abe6126462237f67715bc2a28337b8b8d0d64f7a44ddde4893408d345",
+      "validation_status": "FUTURE_DATA_DEPENDENT",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [
+        "oic-executable-bid-ask"
+      ],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "cda-impact-model-limit",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Immediate impact model boundary",
+      "domain": "microstructure",
+      "definition_principle": "A stylized dimensionless model is not a live forecast for Indian option spread or impact.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "arxiv-smith-farmer-gillemot-cda-2002",
+      "exact_locator": "PDF p.32 > dimensionless-model limitation",
+      "short_excerpt": null,
+      "paraphrase": "A stylized dimensionless model is not a live forecast for Indian option spread or impact.",
+      "source_quality": "WORKING_PAPER_PRIMARY",
+      "source_hash_version": "3ee6de4abe6126462237f67715bc2a28337b8b8d0d64f7a44ddde4893408d345",
+      "validation_status": "FUTURE_DATA_DEPENDENT",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    }
+  ]
+}

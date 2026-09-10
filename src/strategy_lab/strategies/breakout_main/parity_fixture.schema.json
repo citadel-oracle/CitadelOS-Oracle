@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "citadel://strategy-lab/breakout-main/tradingview-parity-v1",
+  "title": "BREAKOUT MAIN TradingView parity fixture",
+  "type": "object",
+  "required": ["metadata", "records"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["schema_version", "source", "strategy", "pine_version", "pine_source_sha256", "symbol", "timeframe", "timezone"],
+      "properties": {
+        "schema_version": {"const": 1},
+        "source": {"const": "TRADINGVIEW"},
+        "strategy": {"const": "BREAKOUT MAIN"},
+        "pine_version": {"const": 5},
+        "pine_source_sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+        "symbol": {"type": "string", "minLength": 1},
+        "timeframe": {"type": "string", "minLength": 1},
+        "timezone": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["bar", "expected"],
+        "properties": {
+          "bar": {
+            "type": "object",
+            "required": ["index", "timestamp", "open", "high", "low", "close", "volume", "confirmed"],
+            "properties": {
+              "index": {"type": "integer"}, "timestamp": {"type": "string"},
+              "open": {"type": "number"}, "high": {"type": "number"},
+              "low": {"type": "number"}, "close": {"type": "number"},
+              "volume": {"type": "number"}, "confirmed": {"type": "boolean"}
+            },
+            "additionalProperties": false
+          },
+          "expected": {
+            "type": "object",
+            "required": ["market_structure", "order_blocks", "strategy", "events", "runtime_serialization", "paper_order"],
+            "properties": {
+              "market_structure": {"type": "object", "required": ["trend", "bos", "choch", "upsweep", "dnsweep", "events"]},
+              "order_blocks": {"type": "object", "required": ["bullish", "bearish"]},
+              "strategy": {"type": "object", "required": ["pending_signal", "signal_high", "signal_low", "signal_stop", "target", "long_position", "trailing_stop", "exit_reason", "used_setups", "signal", "signal_cancellation", "session_reset"]},
+              "events": {"type": "object", "required": ["replay", "journal", "evidence"]},
+              "runtime_serialization": {"type": "object"},
+              "paper_order": {"type": ["object", "null"]}
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

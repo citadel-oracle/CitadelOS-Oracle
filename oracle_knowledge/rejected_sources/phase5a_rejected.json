@@ -1,0 +1,13 @@
+{
+  "schema_version": "5a.1.0",
+  "rejected": [
+    {"candidate_id": "awesome-systematic-trading-as-authority", "status": "REJECTED", "reason": "Discovery index only; summaries, Sharpe values, implementations, and book listings are not source authority."},
+    {"candidate_id": "awesome-institutional-trading-as-authority", "status": "REJECTED", "reason": "Discovery index contains promotional and unsourced glossary claims; used only to locate original material."},
+    {"candidate_id": "algostorm-promotional-concepts", "status": "REJECTED", "reason": "Vendor marketing/education is not primary evidence for institutional causality."},
+    {"candidate_id": "squeezemetrics-gex-whitepaper", "status": "REJECTED", "reason": "Vendor whitepaper and U.S. dealer-position assumptions were not accepted as universal NIFTY/BANKNIFTY truth."},
+    {"candidate_id": "gex-dealer-positioning-glossary", "status": "REJECTED", "reason": "Aggregate dealer positions are not observed by CITADEL; single-contract Gamma cannot be promoted to GEX causality."},
+    {"candidate_id": "amazon-book-pages", "status": "REJECTED", "reason": "Retail catalog pages do not provide licensed content, exact locators, or source-verifiable excerpts."},
+    {"candidate_id": "vendor-platform-claims", "status": "REJECTED", "reason": "Tool and platform marketing does not establish measurable trading principles or CITADEL compatibility."},
+    {"candidate_id": "whole-book-runtime-ingestion", "status": "REJECTED", "reason": "Copyright, scope, and live-context policy forbid full-book storage or loading."}
+  ]
+}

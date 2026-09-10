@@ -1,0 +1,65 @@
+{
+  "schema_version": "5a.1.0",
+  "defaults": {
+    "version": "1.0.0", "card_type": "PRINCIPLE", "optional_confirmations": [],
+    "timeframes": ["1D", "4H", "1H", "15m", "5m", "3m", "1m"],
+    "instruments": ["NIFTY", "BANKNIFTY"], "option_buying_relevance": "MEDIUM",
+    "data_availability": {"canonical_candles": "AVAILABLE", "visual_claim": "VERIFY_NUMERICALLY"},
+    "execution_influence": "ZERO", "knowledge_policy_version": "oracle-knowledge-advisory-5a.1.0",
+    "regimes": [], "setup_types": [], "research_only": false, "research_fields": {}
+  },
+  "cards": [
+    {
+      "card_id": "pa-support-resistance-location", "concept": "Support and resistance as testable locations", "domain": "price_action",
+      "definition_principle": "A support or resistance level is a candidate location where an existing trend may be interrupted; current use requires an exact numeric level and observed interaction.",
+      "measurable_predicates": ["level is numeric and source-timestamped", "completed candle reaches the declared tolerance", "post-touch continuation or interruption window is fixed before evaluation"],
+      "required_evidence": ["canonical completed candles", "exact level and tolerance", "touch timestamp", "predeclared evaluation window"],
+      "valid_conditions": ["Instrument, timeframe, level, tolerance, and evaluation window are fixed before the outcome."],
+      "failure_conditions": ["Level is redrawn after the outcome or inferred only from a screenshot."],
+      "contradictions": ["Published level performance varied by source and market in the cited study."],
+      "when_not_to_use": ["Do not use a location alone as direction, probability, or entry authorization."],
+      "relevant_citadel_fields": ["canonical_candle_refs", "verified_visual_claims", "vob_zone_ids", "structural_trigger"],
+      "source_id": "frbny-osler-support-resistance-2000", "exact_locator": "PDF p.53 > opening definition", "short_excerpt": "points at which an exchange rate trend may be interrupted and reversed", "paraphrase": "Treat support/resistance as a predeclared testable location, not a guaranteed reversal.",
+      "source_quality": "PEER_REVIEWED_PRIMARY", "source_hash_version": "dd1eb1b3100aa5cc56532bd49e631c1dcf7a459a83c0d225d21ce681bc4d2740", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "SOURCE_STUDY_NOT_CITADEL_VALIDATED", "contradicts_card_ids": ["pa-level-strength-not-probability"]
+    },
+    {
+      "card_id": "pa-level-strength-not-probability", "concept": "Level strength labels are not probabilities", "domain": "price_action",
+      "definition_principle": "A qualitative strength rating attached to a level must not be treated as calibrated likelihood without independent outcome validation.",
+      "measurable_predicates": ["strength label retained as source metadata", "CITADEL historical probability remains null unless calibration policy passes"],
+      "required_evidence": ["source strength label", "immutable completed outcomes", "OOS calibration report"],
+      "valid_conditions": ["The label is shown only as explanatory metadata."],
+      "failure_conditions": ["Strength language is mapped to confidence or win probability."],
+      "contradictions": ["The cited study found reported strength categories had no consistent correspondence with bounce frequency."],
+      "when_not_to_use": ["Do not rank live trades by an unvalidated strong/weak label."],
+      "relevant_citadel_fields": ["setup_quality", "historical_probability", "calibration_state", "vob_strength"],
+      "source_id": "frbny-osler-support-resistance-2000", "exact_locator": "PDF p.64 > reported strength ratings conclusion", "short_excerpt": "reported strength levels seem to have no consistent correspondence", "paraphrase": "Keep qualitative level strength separate from calibrated empirical probability.",
+      "source_quality": "PEER_REVIEWED_PRIMARY", "source_hash_version": "dd1eb1b3100aa5cc56532bd49e631c1dcf7a459a83c0d225d21ce681bc4d2740", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "COUNTER_PRINCIPLE", "contradicts_card_ids": ["pa-support-resistance-location"]
+    },
+    {
+      "card_id": "pa-patterns-require-deterministic-predicates", "concept": "Chart patterns require objective predicates", "domain": "price_action",
+      "definition_principle": "Because geometric chart interpretation is subjective, any CITADEL pattern claim must compile to repeatable numerical predicates before it can become evidence.",
+      "measurable_predicates": ["same candles and policy produce the same label", "predicate version and tolerances are recorded", "forming candles cannot confirm the pattern"],
+      "required_evidence": ["canonical ordered candles", "predicate version", "tolerances", "completed-candle boundary"],
+      "valid_conditions": ["The claim is reproducible without discretionary redrawing."],
+      "failure_conditions": ["Only a visual name or hindsight-selected geometry is available."],
+      "contradictions": ["Objective recognition does not establish profitability or transfer across markets."],
+      "when_not_to_use": ["Do not let an LLM or screenshot name a live pattern as verified evidence."],
+      "relevant_citadel_fields": ["visual_claim_candidates", "verified_visual_claims", "canonical_candle_refs", "predicate_version"],
+      "source_id": "nber-lo-mamaysky-wang-2000", "exact_locator": "Abstract > subjectivity and systematic recognition", "short_excerpt": null, "paraphrase": "Convert subjective chart geometry into versioned, automatic, reproducible predicates.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "bff74dd2efbc02ba0d0a8fd5f5d737d0ed0b26dab65af3e51be8e01db3d16fae", "validation_status": "SOURCE_BACKED_UNVALIDATED", "empirical_status": "METHOD_PRINCIPLE", "contradicts_card_ids": ["pa-technical-information-not-live-edge"]
+    },
+    {
+      "card_id": "pa-technical-information-not-live-edge", "concept": "Technical information is not a live edge claim", "domain": "price_action",
+      "definition_principle": "Evidence that some historical technical indicators contained incremental information does not establish that a current intraday option setup has an edge.",
+      "measurable_predicates": ["current evidence is separated from source-study results", "historical_probability is null without CITADEL OOS calibration"],
+      "required_evidence": ["current verified claims", "CITADEL dataset version", "OOS calibration state"],
+      "valid_conditions": ["The source is used only to motivate measurable research."],
+      "failure_conditions": ["Study findings are copied into current confidence or probability."],
+      "contradictions": ["The cited results came from a different instrument universe, frequency, and historical period."],
+      "when_not_to_use": ["Do not cite the study as proof that a current pattern will work."],
+      "relevant_citadel_fields": ["evidence_bundle", "historical_probability", "calibration_state", "dataset_version"],
+      "source_id": "nber-lo-mamaysky-wang-2000", "exact_locator": "Abstract > incremental information finding", "short_excerpt": null, "paraphrase": "Use technical studies to define hypotheses; use CITADEL OOS outcomes to validate them.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "bff74dd2efbc02ba0d0a8fd5f5d737d0ed0b26dab65af3e51be8e01db3d16fae", "validation_status": "CONFLICTED", "empirical_status": "TRANSFER_UNVALIDATED", "contradicts_card_ids": ["pa-patterns-require-deterministic-predicates"]
+    }
+  ]
+}

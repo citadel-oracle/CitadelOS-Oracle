@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "record_type": "STRATEGY_DECISION",
+  "strategy_id": "pullback-master-pine-v5",
+  "signal": "adapter.signal",
+  "pine_action": "adapter.pine_action",
+  "reason": "pine_event.reason",
+  "why_trade": "pine_event.why_trade",
+  "why_not_trade": "pine_event.why_not_trade",
+  "entry": "pine_event.entry",
+  "exit": "pine_event.exit",
+  "stop": "pine_event.stop",
+  "target": "pine_event.target",
+  "paper_execution": "strategy_lab_isolated_execution_result",
+  "production_journal": null,
+  "development_journal": null
+}

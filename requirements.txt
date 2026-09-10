@@ -1,0 +1,6 @@
+# Runtime requires Python >=3.10 (production code uses PEP 604 union types).
+fastapi>=0.100,<1
+python-dotenv>=1,<2
+requests>=2.31,<3
+uvicorn>=0.22,<1
+websockets>=16,<17

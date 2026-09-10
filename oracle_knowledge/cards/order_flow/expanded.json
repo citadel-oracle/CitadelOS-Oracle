@@ -1,0 +1,208 @@
+{
+  "schema_version": "5a.2.0",
+  "defaults": {},
+  "cards": [
+    {
+      "card_id": "mlofi-multiple-depth-levels",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Multi-level order-flow imbalance",
+      "domain": "order_flow",
+      "definition_principle": "Multi-level imbalance requires synchronized changes across several book levels, not volume or top-of-book alone.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "arxiv-xu-gould-howison-mlofi-2019",
+      "exact_locator": "Section 2 > Multi-level order-flow imbalance definition",
+      "short_excerpt": null,
+      "paraphrase": "Multi-level imbalance requires synchronized changes across several book levels, not volume or top-of-book alone.",
+      "source_quality": "WORKING_PAPER_PRIMARY",
+      "source_hash_version": "a4da688fe33e8bf981e96e265b89cee3e42d0ae7efd187aa3f6cbd5c27359460",
+      "validation_status": "FUTURE_DATA_DEPENDENT",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [
+        "mlofi-citadel-data-unavailable"
+      ],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "mlofi-oos-comparison",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Order-flow models need OOS comparison",
+      "domain": "order_flow",
+      "definition_principle": "Any order-flow feature must be evaluated out of sample and with market-specific data.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "arxiv-xu-gould-howison-mlofi-2019",
+      "exact_locator": "Section 4 > out-of-sample comparison",
+      "short_excerpt": null,
+      "paraphrase": "Any order-flow feature must be evaluated out of sample and with market-specific data.",
+      "source_quality": "WORKING_PAPER_PRIMARY",
+      "source_hash_version": "a4da688fe33e8bf981e96e265b89cee3e42d0ae7efd187aa3f6cbd5c27359460",
+      "validation_status": "FUTURE_DATA_DEPENDENT",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "mlofi-citadel-data-unavailable",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "CITADEL multi-level data unavailable",
+      "domain": "order_flow",
+      "definition_principle": "Without authoritative multi-level order-event history, CITADEL cannot claim MLOFI evidence.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "arxiv-xu-gould-howison-mlofi-2019",
+      "exact_locator": "PDF p.1 > Abstract",
+      "short_excerpt": null,
+      "paraphrase": "Without authoritative multi-level order-event history, CITADEL cannot claim MLOFI evidence.",
+      "source_quality": "WORKING_PAPER_PRIMARY",
+      "source_hash_version": "a4da688fe33e8bf981e96e265b89cee3e42d0ae7efd187aa3f6cbd5c27359460",
+      "validation_status": "FUTURE_DATA_DEPENDENT",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [
+        "mlofi-multiple-depth-levels"
+      ],
+      "research_only": false,
+      "research_fields": {}
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "schema_version": "5a.1.0",
+  "defaults": {
+    "version": "1.0.0", "card_type": "PRINCIPLE", "optional_confirmations": ["VOB interaction", "OSE premium confirmation"],
+    "timeframes": ["1H", "15m", "5m", "3m", "1m"], "instruments": ["NIFTY", "BANKNIFTY"], "option_buying_relevance": "HIGH",
+    "data_availability": {"canonical_candles": "AVAILABLE", "hidden_stop_orders": "UNAVAILABLE", "l2_order_events": "FUTURE"},
+    "execution_influence": "ZERO", "knowledge_policy_version": "oracle-knowledge-advisory-5a.1.0", "regimes": [], "setup_types": [], "research_only": false, "research_fields": {}
+  },
+  "cards": [
+    {
+      "card_id": "liquidity-stop-cluster-context", "concept": "Stop clustering is market-specific empirical context", "domain": "liquidity_smc",
+      "definition_principle": "Historical evidence of stop-order clustering can motivate a liquidity hypothesis, but CITADEL must not infer actual hidden stops without authoritative order data.",
+      "measurable_predicates": ["candidate level existed before interaction", "trade-through and reclaim or continuation are measured", "hidden order presence remains UNAVAILABLE"],
+      "required_evidence": ["predeclared level", "canonical completed candles", "explicit sweep or continuation predicate"],
+      "valid_conditions": ["The explanation says candidate liquidity location, not observed institutional orders."],
+      "failure_conditions": ["A wick or round number is represented as proof of stop orders."],
+      "contradictions": ["The cited evidence uses one FX dealer dataset and does not reveal NIFTY hidden orders."],
+      "when_not_to_use": ["Do not claim institutional causality or execution intent."],
+      "relevant_citadel_fields": ["liquidity_levels", "verified_visual_claims", "vob_zone_ids", "missing_evidence"],
+      "source_id": "frbny-osler-currency-orders-2001", "exact_locator": "Abstract > order clustering and round numbers", "short_excerpt": null, "paraphrase": "Use clustered-level research only to define measurable candidate locations and disclose hidden-order unavailability.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "d72bc0a020d04f0b7dd423c0f4f2dcebc83b34ebd160ca8eca75b52d69e1341d", "validation_status": "CONFLICTED", "empirical_status": "TRANSFER_UNVALIDATED", "contradicts_card_ids": ["liquidity-sweep-no-causality"]
+    },
+    {
+      "card_id": "liquidity-sweep-no-causality", "concept": "Liquidity sweep is a measurable price sequence, not hidden-order proof", "domain": "liquidity_smc",
+      "definition_principle": "For CITADEL, a sweep label can mean only a deterministic trade-through and reclaim/acceptance sequence around a prior level; it cannot assert who traded or why.",
+      "measurable_predicates": ["prior level is immutable", "price trades beyond level by tolerance", "completed close reclaims or accepts according to versioned rule"],
+      "required_evidence": ["prior swing or level ID", "high/low/close sequence", "tolerance", "completed candle IDs"],
+      "valid_conditions": ["Every predicate is numerically verified."],
+      "failure_conditions": ["Only a wick, label, or influencer terminology is available."],
+      "contradictions": ["No institutional actor or stop inventory is observed by the candle predicate."],
+      "when_not_to_use": ["Do not make a sweep a standalone reversal signal."],
+      "relevant_citadel_fields": ["canonical_candle_refs", "verified_visual_claims", "structural_invalidation", "liquidity_levels"],
+      "source_id": "nber-lo-mamaysky-wang-2000", "exact_locator": "Abstract > subjectivity and systematic recognition", "short_excerpt": null, "paraphrase": "Normalize sweep terminology into a repeatable price predicate and explicitly reject causal claims.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "bff74dd2efbc02ba0d0a8fd5f5d737d0ed0b26dab65af3e51be8e01db3d16fae", "validation_status": "CONFLICTED", "empirical_status": "DEFINITION_ONLY", "contradicts_card_ids": ["liquidity-stop-cluster-context"], "setup_types": ["LIQUIDITY_SWEEP_REVERSAL"]
+    },
+    {
+      "card_id": "smc-fvg-context-only", "concept": "Fair-value-gap terminology is context-only", "domain": "liquidity_smc",
+      "definition_principle": "An FVG may be stored only as a versioned three-candle price-gap predicate; institutional imbalance causality and predictive edge remain unvalidated.",
+      "measurable_predicates": ["three completed candles are ordered", "declared non-overlap condition is satisfied", "gap bounds and fill status are numeric"],
+      "required_evidence": ["three canonical completed candles", "gap predicate version", "gap bounds", "later fill/invalidity rule"],
+      "valid_conditions": ["The card is explanatory or research-only and no authority currently supplies a validated FVG contract."],
+      "failure_conditions": ["The term is used without a numerical definition or as automatic institutional evidence."],
+      "contradictions": ["Different SMC/ICT sources use discretionary variants; no single definition is frozen as objective market truth."],
+      "when_not_to_use": ["Do not use FVG as a target, trigger, or probability in current CITADEL production decisions."],
+      "relevant_citadel_fields": ["canonical_candle_refs", "future_fvg_contract", "verified_visual_claims"],
+      "source_id": "nber-lo-mamaysky-wang-2000", "exact_locator": "Abstract > subjectivity and systematic recognition", "short_excerpt": null, "paraphrase": "If researched, define the gap mechanically and keep every causal or predictive claim unvalidated.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "bff74dd2efbc02ba0d0a8fd5f5d737d0ed0b26dab65af3e51be8e01db3d16fae", "validation_status": "CONFLICTED", "empirical_status": "HYPOTHESIS_ONLY", "contradicts_card_ids": ["smc-order-block-bos-choch-boundary"], "setup_types": ["DISPLACEMENT_FVG_CONTINUATION"]
+    },
+    {
+      "card_id": "smc-order-block-bos-choch-boundary", "concept": "Order block, BOS, and CHOCH labels require explicit rules", "domain": "liquidity_smc",
+      "definition_principle": "Discretionary SMC labels remain hypotheses until each location, swing rule, close rule, invalidation, and contradiction is deterministic and validated on CITADEL data.",
+      "measurable_predicates": ["swing algorithm and lookback are versioned", "break uses completed close and tolerance", "zone origin and invalidation are immutable"],
+      "required_evidence": ["canonical candles", "swing IDs", "predicate version", "zone bounds", "invalidation rule"],
+      "valid_conditions": ["Multiple definitions are preserved as competing research specifications."],
+      "failure_conditions": ["One influencer definition is silently treated as institutional truth."],
+      "contradictions": ["Objective implementation removes visual ambiguity but does not create empirical edge."],
+      "when_not_to_use": ["Do not use unvalidated OB/BOS/CHOCH labels in live evidence or execution."],
+      "relevant_citadel_fields": ["canonical_candle_refs", "future_structure_predicates", "vob_zone_ids", "research_registry"],
+      "source_id": "nber-lo-mamaysky-wang-2000", "exact_locator": "Abstract > subjectivity and systematic recognition", "short_excerpt": null, "paraphrase": "Keep competing deterministic definitions and require OOS CITADEL evidence before any operational use.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "bff74dd2efbc02ba0d0a8fd5f5d737d0ed0b26dab65af3e51be8e01db3d16fae", "validation_status": "CONFLICTED", "empirical_status": "HYPOTHESIS_ONLY", "contradicts_card_ids": ["smc-fvg-context-only"], "setup_types": ["ORDER_BLOCK_REACTION"]
+    }
+  ]
+}

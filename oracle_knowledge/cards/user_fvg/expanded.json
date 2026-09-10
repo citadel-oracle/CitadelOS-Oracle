@@ -1,0 +1,1737 @@
+{
+  "schema_version": "5a.2.0",
+  "defaults": {},
+  "cards": [
+    {
+      "card_id": "user-fvg-three-candle-definition",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Three-candle FVG definition",
+      "domain": "user_fvg",
+      "definition_principle": "The notes define bullish and bearish gaps by non-overlap between candle-one and candle-three wicks.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Usable FVG Rules > rule 1",
+      "short_excerpt": null,
+      "paraphrase": "The notes define bullish and bearish gaps by non-overlap between candle-one and candle-three wicks.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [
+        "pa-patterns-require-deterministic-predicates"
+      ],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-displacement-filter",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Displacement filter",
+      "domain": "user_fvg",
+      "definition_principle": "The notes require a strong middle displacement candle and reject tiny gaps without impulse.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Usable FVG Rules > rules 2-7",
+      "short_excerpt": null,
+      "paraphrase": "The notes require a strong middle displacement candle and reject tiny gaps without impulse.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-not-standalone-entry",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "FVG is not a standalone entry",
+      "domain": "user_fvg",
+      "definition_principle": "The notes require a retest, rejection, structure, engulfing, or continuation trigger.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Usable FVG Rules > rules 2-7",
+      "short_excerpt": null,
+      "paraphrase": "The notes require a retest, rejection, structure, engulfing, or continuation trigger.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-structure-break-filter",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Structure-break quality filter",
+      "domain": "user_fvg",
+      "definition_principle": "The notes treat BOS or CHoCH near formation as a quality hypothesis.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Usable FVG Rules > rules 2-7",
+      "short_excerpt": null,
+      "paraphrase": "The notes treat BOS or CHoCH near formation as a quality hypothesis.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-liquidity-sweep-filter",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Liquidity-sweep quality filter",
+      "domain": "user_fvg",
+      "definition_principle": "The notes treat a prior measurable sweep as optional confluence.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Usable FVG Rules > rules 2-7",
+      "short_excerpt": null,
+      "paraphrase": "The notes treat a prior measurable sweep as optional confluence.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [
+        "liquidity-sweep-no-causality"
+      ],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-unmitigated-priority",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Unmitigated FVG priority",
+      "domain": "user_fvg",
+      "definition_principle": "The notes prefer fresh, untested zones and default to one-time use.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Usable FVG Rules > rules 2-7",
+      "short_excerpt": null,
+      "paraphrase": "The notes prefer fresh, untested zones and default to one-time use.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-reaction-close",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Reaction-close predicate",
+      "domain": "user_fvg",
+      "definition_principle": "A long reaction should close inside or above the zone rather than invalidate below it.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Usable FVG Rules > rules 2-7",
+      "short_excerpt": null,
+      "paraphrase": "A long reaction should close inside or above the zone rather than invalidate below it.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-htf-ltf-map",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Higher/lower timeframe FVG roles",
+      "domain": "user_fvg",
+      "definition_principle": "The notes separate higher-timeframe location from lower-timeframe entry timing.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Usable FVG Rules > rules 8-16",
+      "short_excerpt": null,
+      "paraphrase": "The notes separate higher-timeframe location from lower-timeframe entry timing.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-premium-discount",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Premium-discount filter",
+      "domain": "user_fvg",
+      "definition_principle": "The notes propose impulse-midpoint location as an option-premium quality filter.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Usable FVG Rules > rules 8-16",
+      "short_excerpt": null,
+      "paraphrase": "The notes propose impulse-midpoint location as an option-premium quality filter.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-extreme-location",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Extreme FVG location",
+      "domain": "user_fvg",
+      "definition_principle": "The notes prioritize an extreme gap over an internal gap, subject to deterministic definition.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Usable FVG Rules > rules 8-16",
+      "short_excerpt": null,
+      "paraphrase": "The notes prioritize an extreme gap over an internal gap, subject to deterministic definition.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-demand-confluence",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Demand or supply confluence",
+      "domain": "user_fvg",
+      "definition_principle": "The notes propose deterministic demand/support or supply/resistance overlap as confluence.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Usable FVG Rules > rules 8-16",
+      "short_excerpt": null,
+      "paraphrase": "The notes propose deterministic demand/support or supply/resistance overlap as confluence.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-inside-bar-exception",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Inside-bar exception",
+      "domain": "user_fvg",
+      "definition_principle": "The notes propose a mother-candle/four-candle adjustment when candle one is inside.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Usable FVG Rules > rules 8-16",
+      "short_excerpt": null,
+      "paraphrase": "The notes propose a mother-candle/four-candle adjustment when candle one is inside.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-news-slippage",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Event-gap slippage caution",
+      "domain": "user_fvg",
+      "definition_principle": "The notes warn that abrupt event gaps may have poor executable prices.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Usable FVG Rules > rules 8-16",
+      "short_excerpt": null,
+      "paraphrase": "The notes warn that abrupt event gaps may have poor executable prices.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-retest-close-entry",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Retest-close entry",
+      "domain": "user_fvg",
+      "definition_principle": "A candidate entry waits for completed-candle acceptance inside or above a bullish FVG.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Entry Models For Our FVG Strategy > rules 1-7",
+      "short_excerpt": null,
+      "paraphrase": "A candidate entry waits for completed-candle acceptance inside or above a bullish FVG.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-wick-touch-entry",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Wick-touch entry hypothesis",
+      "domain": "user_fvg",
+      "definition_principle": "Wick touch is retained only as a selectable research mode and not a confirmed entry rule.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Filters For Indian Option Buying > rules 1-10",
+      "short_excerpt": null,
+      "paraphrase": "Wick touch is retained only as a selectable research mode and not a confirmed entry rule.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-midpoint-entry",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Midpoint-limit entry hypothesis",
+      "domain": "user_fvg",
+      "definition_principle": "The notes propose midpoint entry for large gaps, subject to fill and OOS testing.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Entry Models For Our FVG Strategy > rules 1-7",
+      "short_excerpt": null,
+      "paraphrase": "The notes propose midpoint entry for large gaps, subject to fill and OOS testing.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-engulf-entry",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Engulf-confirmation entry",
+      "domain": "user_fvg",
+      "definition_principle": "The notes propose completed engulf confirmation after a gap tap.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Entry Models For Our FVG Strategy > rules 1-7",
+      "short_excerpt": null,
+      "paraphrase": "The notes propose completed engulf confirmation after a gap tap.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-breakaway-continuation",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Breakaway FVG continuation",
+      "domain": "user_fvg",
+      "definition_principle": "The notes propose continuation only after strong breakout, displacement, and an unfilled gap.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Entry Models For Our FVG Strategy > rules 1-7",
+      "short_excerpt": null,
+      "paraphrase": "The notes propose continuation only after strong breakout, displacement, and an unfilled gap.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-stop-candidates",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "FVG stop candidates",
+      "domain": "user_fvg",
+      "definition_principle": "The notes list zone, displacement, demand, and transparent buffer candidates; none is automatically authoritative.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Stop And Target Logic > rules 1-8",
+      "short_excerpt": null,
+      "paraphrase": "The notes list zone, displacement, demand, and transparent buffer candidates; none is automatically authoritative.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-target-room",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "FVG target-room filter",
+      "domain": "user_fvg",
+      "definition_principle": "The notes require room to a natural structure or liquidity target before considering the setup.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Stop And Target Logic > rules 1-8",
+      "short_excerpt": null,
+      "paraphrase": "The notes require room to a natural structure or liquidity target before considering the setup.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-fixed-rr-hypothesis",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Fixed 2R/3R target hypothesis",
+      "domain": "user_fvg",
+      "definition_principle": "The supplied 2R/3R targets remain an unvalidated research hypothesis and cannot replace natural CITADEL targets.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Stop And Target Logic > rules 1-8",
+      "short_excerpt": null,
+      "paraphrase": "The supplied 2R/3R targets remain an unvalidated research hypothesis and cannot replace natural CITADEL targets.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "HYPOTHESIS",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [
+        "construction-no-fixed-rr-targets"
+      ],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-session-window",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Indian option session window",
+      "domain": "user_fvg",
+      "definition_principle": "The notes propose avoiding the chaotic opening minute and late-decay entries as testable session filters.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Filters For Indian Option Buying > rules 1-10",
+      "short_excerpt": null,
+      "paraphrase": "The notes propose avoiding the chaotic opening minute and late-decay entries as testable session filters.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-volume-filter",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Option displacement volume filter",
+      "domain": "user_fvg",
+      "definition_principle": "The notes propose displacement volume relative to recent average as an optional research filter.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Filters For Indian Option Buying > rules 1-10",
+      "short_excerpt": null,
+      "paraphrase": "The notes propose displacement volume relative to recent average as an optional research filter.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-chop-rejection",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Choppy overlapping FVG rejection",
+      "domain": "user_fvg",
+      "definition_principle": "The notes reject many overlapping small gaps without clean impulse or structure break.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "Filters For Indian Option Buying > rules 1-10",
+      "short_excerpt": null,
+      "paraphrase": "The notes reject many overlapping small gaps without clean impulse or structure break.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "user-fvg-do-not-buy-every-touch",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Do not buy every FVG touch",
+      "domain": "user_fvg",
+      "definition_principle": "The notes explicitly reject blind gap-touch entries and repeated use of mitigated gaps.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "The predicate is ambiguous, uses future data, or lacks the authoritative CITADEL field."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use this user-provided claim for current-trade risk or execution."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-fvg-strategy-notes-2026",
+      "exact_locator": "What Not To Do > rules 1-6",
+      "short_excerpt": null,
+      "paraphrase": "The notes explicitly reject blind gap-touch entries and repeated use of mitigated gaps.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "c51f68b10a8d0947f576ba49ad4520a5213edad17de645adfa2bb4c79be59269",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "USER_CLAIM_NOT_INTERNALLY_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST",
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    }
+  ]
+}

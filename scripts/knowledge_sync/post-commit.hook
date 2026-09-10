@@ -1,0 +1,16 @@
+#!/bin/sh
+# Installed only by install-hook. Disabled unless explicitly enabled in the environment.
+set -eu
+
+[ "${CITADEL_DOC_SYNC_HOOK_ENABLED:-0}" = "1" ] || exit 0
+[ "${CITADEL_DOC_SYNC_ACTIVE:-0}" != "1" ] || exit 0
+
+REPO=$(git rev-parse --show-toplevel)
+SYNC="$REPO/scripts/knowledge_sync/citadel-doc-sync"
+[ -x "$SYNC" ] || exit 0
+
+if [ "${CITADEL_DOC_SYNC_HOOK_APPLY:-0}" = "1" ]; then
+  "$SYNC" --commit HEAD
+else
+  "$SYNC" --commit HEAD --dry-run
+fi

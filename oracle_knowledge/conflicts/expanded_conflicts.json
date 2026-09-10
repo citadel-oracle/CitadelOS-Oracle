@@ -1,0 +1,158 @@
+{
+  "schema_version": "5a.2.0",
+  "conflicts": [
+    {
+      "conflict_id": "level-location-vs-strength",
+      "card_ids": [
+        "pa-support-resistance-location",
+        "pa-level-strength-not-probability"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "Use the location as context; never convert qualitative strength to probability."
+    },
+    {
+      "conflict_id": "technical-method-vs-transfer",
+      "card_ids": [
+        "pa-patterns-require-deterministic-predicates",
+        "pa-technical-information-not-live-edge"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "Deterministic recognition is required but does not establish current edge."
+    },
+    {
+      "conflict_id": "breakout-vs-transfer",
+      "card_ids": [
+        "structure-breakout-momentum-context",
+        "structure-transfer-boundary"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "Treat breakout continuation as a research hypothesis until CITADEL OOS validation."
+    },
+    {
+      "conflict_id": "liquidity-context-vs-causality",
+      "card_ids": [
+        "liquidity-stop-cluster-context",
+        "liquidity-sweep-no-causality"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "Retain measurable price sequence; withhold hidden-order and institutional claims."
+    },
+    {
+      "conflict_id": "greeks-vs-realized-premium",
+      "card_ids": [
+        "options-greeks-theoretical-not-guarantee",
+        "options-premium-multiple-drivers"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "Use Greeks as sensitivities and verify actual contract quotes."
+    },
+    {
+      "conflict_id": "ofi-vs-volume-proxy",
+      "card_ids": [
+        "micro-ofi-price-impact",
+        "micro-volume-not-ofi"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "OFI stays unavailable until authoritative order-event data exists."
+    },
+    {
+      "conflict_id": "structure-vs-fixed-rr",
+      "card_ids": [
+        "construction-natural-targets",
+        "construction-no-fixed-rr-targets"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "RR is calculated after natural structure, costs, and executable entry."
+    },
+    {
+      "conflict_id": "oos-vs-reused-holdout",
+      "card_ids": [
+        "validation-oos-required",
+        "validation-holdout-not-sufficient"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "Use immutable time splits plus trial accounting and non-reused final evaluation."
+    },
+    {
+      "conflict_id": "breakout-followthrough-vs-failure",
+      "card_ids": [
+        "grimes-breakout-followthrough",
+        "grimes-failure-test"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "A breakout requires follow-through; a trade-through and reclaim is a distinct failure sequence."
+    },
+    {
+      "conflict_id": "candle-name-vs-context",
+      "card_ids": [
+        "brooks-context-over-candle-name",
+        "brooks-candle-pattern-alone-invalid"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "A named candle remains unavailable without preceding context and deterministic predicates."
+    },
+    {
+      "conflict_id": "stop-cascade-vs-transfer",
+      "card_ids": [
+        "frbny-stop-cascade-observation",
+        "frbny-stop-cascade-transfer-limit"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "Retain the measurable FX observation while withholding hidden-order and Indian-option causality claims."
+    },
+    {
+      "conflict_id": "market-vs-limit-order",
+      "card_ids": [
+        "oic-market-order-tradeoff",
+        "oic-limit-order-tradeoff"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "Expose the price-certainty versus execution-certainty trade-off; neither guarantees a fill at the displayed quote."
+    },
+    {
+      "conflict_id": "mlofi-vs-data-gap",
+      "card_ids": [
+        "mlofi-multiple-depth-levels",
+        "mlofi-citadel-data-unavailable"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "MLOFI stays unavailable until authoritative multi-level order-event data exists."
+    },
+    {
+      "conflict_id": "pbo-holdout-vs-trials",
+      "card_ids": [
+        "pbo-holdout-limit",
+        "pbo-cscv-trial-accounting"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "Use immutable splits plus trial accounting; do not reuse the final OOS sample."
+    },
+    {
+      "conflict_id": "user-fvg-vs-objective-predicate",
+      "card_ids": [
+        "user-fvg-three-candle-definition",
+        "pa-patterns-require-deterministic-predicates"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "Keep the user definition as a hypothesis until the same completed candles reproduce the versioned predicate."
+    },
+    {
+      "conflict_id": "user-liquidity-vs-causality",
+      "card_ids": [
+        "user-fvg-liquidity-sweep-filter",
+        "liquidity-sweep-no-causality"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "A measurable sweep may be context; hidden liquidity or institutional causality remains unverified."
+    },
+    {
+      "conflict_id": "user-fixed-rr-vs-natural-target",
+      "card_ids": [
+        "user-fvg-fixed-rr-hypothesis",
+        "construction-no-fixed-rr-targets"
+      ],
+      "materiality": "MATERIAL",
+      "resolution": "Keep 2R/3R as a research variable; live construction uses natural targets and resulting RR."
+    }
+  ]
+}

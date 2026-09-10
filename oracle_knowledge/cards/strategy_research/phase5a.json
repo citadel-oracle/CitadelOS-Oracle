@@ -1,0 +1,107 @@
+{
+  "schema_version": "5a.1.0",
+  "defaults": {
+    "version": "1.0.0", "card_type": "STRATEGY_RESEARCH", "optional_confirmations": [], "timeframes": ["15m", "5m", "3m"],
+    "instruments": ["NIFTY", "BANKNIFTY"], "option_buying_relevance": "HIGH",
+    "data_availability": {"canonical_candles": "AVAILABLE", "historical_options": "INSUFFICIENT", "promotion": "FORBIDDEN"},
+    "execution_influence": "ZERO", "knowledge_policy_version": "oracle-knowledge-advisory-5a.1.0", "regimes": [], "research_only": true
+  },
+  "cards": [
+    {
+      "card_id": "research-trend-breakout-continuation", "concept": "Trend-following breakout continuation", "domain": "strategy_research",
+      "definition_principle": "Research a completed-close break of a predeclared range followed by bounded continuation or retest evidence.",
+      "measurable_predicates": ["range and level predate signal", "completed close exceeds tolerance", "retest/follow-through window fixed"],
+      "required_evidence": ["canonical candles", "range bounds", "VOB context", "option bid/ask", "costs"],
+      "valid_conditions": ["Trend/range regime and all rule parameters are frozen before replay."], "failure_conditions": ["No follow-through, failed retest, stale premium, or adverse costs."],
+      "contradictions": ["Breakout research in other markets does not prove NIFTY option profitability."], "when_not_to_use": ["Never arm or execute from this research card."],
+      "relevant_citadel_fields": ["completed_candle", "structural_trigger", "vob_state", "ose_state", "bid", "ask"],
+      "source_id": "frbny-osler-currency-orders-2001", "exact_locator": "Abstract > two familiar predictions", "short_excerpt": null, "paraphrase": "A formal continuation hypothesis requiring CITADEL replay, costs, OOS, shadow, and paper evidence.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "d72bc0a020d04f0b7dd423c0f4f2dcebc83b34ebd160ca8eca75b52d69e1341d", "validation_status": "HYPOTHESIS", "empirical_status": "NO_CITADEL_BACKTEST", "contradicts_card_ids": ["structure-transfer-boundary"], "setup_types": ["BREAKOUT_CONTINUATION"],
+      "research_fields": {"instrument_scope": "NIFTY/BANKNIFTY index options", "timeframe_scope": "15m context; 5m/3m signal", "regime_filter": "TRENDING only", "setup_logic": "predeclared range break", "trigger_logic": "completed close plus fixed retest/follow-through", "invalidation_logic": "close back inside range or structural failure", "target_logic": "next verified structure/VOB only", "option_filter": "exact CE/PE with fresh spread/Greeks", "required_data": "candles, VOB/OSE/ARGUS, option quotes, costs", "missing_data": "historical contract-level option outcomes", "cost_model": "fees, spread, slippage required", "backtest_plan": "event-time replay with frozen parameters", "oos_plan": "walk-forward time splits", "failure_analysis": "false breaks, gaps, illiquidity, expiry", "research_status": "RESEARCH_ONLY"}
+    },
+    {
+      "card_id": "research-failed-breakout-reversal", "concept": "Failed-breakout reversal", "domain": "strategy_research",
+      "definition_principle": "Research a trade-through followed by completed-close failure back inside a predeclared range, without assuming every failed break reverses.",
+      "measurable_predicates": ["range predates event", "trade-through exceeds tolerance", "completed close returns inside within fixed window"],
+      "required_evidence": ["range IDs", "completed candles", "opposite structural target", "premium confirmation", "costs"],
+      "valid_conditions": ["Failure and reversal confirmation are separate predicates."], "failure_conditions": ["Price re-accepts outside, target absent, or premium does not confirm."],
+      "contradictions": ["A failed close may become consolidation rather than reversal."], "when_not_to_use": ["Never execute from a named pattern without deterministic revalidation."],
+      "relevant_citadel_fields": ["structural_trigger", "structural_invalidation", "vob_state", "ose_state"],
+      "source_id": "frbny-osler-support-resistance-2000", "exact_locator": "PDF p.64 > Conclusion", "short_excerpt": null, "paraphrase": "Formalize failure and subsequent reversal as separate, testable events.",
+      "source_quality": "PEER_REVIEWED_PRIMARY", "source_hash_version": "dd1eb1b3100aa5cc56532bd49e631c1dcf7a459a83c0d225d21ce681bc4d2740", "validation_status": "HYPOTHESIS", "empirical_status": "NO_CITADEL_BACKTEST", "contradicts_card_ids": ["structure-breakout-momentum-context"], "setup_types": ["FAILED_BREAKOUT_REVERSAL"],
+      "research_fields": {"instrument_scope": "NIFTY/BANKNIFTY index options", "timeframe_scope": "15m range; 5m/3m failure", "regime_filter": "RANGING or exhausted trend", "setup_logic": "predeclared range excursion", "trigger_logic": "completed close back inside plus optional retest", "invalidation_logic": "renewed accepted close outside", "target_logic": "opposite range/verified structure", "option_filter": "fresh opposite-side contract confirmation", "required_data": "candles, structure, VOB/OSE/ARGUS, option quotes", "missing_data": "validated historical failure cohorts", "cost_model": "fees, spread, slippage required", "backtest_plan": "all excursions, including non-reversals", "oos_plan": "chronological walk-forward", "failure_analysis": "chop, re-break, wide spread, late entry", "research_status": "RESEARCH_ONLY"}
+    },
+    {
+      "card_id": "research-liquidity-sweep-reversal", "concept": "Liquidity-sweep reversal", "domain": "strategy_research",
+      "definition_principle": "Research a deterministic level trade-through and reclaim sequence while explicitly withholding hidden-order and institutional-causality claims.",
+      "measurable_predicates": ["prior level immutable", "trade-through tolerance met", "completed reclaim and invalidation defined"],
+      "required_evidence": ["prior level", "canonical candles", "reclaim", "premium confirmation", "costs"],
+      "valid_conditions": ["The label describes only observable price sequence."], "failure_conditions": ["No reclaim, stale level, or continuation beyond sweep extreme."],
+      "contradictions": ["CITADEL cannot observe hidden stop inventory."], "when_not_to_use": ["Never assert stop hunting or institutional intent."],
+      "relevant_citadel_fields": ["liquidity_levels", "verified_visual_claims", "structural_invalidation", "ose_state"],
+      "source_id": "frbny-osler-currency-orders-2001", "exact_locator": "Abstract > order clustering and round numbers", "short_excerpt": null, "paraphrase": "Test the price sequence independently of the causal story.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "d72bc0a020d04f0b7dd423c0f4f2dcebc83b34ebd160ca8eca75b52d69e1341d", "validation_status": "HYPOTHESIS", "empirical_status": "NO_CITADEL_BACKTEST", "contradicts_card_ids": ["liquidity-sweep-no-causality"], "setup_types": ["LIQUIDITY_SWEEP_REVERSAL"],
+      "research_fields": {"instrument_scope": "NIFTY/BANKNIFTY", "timeframe_scope": "15m location; 5m/3m sequence", "regime_filter": "range edge or pullback", "setup_logic": "trade-through and reclaim", "trigger_logic": "completed reclaim with bounded retest", "invalidation_logic": "acceptance beyond extreme", "target_logic": "next verified internal structure", "option_filter": "fresh CE/PE premium confirmation", "required_data": "candles, levels, option quotes", "missing_data": "hidden orders and validated cohorts", "cost_model": "fees/spread/slippage", "backtest_plan": "enumerate every prior-level interaction", "oos_plan": "time and regime splits", "failure_analysis": "continuation, ambiguous level, hindsight level selection", "research_status": "RESEARCH_ONLY"}
+    },
+    {
+      "card_id": "research-displacement-fvg-continuation", "concept": "Displacement/FVG continuation", "domain": "strategy_research",
+      "definition_principle": "Research explicit displacement and three-candle gap predicates as price context only; no institutional imbalance claim is accepted.",
+      "measurable_predicates": ["displacement threshold versioned", "three completed candles satisfy declared gap", "fill/invalidation window fixed"],
+      "required_evidence": ["canonical candles", "ATR/volume versions", "gap bounds", "premium response"],
+      "valid_conditions": ["Competing FVG definitions remain separately versioned."], "failure_conditions": ["Gap definition changes, fill occurs before trigger, or no continuation target."],
+      "contradictions": ["No validated CITADEL FVG authority or institutional-causality evidence exists."], "when_not_to_use": ["Never use as production target or trigger in Phase 5A."],
+      "relevant_citadel_fields": ["canonical_candle_refs", "atr", "volume", "future_fvg_contract"],
+      "source_id": "nber-lo-mamaysky-wang-2000", "exact_locator": "Abstract > subjectivity and systematic recognition", "short_excerpt": null, "paraphrase": "Turn discretionary labels into competing numerical research specifications.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "bff74dd2efbc02ba0d0a8fd5f5d737d0ed0b26dab65af3e51be8e01db3d16fae", "validation_status": "HYPOTHESIS", "empirical_status": "NO_CITADEL_BACKTEST", "contradicts_card_ids": ["smc-fvg-context-only"], "setup_types": ["DISPLACEMENT_FVG_CONTINUATION"],
+      "research_fields": {"instrument_scope": "NIFTY/BANKNIFTY", "timeframe_scope": "15m/5m context; 3m trigger", "regime_filter": "expansion after compression", "setup_logic": "versioned displacement plus gap", "trigger_logic": "retest/continuation completed close", "invalidation_logic": "gap/structure failure", "target_logic": "verified structure only, not gap magic", "option_filter": "fresh premium and spread", "required_data": "candles, ATR, volume, option quotes", "missing_data": "validated FVG contract and cohorts", "cost_model": "fees/spread/slippage", "backtest_plan": "compare competing definitions without cherry-picking", "oos_plan": "walk-forward by definition version", "failure_analysis": "gap fill, no continuation, definition drift", "research_status": "RESEARCH_ONLY"}
+    },
+    {
+      "card_id": "research-order-block-reaction", "concept": "Order-block reaction", "domain": "strategy_research",
+      "definition_principle": "Research explicit zone-origin and invalidation definitions without claiming institutional sponsorship or treating a reaction as guaranteed.",
+      "measurable_predicates": ["zone origin algorithm versioned", "bounds predate retest", "reaction and failure windows fixed"],
+      "required_evidence": ["canonical candles", "zone bounds", "origin ID", "invalidation", "premium response"],
+      "valid_conditions": ["Multiple definitions are tested independently."], "failure_conditions": ["Zone is redrawn, origin ambiguous, or invalidation absent."],
+      "contradictions": ["Order-block terminology has competing discretionary definitions and no accepted causal authority here."], "when_not_to_use": ["Never use as production evidence before internal validation."],
+      "relevant_citadel_fields": ["canonical_candle_refs", "vob_zone_ids", "future_order_block_contract"],
+      "source_id": "nber-lo-mamaysky-wang-2000", "exact_locator": "Abstract > subjectivity and systematic recognition", "short_excerpt": null, "paraphrase": "Specify zones mechanically and test all touches, failures, and costs.",
+      "source_quality": "WORKING_PAPER_PRIMARY", "source_hash_version": "bff74dd2efbc02ba0d0a8fd5f5d737d0ed0b26dab65af3e51be8e01db3d16fae", "validation_status": "HYPOTHESIS", "empirical_status": "NO_CITADEL_BACKTEST", "contradicts_card_ids": ["smc-order-block-bos-choch-boundary"], "setup_types": ["ORDER_BLOCK_REACTION"],
+      "research_fields": {"instrument_scope": "NIFTY/BANKNIFTY", "timeframe_scope": "1H/15m zone; 5m/3m reaction", "regime_filter": "explicitly stratified", "setup_logic": "versioned origin and zone", "trigger_logic": "completed reaction predicate", "invalidation_logic": "zone failure close", "target_logic": "next verified structure/VOB", "option_filter": "fresh option capture lane", "required_data": "candles, zone definition, option quotes", "missing_data": "accepted OB authority and outcomes", "cost_model": "fees/spread/slippage", "backtest_plan": "all zones/touches with competing definitions", "oos_plan": "chronological splits", "failure_analysis": "zone proliferation, hindsight, overlap, stale zones", "research_status": "RESEARCH_ONLY"}
+    },
+    {
+      "card_id": "research-premium-confirmation-option-buying", "concept": "Premium-confirmation option buying", "domain": "strategy_research",
+      "definition_principle": "Research whether exact-contract premium response confirms an independently valid underlying setup after spread, Greeks, IV, and freshness checks.",
+      "measurable_predicates": ["underlying setup fixed first", "exact CE/PE quote responds within fixed window", "spread and freshness pass"],
+      "required_evidence": ["Decision Envelope", "exact option identity", "bid/ask", "Greeks/IV", "OSE/ARGUS", "costs"],
+      "valid_conditions": ["Premium confirmation cannot rescue an invalid underlying thesis."], "failure_conditions": ["Stale quote, wide spread, IV opposition, or missing Greeks."],
+      "contradictions": ["Greeks are guideposts and premium response is not guaranteed."], "when_not_to_use": ["Never let the research card select or order a contract."],
+      "relevant_citadel_fields": ["selected_contract_id", "ose_state", "argus_state", "bid", "ask", "delta", "iv"],
+      "source_id": "oic-understanding-options-greeks-2026", "exact_locator": "Main article > opening paragraph", "short_excerpt": null, "paraphrase": "Test premium confirmation as a separate capture lane after underlying validity.",
+      "source_quality": "OFFICIAL_PRIMARY", "source_hash_version": "dc0aeff46e21e477dbbadef941715b54224567e072b8de01cfa73d9a967945fb", "validation_status": "HYPOTHESIS", "empirical_status": "NO_CITADEL_BACKTEST", "contradicts_card_ids": ["options-greeks-theoretical-not-guarantee"], "setup_types": ["PREMIUM_CONFIRMATION"],
+      "research_fields": {"instrument_scope": "NIFTY/BANKNIFTY CE/PE", "timeframe_scope": "5m/3m/1m", "regime_filter": "underlying setup-specific", "setup_logic": "valid underlying setup precedes premium test", "trigger_logic": "fresh premium response and spread pass", "invalidation_logic": "premium non-confirmation or structural failure", "target_logic": "natural underlying target mapped cautiously", "option_filter": "exact identity, expiry, delta/IV, spread", "required_data": "decision, OSE/ARGUS, chain, Greeks, quotes", "missing_data": "sufficient immutable option outcomes", "cost_model": "fees/spread/slippage mandatory", "backtest_plan": "event-time exact-contract replay", "oos_plan": "expiry/regime/time-bucket walk-forward", "failure_analysis": "IV crush, theta, stale ask, selection bias", "research_status": "RESEARCH_ONLY"}
+    },
+    {
+      "card_id": "research-iv-crush-avoidance", "concept": "IV-crush avoidance", "domain": "strategy_research",
+      "definition_principle": "Research whether pre-event IV/vega and post-event premium behavior identify contexts where long-option direction is overwhelmed by volatility repricing.",
+      "measurable_predicates": ["event boundary known before trade", "same-contract IV and premium snapshots", "underlying move separated from IV move"],
+      "required_evidence": ["event calendar", "IV", "vega", "theta", "bid/ask", "underlying returns"],
+      "valid_conditions": ["No event schedule or IV value is fabricated."], "failure_conditions": ["IV history absent, contract rolls, or quote freshness fails."],
+      "contradictions": ["Vega is modeled sensitivity and does not alone forecast IV direction."], "when_not_to_use": ["Never block or authorize a current trade from an unvalidated IV rule."],
+      "relevant_citadel_fields": ["iv", "vega", "theta", "expiry_bucket", "premium_response"],
+      "source_id": "oic-volatility-greeks-2026", "exact_locator": "Volatility and the Greeks > Vega paragraph", "short_excerpt": null, "paraphrase": "Separate volatility repricing from direction and validate on exact-contract outcomes.",
+      "source_quality": "OFFICIAL_PRIMARY", "source_hash_version": "75c91bb843fec7f84729d700ace821e9e4e870afe043cb28de1e0b16f84d45cc", "validation_status": "HYPOTHESIS", "empirical_status": "NO_CITADEL_BACKTEST", "contradicts_card_ids": ["options-vega-iv-response"], "setup_types": ["IV_CRUSH_AVOIDANCE"],
+      "research_fields": {"instrument_scope": "NIFTY/BANKNIFTY options", "timeframe_scope": "event window plus 15m/5m", "regime_filter": "event and high-IV buckets", "setup_logic": "long-option setup near known volatility event", "trigger_logic": "separately valid underlying trigger", "invalidation_logic": "IV/premium non-confirmation or time expiry", "target_logic": "natural target with after-cost premium outcome", "option_filter": "exact IV/vega/theta/expiry", "required_data": "event calendar, Greeks, exact quotes", "missing_data": "authoritative IV history and outcome depth", "cost_model": "full round-trip", "backtest_plan": "event-time exact-contract study", "oos_plan": "future event windows held out", "failure_analysis": "event leakage, sparse samples, contract mismatch", "research_status": "RESEARCH_ONLY"}
+    },
+    {
+      "card_id": "research-order-flow-imbalance", "concept": "Order-flow-imbalance signal", "domain": "strategy_research",
+      "definition_principle": "Research top-of-book event imbalance only after authoritative L2/order-event history exists; no proxy substitution is permitted.",
+      "measurable_predicates": ["every best-quote addition/cancellation/trade is ordered", "OFI formula versioned", "depth-normalized window fixed"],
+      "required_evidence": ["authoritative order events", "depth", "mid-price", "timestamps", "costs"],
+      "valid_conditions": ["Event completeness and sequence gaps pass policy."], "failure_conditions": ["Missing events, snapshot-only depth, or proxy volume/OI."],
+      "contradictions": ["Current production data is insufficient and source results do not transfer automatically."], "when_not_to_use": ["Never use before future L2 policy and CITADEL OOS validation pass."],
+      "relevant_citadel_fields": ["future_l2_events", "depth", "bid", "ask", "data_completeness"],
+      "source_id": "arxiv-cont-kukanov-stoikov-2011", "exact_locator": "Section 4.1 > Trade imbalance vs order flow imbalance", "short_excerpt": null, "paraphrase": "Preserve this as future-data-dependent research with an explicit no-proxy rule.",
+      "source_quality": "PEER_REVIEWED_PRIMARY", "source_hash_version": "40d1d5f0baf7944a1b9f4c12d3644038e657acf4a3dfb500b2057c2269edd25f", "validation_status": "FUTURE_DATA_DEPENDENT", "empirical_status": "NO_CITADEL_DATA", "contradicts_card_ids": ["micro-volume-not-ofi"], "setup_types": ["ORDER_FLOW_IMBALANCE"],
+      "research_fields": {"instrument_scope": "future NIFTY/BANKNIFTY underlying/options order books", "timeframe_scope": "event/seconds to 1m", "regime_filter": "depth/liquidity buckets", "setup_logic": "versioned OFI and depth normalization", "trigger_logic": "future only after completeness gates", "invalidation_logic": "event gap, stale depth, reversal", "target_logic": "predeclared short-horizon move", "option_filter": "future exact-contract liquidity filter", "required_data": "L2 additions, cancellations, trades, depth", "missing_data": "authoritative historical L2/order events", "cost_model": "fees/spread/impact", "backtest_plan": "blocked until data exists", "oos_plan": "chronological event-stream split", "failure_analysis": "feed gaps, spoofing/cancellations, latency, transfer", "research_status": "RESEARCH_ONLY"}
+    }
+  ]
+}

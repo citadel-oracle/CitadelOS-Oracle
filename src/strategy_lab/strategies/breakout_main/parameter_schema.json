@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BREAKOUT MAIN Parameters",
+  "type": "object",
+  "properties": {
+    "market_structure": {"$ref": "configuration_schema.json"}
+  },
+  "additionalProperties": false,
+  "x-citadel-status": "MARKET_STRUCTURE_COMPLETE"
+}

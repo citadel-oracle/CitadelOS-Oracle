@@ -1,0 +1,71 @@
+# FVG Strategy Knowledge Notes
+
+Sources reviewed:
+- WEhmadJArQo - Casper SMC - The Best FVG Trading Strategy (That Actually Works)
+- -uRKGucJEkE - Smart Risk - Best Fair Value Gap Trading Strategy
+- zm2CyPrD5Uk - Smart Risk - High-Quality Fair Value Gap Trading Strategy
+- BFfF_Lnk9T4 - Smart Risk - Fair Value Gap Simplified - Smart Money Course
+- ZTMregh_428 - TradingLab - I Found A Secret To Fair Value Gaps
+- yFPrP6nJRYQ - Trade with Pat - Fair Value Gap Trading Strategy (Tested 1001+ Times)
+
+## Usable FVG Rules
+
+1. FVG is a three-candle imbalance: bullish FVG exists when candle 1 high is below candle 3 low; bearish FVG exists when candle 1 low is above candle 3 high.
+2. The middle candle should be a strong displacement candle. Tiny gaps without impulse should be filtered.
+3. FVG is not an entry by itself. It is a zone or directional clue; entry should require retest/rejection/BOS/CHoCH/engulfing or a momentum continuation rule.
+4. Break of structure before or during FVG formation makes the FVG higher quality.
+5. Liquidity sweep before FVG or before retest improves quality.
+6. Unmitigated FVG has priority. Once price has already tested/filled a FVG, do not reuse it unless using a specific retest mode.
+7. Candle reaction inside FVG matters: valid long reaction should close inside the FVG or back above it, not close below and invalidate it.
+8. Higher-timeframe FVG can define the reaction zone; lower-timeframe FVG can define entry timing.
+9. Entry timeframe should be meaningfully lower than HTF. For our option charts, practical pairs are 5m zone -> 1m/3m entry, or 15m zone -> 3m/5m entry.
+10. Premium/discount filter: for longs, prefer bullish FVGs below the 50% midpoint of the impulse range. For shorts, prefer bearish FVGs above 50%. Since we buy options only, use this as a quality filter on the option premium chart.
+11. Extreme FVGs have priority: lowest bullish FVG in a bullish impulse is stronger than upper bullish FVGs; highest bearish FVG in bearish impulse is stronger.
+12. Support/demand confluence inside a bullish FVG improves quality.
+13. Resistance/supply confluence inside bearish FVG improves quality.
+14. If there are multiple FVGs, prioritize the one with best location, unmitigated status, structure break, target room, and support/demand overlap.
+15. Inside-bar exception: if candle 1 is inside a mother candle, use the mother candle/four-candle sequence to avoid marking a wrong FVG zone.
+16. News or very sudden event gaps can be dangerous because slippage is high; reduce size or avoid around major scheduled news.
+
+## Entry Models For Our FVG Strategy
+
+1. OR Break + FVG Retest: mark first candle range, wait for breakout through range with FVG, then buy retest/reclaim.
+2. Conservative FVG Retest: bullish FVG forms after BOS, price retests gap, candle closes inside/above gap, then buy.
+3. Engulfing Retest Entry: price taps FVG and the retest candle body is engulfed by bullish candle; buy after engulf confirmation.
+4. Limit Entry Mode: buy at FVG start/top/mid when price returns, only if FVG is unmitigated and structure is valid.
+5. HTF FVG + LTF FVG: HTF FVG is the area of interest; after price enters it, LTF must show sweep/CHoCH and create a new FVG for entry.
+6. Breakaway FVG Momentum: after strong breakout and displacement FVG, buy continuation if next candle breaks displacement high and FVG remains unfilled.
+7. Demand + FVG Model: FVG predicts retracement, but actual entry can be at demand candle before the impulse, especially if price reaches discount.
+
+## Stop And Target Logic
+
+1. Stop below FVG low/bottom for long.
+2. Safer stop below displacement candle low or demand candle low.
+3. If FVG is tiny, use ATR/minimum buffer to avoid normal noise.
+4. If FVG is too large, enter at midpoint or use smaller internal zone to improve risk-reward.
+5. Fixed targets from videos: 2R for slower/day-trade style, 3R for faster/scalping style.
+6. Practical option target: 1:2 partial or breakeven, then next liquidity/recent high/HTF key level.
+7. Target room filter is mandatory: avoid FVG buys if nearby resistance/liquidity is too close.
+8. Trail only after strong continuation; possible trail levels are new bullish FVG bottom, swing low, or structure break exit.
+
+## Filters For Indian Option Buying
+
+1. Long-only on CE/PE premium chart.
+2. Session filter: avoid first chaotic minute; practical start 9:20 or after first 5m range is formed.
+3. Avoid late entries after 15:10-15:15 because decay/spread/slippage increases.
+4. Use minimum FVG size and minimum displacement body filter.
+5. Volume multiplier filter can help options: displacement candle volume above recent average.
+6. One trade per FVG by default.
+7. Avoid already-filled FVGs by default.
+8. Avoid chop: too many small overlapping FVGs, no clean impulse, no structure break.
+9. Keep FVG Mode options: Off, Displacement FVG, Retest FVG, Displacement Or Retest.
+10. Keep entry mode options: Retest Close, Wick Touch, Midpoint Limit, Engulf Confirmation, Breakaway Continuation.
+
+## What Not To Do
+
+1. Do not buy every FVG touch.
+2. Do not use FVG without displacement.
+3. Do not reuse old mitigated FVGs repeatedly.
+4. Do not buy upper/premium bullish FVGs when reward room is poor.
+5. Do not ignore structure: FVG after no BOS/CHoCH is weaker.
+6. Do not overfit with too many mandatory filters at once; start with a clean core and add toggles.

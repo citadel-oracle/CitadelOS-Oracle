@@ -1,0 +1,9 @@
+{
+  "checkpoint": "NX-AI/TiRex-2",
+  "checkpoint_revision": "05e5b26db52bfb256f1ae1bdf785589850482de3",
+  "environment": "/Users/ayushmudgal/Developer/models/tirex-2/.venv",
+  "package": "tirex-2",
+  "package_version": "0.1.1",
+  "python": "3.11",
+  "runtime_device": "cpu"
+}

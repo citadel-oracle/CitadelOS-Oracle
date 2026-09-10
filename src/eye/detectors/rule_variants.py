@@ -1,0 +1,73 @@
+"""SemVer Rule Variant Definitions for Eye Engine E2B Atomic Detectors."""
+
+from src.eye.registry import RuleDefinition, RuleStatus, ProvenanceType
+
+
+def get_e2b_rule_variants() -> tuple[RuleDefinition, ...]:
+    return (
+        RuleDefinition(
+            rule_id="EYE_SWING_FRACTAL_L2_R2_V1",
+            rule_version="1.0.0",
+            event_type="SWING_HIGH",
+            event_family="STRUCTURE",
+            status=RuleStatus.RESEARCH,
+            provenance=ProvenanceType.PROPOSED_RESEARCH_VARIANT,
+            source_file="src/eye/detectors/swing_state.py",
+            source_symbol="SwingStateDetector.detect",
+            source_commit="8632791",
+            effective_parameters={"left_bars": 2, "right_bars": 2},
+            description="Causal fractal 2-bar swing detector without pivot backdating",
+        ),
+        RuleDefinition(
+            rule_id="EYE_BOS_CLOSE_INTERNAL_V1",
+            rule_version="1.0.0",
+            event_type="BOS_BULLISH",
+            event_family="STRUCTURE",
+            status=RuleStatus.RESEARCH,
+            provenance=ProvenanceType.PROPOSED_RESEARCH_VARIANT,
+            source_file="src/eye/detectors/structure_break.py",
+            source_symbol="StructureBreakDetector.detect",
+            source_commit="8632791",
+            effective_parameters={"break_type": "CLOSE"},
+            description="Internal structure continuation BOS close break",
+        ),
+        RuleDefinition(
+            rule_id="EYE_LIQUIDITY_EQUAL_HIGH_ATR_V1",
+            rule_version="1.0.0",
+            event_type="LIQUIDITY_POOL_HIGH",
+            event_family="LIQUIDITY",
+            status=RuleStatus.RESEARCH,
+            provenance=ProvenanceType.PROPOSED_RESEARCH_VARIANT,
+            source_file="src/eye/detectors/liquidity.py",
+            source_symbol="LiquidityDetector.detect",
+            source_commit="8632791",
+            effective_parameters={"tolerance_ticks": 5},
+            description="Equal Highs liquidity pool cluster",
+        ),
+        RuleDefinition(
+            rule_id="EYE_DISPLACEMENT_ATR_BODY_V1",
+            rule_version="1.0.0",
+            event_type="DISPLACEMENT_BULLISH",
+            event_family="DISPLACEMENT",
+            status=RuleStatus.RESEARCH,
+            provenance=ProvenanceType.PROPOSED_RESEARCH_VARIANT,
+            source_file="src/eye/detectors/displacement.py",
+            source_symbol="DisplacementDetector.detect",
+            source_commit="8632791",
+            effective_parameters={"min_body_ratio": 0.7},
+            description="Measurement-driven body/range displacement expansion",
+        ),
+        RuleDefinition(
+            rule_id="EYE_FVG_THREE_BAR_V1",
+            rule_version="1.0.0",
+            event_type="FVG_BULLISH",
+            event_family="IMBALANCE",
+            status=RuleStatus.RESEARCH,
+            provenance=ProvenanceType.PROPOSED_RESEARCH_VARIANT,
+            source_file="src/eye/detectors/fvg_cluster.py",
+            source_symbol="FVGClusterDetector.detect",
+            source_commit="8632791",
+            effective_parameters={"gap_min": 0.0},
+            description="Non-destructive 3-bar Fair Value Gap child imbalance",
+        ),
+    )

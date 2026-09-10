@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "record_type": "STRATEGY_EVIDENCE",
+  "source_identity": ["pine_event.source_sha256", "pine_event.event_id"],
+  "market_context": "strategy_lab_context",
+  "authoritative_pine_event": "pine_event",
+  "candle_identity": ["pine_event.bar_index", "pine_event.candle_time", "pine_event.candle_closed"],
+  "decision_fields": ["action", "reason", "why_trade", "why_not_trade"],
+  "price_fields": ["entry", "exit", "stop", "target"],
+  "parity_status": "PROVISIONAL_PENDING_PARITY_VALIDATION",
+  "secret_filtering": "STRATEGY_LAB_SAFE_SERIALIZER"
+}

@@ -1,0 +1,90 @@
+:root {
+  /* Color roles */
+  --cds-color-bg: #030307;
+  --cds-color-surface: #07070b;
+  --cds-color-surface-strong: #0a0a10;
+  --cds-color-surface-inset: #050509;
+  --cds-color-text: #f0edf6;
+  --cds-color-text-soft: #c9c5d1;
+  --cds-color-text-muted: #8d8c9a;
+  --cds-color-text-subtle: #595865;
+  --cds-color-brand: #6d28d9;
+  --cds-color-brand-soft: #a78bfa;
+  --cds-color-positive: #10b981;
+  --cds-color-negative: #ef4444;
+  --cds-color-info: #3b82f6;
+  --cds-color-warning: #f59e0b;
+  --cds-color-border-subtle: rgba(225, 220, 255, 0.045);
+  --cds-color-border-default: rgba(225, 220, 255, 0.08);
+  --cds-color-border-strong: rgba(225, 220, 255, 0.14);
+
+  /* Semantic fills */
+  --cds-fill-neutral: rgba(255, 255, 255, 0.015);
+  --cds-fill-brand: rgba(109, 40, 217, 0.08);
+  --cds-fill-positive: rgba(16, 185, 129, 0.045);
+  --cds-fill-negative: rgba(239, 68, 68, 0.045);
+  --cds-fill-info: rgba(59, 130, 246, 0.045);
+  --cds-fill-warning: rgba(245, 158, 11, 0.045);
+
+  /* Eight-pixel spacing grid */
+  --cds-space-0: 0;
+  --cds-space-1: 8px;
+  --cds-space-2: 16px;
+  --cds-space-3: 24px;
+  --cds-space-4: 32px;
+  --cds-space-5: 40px;
+  --cds-space-6: 48px;
+  --cds-space-8: 64px;
+
+  /* Typography: five approved levels */
+  --cds-font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --cds-font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+  --cds-type-hero-size: 32px;
+  --cds-type-hero-line: 40px;
+  --cds-type-section-size: 16px;
+  --cds-type-section-line: 24px;
+  --cds-type-table-size: 10px;
+  --cds-type-table-line: 16px;
+  --cds-type-body-size: 12px;
+  --cds-type-body-line: 16px;
+  --cds-type-caption-size: 9px;
+  --cds-type-caption-line: 16px;
+  --cds-weight-regular: 450;
+  --cds-weight-medium: 600;
+  --cds-weight-strong: 700;
+  --cds-tracking-label: 0.08em;
+  --cds-tracking-brand: 0.14em;
+
+  /* Borders */
+  --cds-border-subtle: 1px solid var(--cds-color-border-subtle);
+  --cds-border-default: 1px solid var(--cds-color-border-default);
+  --cds-border-strong: 1px solid var(--cds-color-border-strong);
+  --cds-border-brand: 1px solid rgba(167, 139, 250, 0.22);
+  --cds-border-positive: 1px solid rgba(16, 185, 129, 0.2);
+  --cds-border-negative: 1px solid rgba(239, 68, 68, 0.2);
+  --cds-border-info: 1px solid rgba(59, 130, 246, 0.2);
+  --cds-border-warning: 1px solid rgba(245, 158, 11, 0.2);
+
+  /* Shape and elevation */
+  --cds-radius-none: 0;
+  --cds-radius-sm: 3px;
+  --cds-radius-md: 5px;
+  --cds-radius-lg: 8px;
+  --cds-radius-pill: 999px;
+  --cds-shadow-none: none;
+  --cds-shadow-panel: 0 4px 18px rgba(0, 0, 0, 0.35);
+  --cds-shadow-elevated: 0 8px 28px rgba(0, 0, 0, 0.48);
+  --cds-shadow-focus: 0 0 0 2px var(--cds-color-bg), 0 0 0 3px var(--cds-color-brand-soft);
+
+  /* Motion and interaction */
+  --cds-duration-fast: 120ms;
+  --cds-duration-standard: 180ms;
+  --cds-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --cds-hover-border: rgba(167, 139, 250, 0.2);
+  --cds-hover-surface: #0a0a10;
+
+  /* Institutional row heights */
+  --cds-row-compact: 24px;
+  --cds-row-default: 32px;
+  --cds-row-comfortable: 40px;
+}

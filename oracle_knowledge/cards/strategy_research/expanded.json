@@ -1,0 +1,996 @@
+{
+  "schema_version": "5a.2.0",
+  "defaults": {},
+  "cards": [
+    {
+      "card_id": "research-liquidity-sweep-reclaim",
+      "version": "1.0.0",
+      "card_type": "STRATEGY_RESEARCH",
+      "concept": "Liquidity sweep and reclaim",
+      "domain": "strategy_research",
+      "definition_principle": "Predeclared level, trade-through, completed reclaim, and room to target.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-strategy-knowledge-base-2026",
+      "exact_locator": "Video 11 > Trade Logic",
+      "short_excerpt": null,
+      "paraphrase": "Predeclared level, trade-through, completed reclaim, and room to target.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "dccf62ee374392d9c0fd5d722b9a65d98f41ebae5ab2862d1d9e421bd957c525",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "RESEARCH_ONLY_NOT_BACKTESTED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "LIQUIDITY_SWEEP_RECLAIM"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": true,
+      "research_fields": {
+        "instrument_scope": [
+          "NIFTY",
+          "BANKNIFTY",
+          "CE_OR_PE_PREMIUM_LONG_ONLY"
+        ],
+        "timeframe_scope": [
+          "15m",
+          "5m",
+          "3m",
+          "1m"
+        ],
+        "regime_filter": "Versioned context policy; skip directionless/tight overlapping range.",
+        "setup_logic": "Predeclared level, trade-through, completed reclaim, and room to target.",
+        "trigger_logic": "Fresh reclaim plus option-premium confirmation.",
+        "invalidation_logic": "Close back beyond the sweep extreme or protected structure.",
+        "target_logic": "Next verified liquidity/structure level; no fixed RR target.",
+        "option_filter": "Fresh exact contract, bid/ask/spread, Greeks and expiry where available.",
+        "required_data": [
+          "canonical completed candles",
+          "VOB",
+          "OSE",
+          "ARGUS",
+          "option quote and spread"
+        ],
+        "missing_data": "Fail unavailable; do not proxy or infer the missing authority.",
+        "cost_model": "Executable bid/ask, fees and slippage must be included.",
+        "backtest_plan": "Compile predicates, freeze versions, replay authoritative records, include costs and failures.",
+        "oos_plan": "Immutable time split, trial accounting, untouched OOS evaluation and degradation checks.",
+        "failure_analysis": "Report no-trigger, invalidation, spread, stale data, regime transfer and target-room failures.",
+        "research_status": "RESEARCH_ONLY"
+      }
+    },
+    {
+      "card_id": "research-breakout-acceptance-retest",
+      "version": "1.0.0",
+      "card_type": "STRATEGY_RESEARCH",
+      "concept": "Breakout acceptance and retest",
+      "domain": "strategy_research",
+      "definition_principle": "Completed close beyond VOB/supply followed by acceptance or a fresh retest zone.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-strategy-knowledge-base-2026",
+      "exact_locator": "V2 Build Blueprint > Breakout V2",
+      "short_excerpt": null,
+      "paraphrase": "Completed close beyond VOB/supply followed by acceptance or a fresh retest zone.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "dccf62ee374392d9c0fd5d722b9a65d98f41ebae5ab2862d1d9e421bd957c525",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "RESEARCH_ONLY_NOT_BACKTESTED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "BREAKOUT_ACCEPTANCE_RETEST"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": true,
+      "research_fields": {
+        "instrument_scope": [
+          "NIFTY",
+          "BANKNIFTY",
+          "CE_OR_PE_PREMIUM_LONG_ONLY"
+        ],
+        "timeframe_scope": [
+          "15m",
+          "5m",
+          "3m",
+          "1m"
+        ],
+        "regime_filter": "Versioned context policy; skip directionless/tight overlapping range.",
+        "setup_logic": "Completed close beyond VOB/supply followed by acceptance or a fresh retest zone.",
+        "trigger_logic": "Retest hold or continuation break with premium confirmation.",
+        "invalidation_logic": "Failed reclaim of the breakout boundary.",
+        "target_logic": "Next authoritative VOB/supply/liquidity target.",
+        "option_filter": "Fresh exact contract, bid/ask/spread, Greeks and expiry where available.",
+        "required_data": [
+          "canonical completed candles",
+          "VOB",
+          "OSE",
+          "ARGUS",
+          "option quote and spread"
+        ],
+        "missing_data": "Fail unavailable; do not proxy or infer the missing authority.",
+        "cost_model": "Executable bid/ask, fees and slippage must be included.",
+        "backtest_plan": "Compile predicates, freeze versions, replay authoritative records, include costs and failures.",
+        "oos_plan": "Immutable time split, trial accounting, untouched OOS evaluation and degradation checks.",
+        "failure_analysis": "Report no-trigger, invalidation, spread, stale data, regime transfer and target-room failures.",
+        "research_status": "RESEARCH_ONLY"
+      }
+    },
+    {
+      "card_id": "research-failed-breakout-reversal-v2",
+      "version": "1.0.0",
+      "card_type": "STRATEGY_RESEARCH",
+      "concept": "Failed breakout reversal",
+      "domain": "strategy_research",
+      "definition_principle": "Trade-through a declared boundary followed by completed return inside.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-strategy-knowledge-base-2026",
+      "exact_locator": "Video 2 > Main Ideas",
+      "short_excerpt": null,
+      "paraphrase": "Trade-through a declared boundary followed by completed return inside.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "dccf62ee374392d9c0fd5d722b9a65d98f41ebae5ab2862d1d9e421bd957c525",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "RESEARCH_ONLY_NOT_BACKTESTED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "FAILED_BREAKOUT_REVERSAL"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": true,
+      "research_fields": {
+        "instrument_scope": [
+          "NIFTY",
+          "BANKNIFTY",
+          "CE_OR_PE_PREMIUM_LONG_ONLY"
+        ],
+        "timeframe_scope": [
+          "15m",
+          "5m",
+          "3m",
+          "1m"
+        ],
+        "regime_filter": "Versioned context policy; skip directionless/tight overlapping range.",
+        "setup_logic": "Trade-through a declared boundary followed by completed return inside.",
+        "trigger_logic": "Reclaim plus structure/premium confirmation.",
+        "invalidation_logic": "Renewed acceptance beyond the failed-break extreme.",
+        "target_logic": "Opposite range boundary or verified structure level.",
+        "option_filter": "Fresh exact contract, bid/ask/spread, Greeks and expiry where available.",
+        "required_data": [
+          "canonical completed candles",
+          "VOB",
+          "OSE",
+          "ARGUS",
+          "option quote and spread"
+        ],
+        "missing_data": "Fail unavailable; do not proxy or infer the missing authority.",
+        "cost_model": "Executable bid/ask, fees and slippage must be included.",
+        "backtest_plan": "Compile predicates, freeze versions, replay authoritative records, include costs and failures.",
+        "oos_plan": "Immutable time split, trial accounting, untouched OOS evaluation and degradation checks.",
+        "failure_analysis": "Report no-trigger, invalidation, spread, stale data, regime transfer and target-room failures.",
+        "research_status": "RESEARCH_ONLY"
+      }
+    },
+    {
+      "card_id": "research-trend-pullback-v2",
+      "version": "1.0.0",
+      "card_type": "STRATEGY_RESEARCH",
+      "concept": "Trend pullback",
+      "domain": "strategy_research",
+      "definition_principle": "Verified trend, corrective pullback into an authoritative zone, and target room.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-strategy-knowledge-base-2026",
+      "exact_locator": "Video 9 > Valid Pullback",
+      "short_excerpt": null,
+      "paraphrase": "Verified trend, corrective pullback into an authoritative zone, and target room.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "dccf62ee374392d9c0fd5d722b9a65d98f41ebae5ab2862d1d9e421bd957c525",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "RESEARCH_ONLY_NOT_BACKTESTED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "TREND_PULLBACK"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": true,
+      "research_fields": {
+        "instrument_scope": [
+          "NIFTY",
+          "BANKNIFTY",
+          "CE_OR_PE_PREMIUM_LONG_ONLY"
+        ],
+        "timeframe_scope": [
+          "15m",
+          "5m",
+          "3m",
+          "1m"
+        ],
+        "regime_filter": "Versioned context policy; skip directionless/tight overlapping range.",
+        "setup_logic": "Verified trend, corrective pullback into an authoritative zone, and target room.",
+        "trigger_logic": "Completed continuation/reclaim trigger.",
+        "invalidation_logic": "Protected swing or zone failure.",
+        "target_logic": "Next verified structure/VOB target.",
+        "option_filter": "Fresh exact contract, bid/ask/spread, Greeks and expiry where available.",
+        "required_data": [
+          "canonical completed candles",
+          "VOB",
+          "OSE",
+          "ARGUS",
+          "option quote and spread"
+        ],
+        "missing_data": "Fail unavailable; do not proxy or infer the missing authority.",
+        "cost_model": "Executable bid/ask, fees and slippage must be included.",
+        "backtest_plan": "Compile predicates, freeze versions, replay authoritative records, include costs and failures.",
+        "oos_plan": "Immutable time split, trial accounting, untouched OOS evaluation and degradation checks.",
+        "failure_analysis": "Report no-trigger, invalidation, spread, stale data, regime transfer and target-room failures.",
+        "research_status": "RESEARCH_ONLY"
+      }
+    },
+    {
+      "card_id": "research-compression-displacement",
+      "version": "1.0.0",
+      "card_type": "STRATEGY_RESEARCH",
+      "concept": "Compression and displacement",
+      "domain": "strategy_research",
+      "definition_principle": "Deterministic contraction followed by completed displacement through structure.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-strategy-knowledge-base-2026",
+      "exact_locator": "Unified Strategy Design Notes > Context",
+      "short_excerpt": null,
+      "paraphrase": "Deterministic contraction followed by completed displacement through structure.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "dccf62ee374392d9c0fd5d722b9a65d98f41ebae5ab2862d1d9e421bd957c525",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "RESEARCH_ONLY_NOT_BACKTESTED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "COMPRESSION_DISPLACEMENT"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": true,
+      "research_fields": {
+        "instrument_scope": [
+          "NIFTY",
+          "BANKNIFTY",
+          "CE_OR_PE_PREMIUM_LONG_ONLY"
+        ],
+        "timeframe_scope": [
+          "15m",
+          "5m",
+          "3m",
+          "1m"
+        ],
+        "regime_filter": "Versioned context policy; skip directionless/tight overlapping range.",
+        "setup_logic": "Deterministic contraction followed by completed displacement through structure.",
+        "trigger_logic": "Acceptance/follow-through and premium confirmation.",
+        "invalidation_logic": "Return into compression with failed continuation.",
+        "target_logic": "Next natural structure or VOB level.",
+        "option_filter": "Fresh exact contract, bid/ask/spread, Greeks and expiry where available.",
+        "required_data": [
+          "canonical completed candles",
+          "VOB",
+          "OSE",
+          "ARGUS",
+          "option quote and spread"
+        ],
+        "missing_data": "Fail unavailable; do not proxy or infer the missing authority.",
+        "cost_model": "Executable bid/ask, fees and slippage must be included.",
+        "backtest_plan": "Compile predicates, freeze versions, replay authoritative records, include costs and failures.",
+        "oos_plan": "Immutable time split, trial accounting, untouched OOS evaluation and degradation checks.",
+        "failure_analysis": "Report no-trigger, invalidation, spread, stale data, regime transfer and target-room failures.",
+        "research_status": "RESEARCH_ONLY"
+      }
+    },
+    {
+      "card_id": "research-displacement-fvg-retest-v2",
+      "version": "1.0.0",
+      "card_type": "STRATEGY_RESEARCH",
+      "concept": "Displacement FVG retest",
+      "domain": "strategy_research",
+      "definition_principle": "Verified three-candle imbalance after displacement and structure transition.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-strategy-knowledge-base-2026",
+      "exact_locator": "Video 13 > Rules",
+      "short_excerpt": null,
+      "paraphrase": "Verified three-candle imbalance after displacement and structure transition.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "dccf62ee374392d9c0fd5d722b9a65d98f41ebae5ab2862d1d9e421bd957c525",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "RESEARCH_ONLY_NOT_BACKTESTED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DISPLACEMENT_FVG_RETEST"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": true,
+      "research_fields": {
+        "instrument_scope": [
+          "NIFTY",
+          "BANKNIFTY",
+          "CE_OR_PE_PREMIUM_LONG_ONLY"
+        ],
+        "timeframe_scope": [
+          "15m",
+          "5m",
+          "3m",
+          "1m"
+        ],
+        "regime_filter": "Versioned context policy; skip directionless/tight overlapping range.",
+        "setup_logic": "Verified three-candle imbalance after displacement and structure transition.",
+        "trigger_logic": "Fresh retest close/engulf confirmation.",
+        "invalidation_logic": "FVG/structure failure under explicit predicate.",
+        "target_logic": "Next natural structure/liquidity level.",
+        "option_filter": "Fresh exact contract, bid/ask/spread, Greeks and expiry where available.",
+        "required_data": [
+          "canonical completed candles",
+          "VOB",
+          "OSE",
+          "ARGUS",
+          "option quote and spread"
+        ],
+        "missing_data": "Fail unavailable; do not proxy or infer the missing authority.",
+        "cost_model": "Executable bid/ask, fees and slippage must be included.",
+        "backtest_plan": "Compile predicates, freeze versions, replay authoritative records, include costs and failures.",
+        "oos_plan": "Immutable time split, trial accounting, untouched OOS evaluation and degradation checks.",
+        "failure_analysis": "Report no-trigger, invalidation, spread, stale data, regime transfer and target-room failures.",
+        "research_status": "RESEARCH_ONLY"
+      }
+    },
+    {
+      "card_id": "research-breakaway-fvg-continuation-v2",
+      "version": "1.0.0",
+      "card_type": "STRATEGY_RESEARCH",
+      "concept": "Breakaway FVG continuation",
+      "domain": "strategy_research",
+      "definition_principle": "Strong completed breakout/displacement with an unmitigated gap and room.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-strategy-knowledge-base-2026",
+      "exact_locator": "Video 8 > FVG Rules",
+      "short_excerpt": null,
+      "paraphrase": "Strong completed breakout/displacement with an unmitigated gap and room.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "dccf62ee374392d9c0fd5d722b9a65d98f41ebae5ab2862d1d9e421bd957c525",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "RESEARCH_ONLY_NOT_BACKTESTED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "BREAKAWAY_FVG_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": true,
+      "research_fields": {
+        "instrument_scope": [
+          "NIFTY",
+          "BANKNIFTY",
+          "CE_OR_PE_PREMIUM_LONG_ONLY"
+        ],
+        "timeframe_scope": [
+          "15m",
+          "5m",
+          "3m",
+          "1m"
+        ],
+        "regime_filter": "Versioned context policy; skip directionless/tight overlapping range.",
+        "setup_logic": "Strong completed breakout/displacement with an unmitigated gap and room.",
+        "trigger_logic": "Follow-through beyond displacement reference plus premium confirmation.",
+        "invalidation_logic": "Gap fill and failed breakout acceptance.",
+        "target_logic": "Next authoritative supply/VOB/liquidity level.",
+        "option_filter": "Fresh exact contract, bid/ask/spread, Greeks and expiry where available.",
+        "required_data": [
+          "canonical completed candles",
+          "VOB",
+          "OSE",
+          "ARGUS",
+          "option quote and spread"
+        ],
+        "missing_data": "Fail unavailable; do not proxy or infer the missing authority.",
+        "cost_model": "Executable bid/ask, fees and slippage must be included.",
+        "backtest_plan": "Compile predicates, freeze versions, replay authoritative records, include costs and failures.",
+        "oos_plan": "Immutable time split, trial accounting, untouched OOS evaluation and degradation checks.",
+        "failure_analysis": "Report no-trigger, invalidation, spread, stale data, regime transfer and target-room failures.",
+        "research_status": "RESEARCH_ONLY"
+      }
+    },
+    {
+      "card_id": "research-demand-vob-fvg-confluence",
+      "version": "1.0.0",
+      "card_type": "STRATEGY_RESEARCH",
+      "concept": "Demand/VOB and FVG confluence",
+      "domain": "strategy_research",
+      "definition_principle": "Authoritative VOB/demand overlap with separately verified FVG location.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-strategy-knowledge-base-2026",
+      "exact_locator": "Video 3 > Main Ideas",
+      "short_excerpt": null,
+      "paraphrase": "Authoritative VOB/demand overlap with separately verified FVG location.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "dccf62ee374392d9c0fd5d722b9a65d98f41ebae5ab2862d1d9e421bd957c525",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "RESEARCH_ONLY_NOT_BACKTESTED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "DEMAND_VOB_FVG_CONFLUENCE"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": true,
+      "research_fields": {
+        "instrument_scope": [
+          "NIFTY",
+          "BANKNIFTY",
+          "CE_OR_PE_PREMIUM_LONG_ONLY"
+        ],
+        "timeframe_scope": [
+          "15m",
+          "5m",
+          "3m",
+          "1m"
+        ],
+        "regime_filter": "Versioned context policy; skip directionless/tight overlapping range.",
+        "setup_logic": "Authoritative VOB/demand overlap with separately verified FVG location.",
+        "trigger_logic": "LTF structure confirmation; no blind zone touch.",
+        "invalidation_logic": "VOB/demand structural failure.",
+        "target_logic": "Next verified opposite VOB or structure target.",
+        "option_filter": "Fresh exact contract, bid/ask/spread, Greeks and expiry where available.",
+        "required_data": [
+          "canonical completed candles",
+          "VOB",
+          "OSE",
+          "ARGUS",
+          "option quote and spread"
+        ],
+        "missing_data": "Fail unavailable; do not proxy or infer the missing authority.",
+        "cost_model": "Executable bid/ask, fees and slippage must be included.",
+        "backtest_plan": "Compile predicates, freeze versions, replay authoritative records, include costs and failures.",
+        "oos_plan": "Immutable time split, trial accounting, untouched OOS evaluation and degradation checks.",
+        "failure_analysis": "Report no-trigger, invalidation, spread, stale data, regime transfer and target-room failures.",
+        "research_status": "RESEARCH_ONLY"
+      }
+    },
+    {
+      "card_id": "research-premium-confirmed-continuation-v2",
+      "version": "1.0.0",
+      "card_type": "STRATEGY_RESEARCH",
+      "concept": "Premium-confirmed continuation",
+      "domain": "strategy_research",
+      "definition_principle": "Underlying continuation setup plus exact option contract evidence.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-strategy-knowledge-base-2026",
+      "exact_locator": "Unified Strategy Design Notes > Trigger",
+      "short_excerpt": null,
+      "paraphrase": "Underlying continuation setup plus exact option contract evidence.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "dccf62ee374392d9c0fd5d722b9a65d98f41ebae5ab2862d1d9e421bd957c525",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "RESEARCH_ONLY_NOT_BACKTESTED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "PREMIUM_CONFIRMED_CONTINUATION"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": true,
+      "research_fields": {
+        "instrument_scope": [
+          "NIFTY",
+          "BANKNIFTY",
+          "CE_OR_PE_PREMIUM_LONG_ONLY"
+        ],
+        "timeframe_scope": [
+          "15m",
+          "5m",
+          "3m",
+          "1m"
+        ],
+        "regime_filter": "Versioned context policy; skip directionless/tight overlapping range.",
+        "setup_logic": "Underlying continuation setup plus exact option contract evidence.",
+        "trigger_logic": "OSE and executable premium confirm without stale/wide spread.",
+        "invalidation_logic": "Underlying or premium structure failure.",
+        "target_logic": "Natural underlying and premium levels with costs.",
+        "option_filter": "Fresh exact contract, bid/ask/spread, Greeks and expiry where available.",
+        "required_data": [
+          "canonical completed candles",
+          "VOB",
+          "OSE",
+          "ARGUS",
+          "option quote and spread"
+        ],
+        "missing_data": "Fail unavailable; do not proxy or infer the missing authority.",
+        "cost_model": "Executable bid/ask, fees and slippage must be included.",
+        "backtest_plan": "Compile predicates, freeze versions, replay authoritative records, include costs and failures.",
+        "oos_plan": "Immutable time split, trial accounting, untouched OOS evaluation and degradation checks.",
+        "failure_analysis": "Report no-trigger, invalidation, spread, stale data, regime transfer and target-room failures.",
+        "research_status": "RESEARCH_ONLY"
+      }
+    },
+    {
+      "card_id": "research-premium-confirmed-reversal",
+      "version": "1.0.0",
+      "card_type": "STRATEGY_RESEARCH",
+      "concept": "Premium-confirmed reversal",
+      "domain": "strategy_research",
+      "definition_principle": "Verified reversal context plus exact CE/PE contract evidence.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "user-strategy-knowledge-base-2026",
+      "exact_locator": "Video 17 > CHoCH Rules",
+      "short_excerpt": null,
+      "paraphrase": "Verified reversal context plus exact CE/PE contract evidence.",
+      "source_quality": "USER_PROVIDED_NOT_VERIFIED",
+      "source_hash_version": "dccf62ee374392d9c0fd5d722b9a65d98f41ebae5ab2862d1d9e421bd957c525",
+      "validation_status": "USER_PROVIDED_UNVALIDATED",
+      "empirical_status": "RESEARCH_ONLY_NOT_BACKTESTED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [
+        "PREMIUM_CONFIRMED_REVERSAL"
+      ],
+      "contradicts_card_ids": [],
+      "research_only": true,
+      "research_fields": {
+        "instrument_scope": [
+          "NIFTY",
+          "BANKNIFTY",
+          "CE_OR_PE_PREMIUM_LONG_ONLY"
+        ],
+        "timeframe_scope": [
+          "15m",
+          "5m",
+          "3m",
+          "1m"
+        ],
+        "regime_filter": "Versioned context policy; skip directionless/tight overlapping range.",
+        "setup_logic": "Verified reversal context plus exact CE/PE contract evidence.",
+        "trigger_logic": "Completed reversal trigger and OSE premium confirmation.",
+        "invalidation_logic": "Reversal structure fails or premium does not confirm.",
+        "target_logic": "Next verified opposite structure/VOB level.",
+        "option_filter": "Fresh exact contract, bid/ask/spread, Greeks and expiry where available.",
+        "required_data": [
+          "canonical completed candles",
+          "VOB",
+          "OSE",
+          "ARGUS",
+          "option quote and spread"
+        ],
+        "missing_data": "Fail unavailable; do not proxy or infer the missing authority.",
+        "cost_model": "Executable bid/ask, fees and slippage must be included.",
+        "backtest_plan": "Compile predicates, freeze versions, replay authoritative records, include costs and failures.",
+        "oos_plan": "Immutable time split, trial accounting, untouched OOS evaluation and degradation checks.",
+        "failure_analysis": "Report no-trigger, invalidation, spread, stale data, regime transfer and target-room failures.",
+        "research_status": "RESEARCH_ONLY"
+      }
+    }
+  ]
+}

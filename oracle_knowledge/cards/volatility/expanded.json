@@ -1,0 +1,138 @@
+{
+  "schema_version": "5a.2.0",
+  "defaults": {},
+  "cards": [
+    {
+      "card_id": "oic-option-time-value",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Option time value",
+      "domain": "volatility",
+      "definition_principle": "Premium beyond intrinsic value includes time value and changes as expiry and other inputs change.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "oic-options-pricing-2026",
+      "exact_locator": "Time Value",
+      "short_excerpt": null,
+      "paraphrase": "Premium beyond intrinsic value includes time value and changes as expiry and other inputs change.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "17f6dc2cd4744823163e0d3535114da27d0dd8f4a0485c4b82c7429175b03e5c",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    },
+    {
+      "card_id": "occ-volatility-uncertainty",
+      "version": "1.0.0",
+      "card_type": "PRINCIPLE",
+      "concept": "Volatility is uncertain",
+      "domain": "volatility",
+      "definition_principle": "Volatility inputs are estimates and require current contract evidence.",
+      "measurable_predicates": [
+        "The claim is compiled into versioned numerical predicates."
+      ],
+      "required_evidence": [
+        "canonical completed candles or authoritative option snapshot",
+        "source and predicate version"
+      ],
+      "optional_confirmations": [],
+      "valid_conditions": [
+        "All cited inputs are complete, current, and time-safe."
+      ],
+      "failure_conditions": [
+        "Required deterministic evidence is missing or stale."
+      ],
+      "contradictions": [
+        "The principle does not establish a CITADEL probability."
+      ],
+      "when_not_to_use": [
+        "Do not use as standalone direction, probability, risk, or execution authorization."
+      ],
+      "timeframes": [
+        "1D",
+        "4H",
+        "1H",
+        "15m",
+        "5m",
+        "3m",
+        "1m"
+      ],
+      "instruments": [
+        "NIFTY",
+        "BANKNIFTY"
+      ],
+      "option_buying_relevance": "HIGH",
+      "relevant_citadel_fields": [
+        "canonical_candle_refs",
+        "verified_visual_claims",
+        "evidence_bundle"
+      ],
+      "data_availability": {
+        "canonical_candles": "AVAILABLE",
+        "visual_claim": "VERIFY_NUMERICALLY"
+      },
+      "source_id": "occ-learning-curriculum-2026",
+      "exact_locator": "Options Volatility - Forecasting the Unknown",
+      "short_excerpt": null,
+      "paraphrase": "Volatility inputs are estimates and require current contract evidence.",
+      "source_quality": "OFFICIAL_PRIMARY",
+      "source_hash_version": "d80060fe597d908f338042cf8cefe0a670d357de0e0fd705b56853e1a532f2b2",
+      "validation_status": "SOURCE_BACKED_UNVALIDATED",
+      "empirical_status": "NOT_CITADEL_VALIDATED",
+      "execution_influence": "ZERO",
+      "knowledge_policy_version": "oracle-knowledge-advisory-5a.2.0",
+      "regimes": [],
+      "setup_types": [],
+      "contradicts_card_ids": [],
+      "research_only": false,
+      "research_fields": {}
+    }
+  ]
+}
