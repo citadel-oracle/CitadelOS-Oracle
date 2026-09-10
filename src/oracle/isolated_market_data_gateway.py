@@ -125,9 +125,10 @@ def _isolated_gateway_child(
     def emit_tick(tick: dict[str, Any]) -> None:
         value = dict(tick)
         key = (_segment_key(value.get("exchange_segment")), str(value.get("security_id")))
-        role = role_by_key.get(key)
+        role = role_by_key.get(key) or value.get("instrument_role") or value.get("role")
         if role:
             value["instrument_role"] = role
+            value["role"] = role
         enqueue(flow_ticks, value, flow_ipc_drops, flow_ipc_enqueued, "flow")
         if role == "NIFTY_FUTURE":
             replaced = _replace_latest(futures_display_ticks, value)

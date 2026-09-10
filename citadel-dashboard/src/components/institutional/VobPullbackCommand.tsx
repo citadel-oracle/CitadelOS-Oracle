@@ -135,7 +135,7 @@ const ContractTruthStrip = memo(function ContractTruthStrip() {
     <section className={styles.contractTruthStrip} aria-label="Current canonical ITM-1 contract authority" data-current-itm1-authority>
       <CurrentItmQuote optionType="CE" side="CALL" />
       <CurrentItmQuote optionType="PE" side="PUT" />
-      <ContractTruthItem label="ATM" value={formatNumber(atmStrike)} title="Canonical ARGUS/Dhan option-chain ATM" />
+      <ContractTruthItem label="ATM" value={formatNumber(atmStrike)} title="Canonical ARGUS/Upstox option-chain ATM" />
       <ContractTruthItem label="REF PRICE" value={formatNumber(referencePrice)} />
       <ContractTruthItem label="STRIKE STEP" value={formatNumber(strikeInterval)} />
       {historical
@@ -256,7 +256,7 @@ function useSemanticFrame(): SemanticFrame {
   const reversalState = useOracleStore((state) => state.reversal.state)
   const vobState = useOracleStore((state) => state.reversal.vobState)
   const direction = useOracleStore((state) => state.reversal.direction)
-  const option = useOracleStore((state) => direction === 'PUT' ? state.market.itmPut : state.market.itmCall)
+  const option = useOracleStore((state) => direction === 'PUT' ? state.market.currentItmPut : state.market.currentItmCall)
   const variant = useOracleStore((state) => state.trade.variants.CONFIRMED_REVERSAL ?? state.trade.variants.VOB_ONLY ?? null)
   return {
     episodeId, revision, reversalState, vobState, direction,
@@ -322,7 +322,7 @@ const TopCommandDeck = memo(function TopCommandDeck() {
 })
 
 const LiveOptionCard = memo(function LiveOptionCard({ side, optionType, target }: { side: 'CALL' | 'PUT'; optionType: 'CE' | 'PE'; target: boolean }) {
-  const option = useOracleStore((state) => optionType === 'CE' ? state.market.itmCall : state.market.itmPut)
+  const option = useOracleStore((state) => optionType === 'CE' ? state.market.currentItmCall : state.market.currentItmPut)
   const currentItm1 = useOracleStore((state) => optionType === 'CE' ? state.market.activeCe : state.market.activePe)
   const historical = useOracleStore((state) => state.replay.mode === 'HISTORICAL_REPLAY')
   const reducedMotion = useReducedMotion()

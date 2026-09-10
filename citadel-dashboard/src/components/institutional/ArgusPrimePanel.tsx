@@ -190,7 +190,7 @@ export const ArgusPrimePanel: React.FC<ArgusPrimePanelProps> = ({
             <span>PROVIDER EVENT TIME <b>{istTime(truth.source_event_time)} IST</b></span>
             <span>CHAIN OBSERVED <b>{istTime(truth.receipt_timestamp)} IST</b></span>
             <span>AGE <b>{truth.age_seconds == null ? '—' : `${number(truth.age_seconds, 1)}s`}</b></span>
-            <span>SOURCE <b>Dhan Option Chain + NIFTY Futures</b></span>
+            <span>SOURCE <b>Upstox Option Chain + NIFTY Futures</b></span>
           </div>
         </div>
 
@@ -246,7 +246,7 @@ export const ArgusPrimePanel: React.FC<ArgusPrimePanelProps> = ({
         </article>
 
         <article className={styles.chainCard}>
-          <span className={styles.eyebrow}>DHAN OPTION CHAIN</span>
+          <span className={styles.eyebrow}>UPSTOX OPTION CHAIN</span>
           <strong>{chainSummary[0] ?? 'No clean chain edge'}</strong>
           <ul>{chainSummary.slice(1).map((item: string) => <li key={item}>{item}</li>)}</ul>
         </article>

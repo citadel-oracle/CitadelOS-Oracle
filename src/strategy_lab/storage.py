@@ -10,11 +10,14 @@ import tempfile
 import threading
 import weakref
 from collections import OrderedDict
+from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter, perf_counter_ns
 from typing import Any, Dict, Iterable, List, Mapping, Optional
+
+import fcntl
 
 
 _PROHIBITED_KEYS = (
@@ -134,6 +137,7 @@ class ImmutableStream:
         if not self.path.exists():
             self.path.touch()
         self.checkpoint_path = self.path.with_name(f"{self.path.name}.checkpoint.sqlite3")
+        self.lock_path = self.path.with_name(f"{self.path.name}.lock")
         self._lock = threading.RLock()
         self._state_cache: Optional[Dict[str, Any]] = None
         self._checkpoint: sqlite3.Connection | None = None
@@ -159,6 +163,61 @@ class ImmutableStream:
                     src.rename(dst)
             self.path.touch(exist_ok=True)
             self._state_cache = None
+
+    @contextmanager
+    def _exclusive_file_lock(self):
+        """Serialize independent process writers before reading chain state.
+
+        ``threading.RLock`` only protects one ``ImmutableStream`` instance.  A
+        stale second runtime can otherwise read the same predecessor and create
+        two individually valid branches.  The sidecar carries no market data and
+        exists only to coordinate the single-writer boundary across processes.
+        """
+
+        descriptor = os.open(self.lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX)
+            yield
+        finally:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+            os.close(descriptor)
+
+    def quarantine_corrupted_segment(self, *, suffix: str) -> Path:
+        """Preserve an invalid segment byte-for-byte and start a fresh chain.
+
+        This is intentionally explicit and is used only after a caller has
+        observed a hash-chain failure.  It never edits or deletes the damaged
+        evidence.  The new active file begins at ``GENESIS`` while the original
+        inode is retained under a visible quarantine suffix.
+        """
+
+        safe_suffix = "".join(char for char in str(suffix) if char.isalnum() or char in "-_")
+        if not safe_suffix:
+            raise ValueError("immutable stream quarantine suffix is required")
+        with self._lock:
+            with self._exclusive_file_lock():
+                # Do not roll a healthy stream because of a stale caller error.
+                try:
+                    self._scan_from(0, "GENESIS")
+                except RuntimeError as error:
+                    if "HASH_CHAIN_INVALID" not in str(error):
+                        raise
+                else:
+                    raise RuntimeError("STRATEGY_LAB_IMMUTABLE_STREAM_QUARANTINE_NOT_REQUIRED")
+
+                quarantine_path = self.path.with_name(f"{self.path.name}.quarantined-{safe_suffix}")
+                if quarantine_path.exists():
+                    raise RuntimeError("STRATEGY_LAB_IMMUTABLE_STREAM_QUARANTINE_COLLISION")
+                self._discard_checkpoint()
+                os.replace(self.path, quarantine_path)
+                self.path.touch(exist_ok=False)
+                directory_descriptor = os.open(self.path.parent, os.O_RDONLY)
+                try:
+                    os.fsync(directory_descriptor)
+                finally:
+                    os.close(directory_descriptor)
+                self._state_cache = None
+                return quarantine_path
 
     def _connection(self) -> sqlite3.Connection:
         if self._checkpoint is None:
@@ -517,6 +576,15 @@ class ImmutableStream:
         if not items:
             return []
         with self._lock:
+            with self._exclusive_file_lock():
+                return self._append_batch_locked(items, return_rows=return_rows)
+
+    def _append_batch_locked(
+        self,
+        items: list[tuple[str, Mapping[str, Any], Optional[str], Optional[str]]],
+        *,
+        return_rows: bool,
+    ) -> List[Dict[str, Any]]:
             self._rotate_if_needed()
             state = self._get_state()
             previous_hash = state["previous_hash"]

@@ -138,13 +138,39 @@ def sync_current_session(
         cursor = dict(existing.get("cursor") or {})
         latest_epoch = max(by_epoch, default=None)
         latest_dt = datetime.fromtimestamp(latest_epoch, tz=IST) if latest_epoch is not None else None
+        if client is None:
+            try:
+                from src.broker.dhan_client import DhanClient
+                dhan = DhanClient()
+                if hasattr(dhan, "has_token") and dhan.has_token():
+                    client = dhan
+            except Exception:
+                client = None
+            if client is None:
+                try:
+                    from src.broker.upstox_client import UpstoxClient
+                    upstox = UpstoxClient()
+                    if getattr(upstox, "has_token", False):
+                        client = upstox
+                except Exception:
+                    client = None
+            if client is None:
+                from src.broker.dhan_client import DhanClient
+                client = DhanClient()
+
+        source_name = (
+            "UPSTOX_INDEX_1M"
+            if (hasattr(client, "get_historical_candles") or "Upstox" in type(client).__name__)
+            else "DHAN_INDEX_1M"
+        )
+
         if not missing_before:
             cursor.update({
                 "latest_completed_1m": latest_dt.isoformat() if latest_dt else None,
                 "latest_persisted_1m": latest_dt.isoformat() if latest_dt else None,
                 "backlog_count": 0,
                 "runtime_status": "LIVE" if cursor.get("latest_evaluated_1m") == (latest_dt.isoformat() if latest_dt else None) else "CATCHING_UP",
-                "source": "DHAN_INDEX_1M",
+                "source": source_name,
             })
             if invalid_removed or existing.get("cursor") != cursor:
                 updated = dict(existing); updated["candles"] = candles; updated["cursor"] = cursor; _save_canonical(path, updated)
@@ -154,10 +180,6 @@ def sync_current_session(
         if attempted_at - _LAST_LIVE_SYNC_ATTEMPT < minimum_retry_seconds:
             return {"status": "RETRY_THROTTLED", "added": 0, "latest_completed_1m": latest_dt.isoformat() if latest_dt else None}
         _LAST_LIVE_SYNC_ATTEMPT = attempted_at
-
-        if client is None:
-            from src.broker.dhan_client import DhanClient
-            client = DhanClient()
         fetched = _fetch_window(client, reference.date().isoformat(), reference.date().isoformat())
         completed = [
             candle for candle in fetched
@@ -176,7 +198,7 @@ def sync_current_session(
             "latest_persisted_1m": latest_dt.isoformat() if latest_dt else None,
             "backlog_count": len(missing_after),
             "runtime_status": "CATCHING_UP",
-            "source": "DHAN_INDEX_1M",
+            "source": source_name,
             "fetch_start": datetime.fromtimestamp(missing_before[0], tz=IST).isoformat(),
             "fetch_end": completed_cutoff.isoformat(),
             "persisted_at": reference.isoformat(),
@@ -196,17 +218,40 @@ def sync_current_session(
 
 
 def _fetch_window(client: Any, from_date: str, to_date: str) -> List[Dict[str, Any]]:
-    result = client.get_intraday_candles(
-        segment=NIFTY_SEGMENT,
-        security_id=NIFTY_SECURITY_ID,
-        instrument=NIFTY_INSTRUMENT,
-        interval="1",
-        from_date=from_date,
-        to_date=to_date,
-    )
-    if not result.get("success"):
+    if client is None:
         return []
-    raw = result.get("candles", [])
+
+    raw = []
+    if hasattr(client, "get_historical_candles"):
+        # UpstoxClient interface
+        today_str = datetime.now(tz=IST).strftime("%Y-%m-%d")
+        if from_date == today_str and to_date == today_str:
+            raw = client.get_intraday_candles("NSE_INDEX|Nifty 50", interval="1") or []
+        else:
+            hist = client.get_historical_candles("NSE_INDEX|Nifty 50", interval="1", to_date=to_date, from_date=from_date) or []
+            if to_date >= today_str:
+                intra = client.get_intraday_candles("NSE_INDEX|Nifty 50", interval="1") or []
+                by_t = {c["time"]: c for c in hist}
+                for c in intra:
+                    by_t[c["time"]] = c
+                raw = [by_t[k] for k in sorted(by_t)]
+            else:
+                raw = hist
+    else:
+        # DhanClient interface
+        result = client.get_intraday_candles(
+            segment=NIFTY_SEGMENT,
+            security_id=NIFTY_SECURITY_ID,
+            instrument=NIFTY_INSTRUMENT,
+            interval="1",
+            from_date=from_date,
+            to_date=to_date,
+        )
+        if isinstance(result, dict) and result.get("success"):
+            raw = result.get("candles", [])
+        elif isinstance(result, list):
+            raw = result
+
     # Keep only candles within NSE session (09:15–15:29 IST) with valid OHLCV
     out = []
     for c in raw:
@@ -243,12 +288,27 @@ def backfill(
     Returns summary dict with keys: added, skipped, total, earliest, latest.
     advisory_only=True, execution_influence=ZERO.
     """
-    from src.broker.dhan_client import DhanClient
-
     if canonical_path is None:
         canonical_path = DEFAULT_CANONICAL_PATH
     if client is None:
-        client = DhanClient()
+        try:
+            from src.broker.dhan_client import DhanClient
+            dhan = DhanClient()
+            if hasattr(dhan, "has_token") and dhan.has_token():
+                client = dhan
+        except Exception:
+            client = None
+        if client is None:
+            try:
+                from src.broker.upstox_client import UpstoxClient
+                upstox = UpstoxClient()
+                if getattr(upstox, "has_token", False):
+                    client = upstox
+            except Exception:
+                client = None
+        if client is None:
+            from src.broker.dhan_client import DhanClient
+            client = DhanClient()
 
     existing = _load_canonical(canonical_path)
     existing_candles: List[Dict] = existing.get("candles", [])

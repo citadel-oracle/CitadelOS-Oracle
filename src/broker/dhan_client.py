@@ -201,6 +201,7 @@ class DhanClient:
         interval="1",
         from_date=None,
         to_date=None,
+        include_oi=False,
     ):
         if from_date is None:
             from_date = datetime.now().strftime("%Y-%m-%d")
@@ -212,7 +213,7 @@ class DhanClient:
             "exchangeSegment": segment,
             "instrument": instrument,
             "interval": str(interval),
-            "oi": False,
+            "oi": bool(include_oi),
             "fromDate": from_date,
             "toDate": to_date,
         }
@@ -241,6 +242,7 @@ class DhanClient:
             lows = data.get("low", [])
             closes = data.get("close", [])
             volumes = data.get("volume", [])
+            open_interest = data.get("open_interest", [])
             timestamps = data.get("timestamp", [])
             if not all(
                 isinstance(values, list)
@@ -255,6 +257,11 @@ class DhanClient:
                 == len(timestamps)
             ):
                 raise ValueError("DHAN_HISTORY_LENGTH_MISMATCH")
+            if include_oi and (
+                not isinstance(open_interest, list)
+                or len(open_interest) != len(timestamps)
+            ):
+                raise ValueError("DHAN_HISTORY_OI_LENGTH_MISMATCH")
 
             candles = []
 
@@ -266,6 +273,11 @@ class DhanClient:
                     "low": float(lows[i]),
                     "close": float(closes[i]),
                     "volume": float(volumes[i]) if i < len(volumes) else None,
+                    "open_interest": (
+                        float(open_interest[i])
+                        if include_oi and i < len(open_interest) and open_interest[i] is not None
+                        else None
+                    ),
                 })
 
             return {

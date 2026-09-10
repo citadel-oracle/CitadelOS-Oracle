@@ -302,6 +302,45 @@
   height: clamp(320px, 24vw, 348px);
   overflow: hidden;
   background: #030508;
+  transition: height .25s ease-out;
+}
+
+.chartFrameFlowMap {
+  position: relative;
+  height: clamp(760px, 56vw, 860px);
+  overflow: hidden;
+  background: #030508;
+  transition: height .25s ease-out;
+}
+
+.flowMapToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .03);
+  color: #94a3b8;
+  font: 600 10px var(--font-oracle-data, "JetBrains Mono", monospace);
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: all .18s ease;
+  user-select: none;
+}
+
+.flowMapToggle:hover {
+  border-color: rgba(47, 240, 216, .35);
+  color: #e2e8f0;
+  background: rgba(47, 240, 216, .06);
+}
+
+.flowMapToggle[aria-pressed="true"] {
+  border-color: #2ff0d8;
+  color: #030508;
+  background: #2ff0d8;
+  box-shadow: 0 0 12px rgba(47, 240, 216, .42);
+  font-weight: 700;
 }
 
 .nowDivider {
@@ -335,6 +374,15 @@
 .chart {
   height: 100%;
   padding: 7px 0 0;
+}
+
+.chart table,
+.chart tr {
+  background: #030508 !important;
+}
+
+.chart td {
+  background: rgba(255, 255, 255, .07) !important;
 }
 
 .profile {

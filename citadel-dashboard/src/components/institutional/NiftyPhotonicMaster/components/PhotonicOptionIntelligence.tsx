@@ -201,8 +201,11 @@ export const PhotonicOptionIntelligence = memo(function PhotonicOptionIntelligen
   const call10d = asData(skew.call_10d)
   const put10d = asData(skew.put_10d)
 
-  // Rolling client buffer for live IV velocity calculation
+  // Rolling client buffer for fallback IV velocity calculation
   const [ivHistory, setIvHistory] = useState<Array<{ time: number; iv: number; c25: number | null; p25: number | null; c10: number | null; p10: number | null }>>([])
+
+  // Backend-persisted velocities from OptionIntelligenceEngine
+  const backendVelocities = asData(vol.velocities) || asData(skew.velocities)
 
   useEffect(() => {
     if (!isAvailable || atmIv === null) return
@@ -221,6 +224,20 @@ export const PhotonicOptionIntelligence = memo(function PhotonicOptionIntelligen
   }, [atmIv, isAvailable, call25d.iv, put25d.iv, call10d.iv, put10d.iv])
 
   const getDeltas = (key: 'iv' | 'c25' | 'p25' | 'c10' | 'p10'): { d5: string | null; d15: string | null; trend: 'RISING' | 'COOLING' | 'STABLE' } => {
+    const d5Key = key === 'iv' ? 'iv_5m_delta' : `${key}_5m_delta`
+    const d15Key = key === 'iv' ? 'iv_15m_delta' : `${key}_15m_delta`
+
+    if (backendVelocities && (backendVelocities as any)[d5Key] !== undefined && (backendVelocities as any)[d5Key] !== null) {
+      const d5Val = number((backendVelocities as any)[d5Key])
+      const d15Val = number((backendVelocities as any)[d15Key])
+      const trend: 'RISING' | 'COOLING' | 'STABLE' =
+        d5Val !== null ? (d5Val > 0.1 ? 'RISING' : d5Val < -0.1 ? 'COOLING' : 'STABLE') : 'STABLE'
+      return {
+        d5: d5Val !== null ? pct(d5Val, true) : null,
+        d15: d15Val !== null ? pct(d15Val, true) : null,
+        trend,
+      }
+    }
     if (ivHistory.length < 2) return { d5: null, d15: null, trend: 'STABLE' }
     const now = Date.now()
     const pNow = ivHistory[ivHistory.length - 1][key]
@@ -294,17 +311,18 @@ export const PhotonicOptionIntelligence = memo(function PhotonicOptionIntelligen
   const isAbsorbingGex = netGexCr !== null && netGexCr >= 0
   const isAboveZeroGamma = netGexCr !== null ? netGexCr >= 0 : true
 
-  // MAIN HERO + MAIN WHEEL: Exactly ONE trader-facing state combining (Premium condition, IV demand, Option quality, GEX)
-  let heroMainState: 'PUT FRIENDLY' | 'CALL FRIENDLY' | 'SIDEWAYS / SELECTIVE' | 'NO OPTION EDGE' | 'AWAITING FEED' = 'SIDEWAYS / SELECTIVE'
+  // TOP-LEVEL OPTION BUYER ENVIRONMENT: Volatility Opportunity / Premium Environment (Non-directional)
+  let heroMainState: 'BUYER FAVOURABLE' | 'SELECTIVE // FAIR PREMIUM' | 'THETA RISK // HOSTILE' | 'AWAITING FEED' = 'SELECTIVE // FAIR PREMIUM'
   let heroStateTone = 'var(--amber)'
   let breatheClass = styles.breatheAmber
   let orbMotionClass = styles.orbSlowOrbit
-  let wheelCenterTitle = 'SIDEWAYS'
-  let wheelCenterSub = 'SELECTIVE'
-  let secondaryContextLabel = 'Fair Premium / Selective'
+  let wheelCenterTitle = 'SELECTIVE'
+  let wheelCenterSub = 'FAIR PREMIUM'
+  let secondaryContextLabel = 'Fair Premium / Selective Environment'
   let secondaryContextTone = 'var(--amber)'
-  let plainLanguageExplanation = 'Market balance me hai — dono taraf symmetrical demand hai.'
-  let finalDecisionConclusion = 'Sideways / selective — balanced premium demand and no clear directional edge.'
+  let plainLanguageExplanation = 'Option premium fair level par hai — move aur structure ke sath selective entry possible.'
+  let finalDecisionConclusion = 'Selective buyer environment — fair volatility pricing with normal theta decay.'
+  let activeRuleBranch = 'Branch: Fair Premium Environment'
 
   if (!isAvailable) {
     heroMainState = 'AWAITING FEED'
@@ -317,80 +335,51 @@ export const PhotonicOptionIntelligence = memo(function PhotonicOptionIntelligen
     secondaryContextTone = 'var(--text-lo)'
     plainLanguageExplanation = 'Quantitative option surface will hydrate when live stream connects.'
     finalDecisionConclusion = 'Standby — awaiting live option stream connection.'
-  } else if (isExpensive && ceResult === 'WEAK FOR BUYING' && peResult === 'WEAK FOR BUYING') {
-    heroMainState = 'NO OPTION EDGE'
+    activeRuleBranch = 'Branch: Feed Standby'
+  } else if (isCheap || volRegime === 'UNDERPRICED_PREMIUM') {
+    heroMainState = 'BUYER FAVOURABLE'
+    heroStateTone = 'var(--mint)'
+    breatheClass = styles.breatheGreen
+    orbMotionClass = styles.orbFastOrbit
+    wheelCenterTitle = 'BUYER'
+    wheelCenterSub = 'FAVOURABLE'
+    secondaryContextLabel = 'Premium Underpriced / Expansion Potential'
+    secondaryContextTone = 'var(--mint)'
+    plainLanguageExplanation = 'Option premium cheap/underpriced hai — volatility opportunity buyer ke favour me hai.'
+    finalDecisionConclusion = 'Buyer favourable — cheap volatility premium and low decay drag for option buying.'
+    activeRuleBranch = 'Branch: Underpriced Volatility Environment'
+  } else if (isExpensive || volRegime === 'OVERPRICED_PREMIUM') {
+    heroMainState = 'THETA RISK // HOSTILE'
     heroStateTone = 'var(--algory-red)'
     breatheClass = styles.breatheRed
     orbMotionClass = styles.orbRiskPulse
-    wheelCenterTitle = 'NO EDGE'
-    wheelCenterSub = 'THETA RISK'
-    secondaryContextLabel = 'Premium Expensive / Theta Risk'
+    wheelCenterTitle = 'THETA RISK'
+    wheelCenterSub = 'OVERPRICED'
+    secondaryContextLabel = 'Premium Expensive / High Time Decay'
     secondaryContextTone = 'var(--algory-red)'
-    plainLanguageExplanation = 'Option premium mehnga hai, isliye move sahi hone par bhi decay risk zyada hai.'
-    finalDecisionConclusion = 'No option edge — time decay risk dominating without directional momentum.'
-  } else if (putWingBid) {
-    heroMainState = 'PUT FRIENDLY'
-    heroStateTone = 'var(--mint)'
-    breatheClass = styles.breatheGreen
-    orbMotionClass = styles.orbFastOrbit
-    wheelCenterTitle = 'PUT'
-    wheelCenterSub = 'FRIENDLY'
-    secondaryContextLabel = isCheap
-      ? 'Premium Cheap / Buyer Friendly'
-      : isExpensive
-      ? 'Premium Expensive / Theta Risk'
-      : 'Fair Premium / Selective'
-    secondaryContextTone = isCheap ? 'var(--mint)' : isExpensive ? 'var(--algory-red)' : 'var(--amber)'
-    plainLanguageExplanation = isExpensive
-      ? 'PUT protection demand increasing but premium cost is high'
-      : 'Traders are paying more for downside protection'
-    finalDecisionConclusion = isExpensive
-      ? 'PUT protection demand increasing but premium cost is high — selective entry only.'
-      : 'PUT buying favourable with fast move response and supportive downside demand.'
-  } else if (callWingBid) {
-    heroMainState = 'CALL FRIENDLY'
-    heroStateTone = 'var(--mint)'
-    breatheClass = styles.breatheGreen
-    orbMotionClass = styles.orbFastOrbit
-    wheelCenterTitle = 'CALL'
-    wheelCenterSub = 'FRIENDLY'
-    secondaryContextLabel = isCheap
-      ? 'Premium Cheap / Buyer Friendly'
-      : isExpensive
-      ? 'Premium Expensive / Theta Risk'
-      : 'Fair Premium / Selective'
-    secondaryContextTone = isCheap ? 'var(--mint)' : isExpensive ? 'var(--algory-red)' : 'var(--amber)'
-    plainLanguageExplanation = isExpensive
-      ? 'Upside demand active but premium cost is high'
-      : 'Upside participation and call demand increasing'
-    finalDecisionConclusion = isExpensive
-      ? 'CALL friendly, but premium expensive — selective entry only.'
-      : 'CALL buying favourable with fast move response and manageable time decay.'
+    plainLanguageExplanation = 'Option premium mehnga hai — move sahi hone par bhi time decay risk zyada hai.'
+    finalDecisionConclusion = 'Hostile buyer environment — overpriced premium risk dominating.'
+    activeRuleBranch = 'Branch: Overpriced Volatility Environment'
   } else {
-    heroMainState = 'SIDEWAYS / SELECTIVE'
+    heroMainState = 'SELECTIVE // FAIR PREMIUM'
     heroStateTone = 'var(--amber)'
     breatheClass = styles.breatheAmber
     orbMotionClass = styles.orbSlowOrbit
-    wheelCenterTitle = 'SIDEWAYS'
-    wheelCenterSub = 'SELECTIVE'
-    secondaryContextLabel = isCheap
-      ? 'Premium Cheap / Buyer Friendly'
-      : isExpensive
-      ? 'Premium Expensive / Theta Risk'
-      : 'Fair Premium / Selective'
-    secondaryContextTone = isCheap ? 'var(--mint)' : isExpensive ? 'var(--algory-red)' : 'var(--amber)'
-    plainLanguageExplanation = 'Market balance me hai — dono taraf symmetrical demand hai.'
-    finalDecisionConclusion = 'Sideways / selective — balanced premium demand and no clear directional edge.'
+    wheelCenterTitle = 'SELECTIVE'
+    wheelCenterSub = 'FAIR PREMIUM'
+    secondaryContextLabel = 'Fair Premium / Selective Environment'
+    secondaryContextTone = 'var(--amber)'
+    plainLanguageExplanation = 'Option premium fair level par hai — move aur structure ke sath selective entry possible.'
+    finalDecisionConclusion = 'Selective buyer environment — fair volatility pricing with normal theta decay.'
+    activeRuleBranch = 'Branch: Fair Premium Environment'
   }
 
-  // Directional Demand Driver Chip
-  let demandDriverChip = 'BALANCED PREMIUM DEMAND'
-  if (number(put25d.iv) !== null && number(call25d.iv) !== null) {
-    if (number(put25d.iv)! > number(call25d.iv)! + 0.6) {
-      demandDriverChip = `PUT PROTECTION DEMAND ${num(put25d.iv)}%`
-    } else if (number(call25d.iv)! > number(put25d.iv)! + 0.6) {
-      demandDriverChip = `CALL UPSIDE DEMAND ${num(call25d.iv)}%`
-    }
+  // Wing Demand / Skew Context Chip
+  let demandDriverChip = 'BALANCED WING DEMAND'
+  if (putWingBid && !callWingBid) {
+    demandDriverChip = `PUT PROTECTION BID (${num(put25d.iv)}% IV)`
+  } else if (callWingBid && !putWingBid) {
+    demandDriverChip = `CALL SKEW ELEVATED (${num(call25d.iv)}% IV)`
   }
 
   // IV Direction Chip (Market Fear)
@@ -471,7 +460,7 @@ export const PhotonicOptionIntelligence = memo(function PhotonicOptionIntelligen
             </div>
           </div>
 
-          {/* SINGLE MAIN HERO STATE (e.g. PUT FRIENDLY / CALL FRIENDLY / SIDEWAYS / NO OPTION EDGE) */}
+          {/* OPTION BUYER ENVIRONMENT HERO (BUYER FAVOURABLE / SELECTIVE / THETA RISK) */}
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginTop: '6px' }}>
             <span
               style={{
@@ -594,6 +583,23 @@ export const PhotonicOptionIntelligence = memo(function PhotonicOptionIntelligen
               }}
             >
               CONCLUSION: <span style={{ color: heroStateTone }}>{finalDecisionConclusion}</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginTop: '3px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '3px' }}>
+              <span className={styles.monoLabel} style={{ fontSize: '7.5px', color: 'var(--text-lo)' }}>
+                RULE: {activeRuleBranch}
+              </span>
+              <span className={styles.monoLabel} style={{ fontSize: '7.5px', color: 'var(--cyan)' }}>
+                SKEW: {skew25dSpread != null ? skew25dSpread : '—'}
+              </span>
+              <span className={styles.monoLabel} style={{ fontSize: '7.5px', color: 'var(--mint)' }}>
+                C25Δ: {call25d?.iv != null ? `${call25d.iv}%` : '—'}
+              </span>
+              <span className={styles.monoLabel} style={{ fontSize: '7.5px', color: 'var(--algory-red)' }}>
+                P25Δ: {put25d?.iv != null ? `${put25d.iv}%` : '—'}
+              </span>
+              <span style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', color: isAvailable ? 'var(--cyan)' : 'var(--amber)', background: 'rgba(255,255,255,0.04)', padding: '2px 6px', borderRadius: '4px' }}>
+                {isAvailable ? 'SYNC: UNIFIED CHAIN FRAME' : 'INPUT SYNC UNVERIFIED'}
+              </span>
             </div>
           </div>
 
@@ -912,7 +918,7 @@ export const PhotonicOptionIntelligence = memo(function PhotonicOptionIntelligen
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════════════════════
-          TIER 4: GEX + HEDGE DEMAND + ZERO GAMMA (STRUCTURAL CONTEXT STRIP)
+          TIER 4: GEX + HEDGE DEMAND + STRIKE GEX CROSS (STRUCTURAL CONTEXT STRIP)
           ════════════════════════════════════════════════════════════════════════════════════ */}
       <div
         style={{

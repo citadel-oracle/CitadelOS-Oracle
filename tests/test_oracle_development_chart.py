@@ -240,6 +240,108 @@ def test_futures_chart_adds_forming_display_bar_without_contaminating_finalized_
         assert service._futures_chart_cache["5m"] == cached_before
 
 
+def test_futures_minute_rollover_wakes_finalized_history_producer(monkeypatch):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        service = OracleDevService(MockDhanClient(), None, None, None, state_root=Path(tmpdir))
+        ist = ZoneInfo("Asia/Kolkata")
+        first = datetime(2026, 8, 10, 10, 0, 59, tzinfo=ist)
+        service._active_fut_security_id = "49081"
+        wakes = []
+        monkeypatch.setattr(
+            service,
+            "request_chart_refresh",
+            lambda **kwargs: wakes.append(kwargs.get("expected_completed_at")),
+        )
+
+        service.ingest_live_futures_tick({
+            "security_id": "49081", "ltp": 112.5, "ltt": int(first.timestamp()),
+            "receive_wall_utc": first.astimezone(timezone.utc).isoformat(),
+        })
+        service.ingest_live_futures_tick({
+            "security_id": "49081", "ltp": 113.0,
+            "ltt": int((first + timedelta(seconds=1)).timestamp()),
+            "receive_wall_utc": (first + timedelta(seconds=1)).astimezone(timezone.utc).isoformat(),
+        })
+        service.ingest_live_futures_tick({
+            "security_id": "49081", "ltp": 113.5,
+            "ltt": int((first + timedelta(seconds=2)).timestamp()),
+            "receive_wall_utc": (first + timedelta(seconds=2)).astimezone(timezone.utc).isoformat(),
+        })
+
+        assert wakes == [int((first + timedelta(seconds=1)).timestamp())]
+
+
+def test_futures_rollover_retries_until_authoritative_closed_candle_is_available(monkeypatch):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        service = OracleDevService(MockDhanClient(), None, None, None, state_root=Path(tmpdir))
+        expected = int(datetime(2026, 8, 10, 10, 1, tzinfo=ZoneInfo("Asia/Kolkata")).timestamp())
+        previous_open = expected - 120
+        completed_open = expected - 60
+        service._producer_interval = 0.2
+        service._producer_retry_interval = 0.01
+        calls = []
+
+        def refresh(*, force=False):
+            calls.append(force)
+            service._historical_futures_candles["1m"] = [
+                {"time": completed_open if len(calls) >= 3 else previous_open}
+            ]
+            if len(calls) >= 3:
+                service._producer_stop.set()
+
+        monkeypatch.setattr(service, "refresh_market_data_if_due", refresh)
+        service.request_chart_refresh(expected_completed_at=expected)
+        service._producer_loop()
+
+        health = service.chart_data_health()["producer"]
+        assert calls == [True, True, True]
+        assert health["source_not_ready_count"] == 1
+        assert health["finalized_retries"] == 1
+        assert health["expected_completed_at"] is None
+        assert health["last_completed_boundary"] == datetime.fromtimestamp(
+            expected, tz=timezone.utc
+        ).isoformat()
+
+
+def test_futures_rollover_wake_uses_tick_identity_when_forming_cache_precedes_tick(monkeypatch):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        service = OracleDevService(MockDhanClient(), None, None, None, state_root=Path(tmpdir))
+        ist = ZoneInfo("Asia/Kolkata")
+        prior = datetime(2026, 8, 10, 10, 0, 59, tzinfo=ist)
+        current = prior + timedelta(seconds=1)
+        current_bucket = int(current.timestamp())
+        service._active_fut_security_id = "49081"
+        service._live_futures_tick = {
+            "security_id": "49081",
+            "ltp": 112.5,
+            "ltt": int(prior.timestamp()),
+        }
+        # A concurrent periodic refresh may prepare the display bucket before
+        # the first genuine websocket tick for that minute arrives.
+        service._forming_futures_cache["1m"] = {
+            "time": current_bucket,
+            "open": 113.0,
+            "high": 113.0,
+            "low": 113.0,
+            "close": 113.0,
+        }
+        wakes = []
+        monkeypatch.setattr(
+            service,
+            "request_chart_refresh",
+            lambda **kwargs: wakes.append(kwargs.get("expected_completed_at")),
+        )
+
+        service.ingest_live_futures_tick({
+            "security_id": "49081",
+            "ltp": 113.25,
+            "ltt": current_bucket,
+            "receive_wall_utc": current.astimezone(timezone.utc).isoformat(),
+        })
+
+        assert wakes == [current_bucket]
+
+
 def test_futures_projection_reader_uses_producer_owned_forming_cache(monkeypatch):
     """A Fast Lane read must not rescan candle history for every timeframe."""
 

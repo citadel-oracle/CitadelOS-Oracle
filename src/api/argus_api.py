@@ -202,7 +202,7 @@ class ArgusAPI:
         cached = self._cache.get(cache_key)
         current_market_state = ArgusBaselineStore.market_state(self.now_provider())
 
-        if cached is not None:
+        if cached is not None and self._cached_expiry_is_active(cached):
             age = max(0.0, now - cached["cached_at"])
             if age < self.cache_ttl_seconds or current_market_state != "OPEN":
                 freshness = "cached" if current_market_state == "OPEN" else "stale"
@@ -219,7 +219,7 @@ class ArgusAPI:
             current_market_state = ArgusBaselineStore.market_state(
                 self.now_provider()
             )
-            if cached is not None:
+            if cached is not None and self._cached_expiry_is_active(cached):
                 age = max(0.0, now - cached["cached_at"])
                 if age < self.cache_ttl_seconds or current_market_state != "OPEN":
                     freshness = (
@@ -241,16 +241,18 @@ class ArgusAPI:
                     )
                     snapshot_dict = snapshot.to_dict()
                 else:
-                    selected_expiry = self.engine._select_expiry(
-                        info["segment"], info["security_id"], normalized_expiry,
-                    )
-                    response = self.engine.dhan.get_option_chain(
-                        segment=info["segment"], security_id=info["security_id"],
-                        expiry=selected_expiry,
+                    selected_expiry, response, source = self.engine.fetch_raw_option_chain(
+                        segment=info["segment"],
+                        security_id=info["security_id"],
+                        expiry=normalized_expiry,
                     )
                     prepared = self.engine.prepare_snapshot_input(
-                        normalized_symbol, info["segment"], info["security_id"],
-                        selected_expiry, response,
+                        normalized_symbol,
+                        info["segment"],
+                        info["security_id"],
+                        selected_expiry,
+                        response,
+                        source=source,
                     )
                     snapshot_dict = process_worker.run("argus_snapshot", prepared)
             except InvalidOptionExpiryError as error:
@@ -284,7 +286,9 @@ class ArgusAPI:
         normalized_expiry = self._validate_expiry(expiry)
         candidates = [
             (key, value) for key, value in self._cache.items()
-            if key[0] == normalized and (normalized_expiry is None or key[1] == normalized_expiry)
+            if key[0] == normalized
+            and (normalized_expiry is None or key[1] == normalized_expiry)
+            and (normalized_expiry is not None or self._cached_expiry_is_active(value))
         ]
         if not candidates:
             return None
@@ -298,6 +302,15 @@ class ArgusAPI:
             else "cached"
         )
         return self._response(cached["data"], cache_hit=True, age_seconds=age, freshness=freshness)
+
+    def _cached_expiry_is_active(self, cached) -> bool:
+        """Never let a closed-market cache pin CURRENT to a finished expiry."""
+
+        try:
+            expiry = cached["data"]["underlying"]["expiry"]
+        except (KeyError, TypeError):
+            return False
+        return self.engine.is_active_expiry(expiry)
 
     def _response(self, data, cache_hit, age_seconds, freshness):
         source_reason = self._source_reason(data)

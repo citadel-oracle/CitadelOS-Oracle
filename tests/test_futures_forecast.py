@@ -262,8 +262,19 @@ def test_chronos_reuses_validated_multivariate_feature_path(tmp_path):
     assert value["input_coverage"] == 100.0
 
 
-def test_market_closed_does_not_schedule_live_inference(tmp_path):
-    assert orchestrator(tmp_path).ingest(chart_projection(market="MARKET_CLOSED")) is False
+def test_market_close_accepts_same_session_finalized_last_candle(tmp_path):
+    assert orchestrator(tmp_path).ingest(chart_projection(market="MARKET_CLOSED")) is True
+
+
+def test_market_close_rejects_old_or_not_yet_finalized_candle(tmp_path):
+    old_clock_engine = orchestrator(tmp_path)
+    old_clock_engine.clock = lambda: datetime(2026, 8, 10, 15, 30, tzinfo=IST)
+    assert old_clock_engine.ingest(chart_projection(market="MARKET_CLOSED")) is False
+
+    future = chart_projection(market="MARKET_CLOSED")
+    future["source_timestamp"] = datetime(2026, 8, 7, 15, 30, tzinfo=IST).astimezone(timezone.utc).isoformat()
+    future["candles"][-1]["time"] = int(datetime(2026, 8, 7, 15, 30, tzinfo=IST).timestamp())
+    assert orchestrator(tmp_path).ingest(future) is False
 
 
 def test_opening_waits_for_first_genuine_finalized_five_minute_bar(tmp_path):

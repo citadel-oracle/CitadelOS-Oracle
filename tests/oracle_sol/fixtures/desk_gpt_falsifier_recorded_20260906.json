@@ -1,0 +1,101 @@
+{
+  "comparison_id": "6c6e2f90053b48a457f1d47a0cf134f5d1242c3dcfec69bd97d96b5a321a63a4",
+  "ended_at": "2026-09-06T10:10:16.766605+00:00",
+  "error_class": null,
+  "evidence_ids": 22,
+  "evidence_semantics_error": null,
+  "finish_reason": "stop",
+  "http_status": 200,
+  "input_hash": "594136f4ff894b694874c527262e2374920bbd92b5d29effe34577c4f3321162",
+  "kind": "RESULT",
+  "latency_ms": 4382.04,
+  "ordinal": 12,
+  "output": {
+    "claim": {
+      "claim": "The CALL side is not substantiated by the observed market data.",
+      "evidence_ids": [
+        "evt_fda6fb85977f4e56_SPOT_MOVE_NIFTY_INDEX_48843db950053c0c",
+        "evt_fda6fb85977f4e56_FUTURES_MOVE_NIFTY_FUTURES_cc88a01443cb2254",
+        "evt_fda6fb85977f4e56_BASIS_SHIFT_NIFTY_BASIS_736a029f8d74a07a",
+        "metric:ce_atm_premium",
+        "metric:pe_atm_premium"
+      ]
+    },
+    "contradiction": [
+      {
+        "claim": "Spot price rose while futures fell, narrowing the basis, which contradicts bullish call pressure.",
+        "evidence_ids": [
+          "evt_fda6fb85977f4e56_SPOT_MOVE_NIFTY_INDEX_48843db950053c0c",
+          "evt_fda6fb85977f4e56_FUTURES_MOVE_NIFTY_FUTURES_cc88a01443cb2254",
+          "evt_fda6fb85977f4e56_BASIS_SHIFT_NIFTY_BASIS_736a029f8d74a07a"
+        ]
+      }
+    ],
+    "internal_tension": [
+      {
+        "claim": "Call premium is higher than put premium (negative skew) but underlying price action is mixed, creating internal tension.",
+        "evidence_ids": [
+          "metric:ce_atm_premium",
+          "metric:pe_atm_premium",
+          "metric:skew_10d",
+          "metric:skew_25d"
+        ]
+      }
+    ],
+    "missing_confirmation": [
+      {
+        "claim": "No increase in call premium or open interest is observed to confirm call buying.",
+        "evidence_ids": [
+          "metric:ce_atm_premium",
+          "metric:pe_atm_premium"
+        ]
+      }
+    ],
+    "side": "CALL",
+    "state": "CONTRADICTED",
+    "support": [],
+    "temporal_change": [
+      {
+        "claim": "Implied volatility and straddle price both decreased, weakening any call‑buying narrative.",
+        "evidence_ids": [
+          "evt_fda6fb85977f4e56_VOLATILITY_SURFACE_SHIFT_NIFTY_VOL_SURFACE_fd8e6fb058a69f00",
+          "evt_fda6fb85977f4e56_STRADDLE_CHANGE_NIFTY_STRADDLE_88d6d2a9edc4f851"
+        ]
+      }
+    ]
+  },
+  "payload_bytes": 24298,
+  "provider": "groq",
+  "rate_limits": {
+    "last_429_timestamp": null,
+    "limit_requests": 1000,
+    "limit_tokens": 8000,
+    "remaining_requests": 999,
+    "remaining_tokens": 180,
+    "reset_requests": "1m26.4s",
+    "reset_tokens": "58.65s",
+    "retry_after_seconds": null,
+    "total_429_count": 0,
+    "total_requests_made": 0,
+    "total_tokens_consumed": 0
+  },
+  "requested_model": "openai/gpt-oss-120b",
+  "response_model": "openai/gpt-oss-120b",
+  "revision": 8,
+  "role": "side_falsifier",
+  "safe_error_message": null,
+  "schema_error_keyword": null,
+  "schema_error_path": null,
+  "schema_valid": true,
+  "session_id": "2026-09-04",
+  "side": "CALL",
+  "source_hash": "73f84fd4b221394406b6f11ed10916d77b67a0e91a4c933534a4a30d1c02be93",
+  "started_at": "2026-09-06T10:10:12.134548+00:00",
+  "transport_success": true,
+  "usage": {
+    "cached_tokens": 0,
+    "completion_tokens": 1681,
+    "prompt_tokens": 7467,
+    "total_tokens": 9148
+  }
+}

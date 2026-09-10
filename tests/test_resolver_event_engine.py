@@ -39,6 +39,39 @@ def test_1_native_flow_freshness_rule():
     assert diag_stale["event_flow_x"] is None
 
 
+def test_1b_canonical_order_flow_shape_reaches_resolver_history_without_future_use():
+    engine = ResolverEngine()
+    first = make_dt(10, 0, 0)
+    second = make_dt(10, 0, 1)
+    future = make_dt(10, 0, 2)
+
+    def canonical(revision, timestamp, mlofi, l1_ofi):
+        return {
+            "revision": revision,
+            "generated_at": timestamp.isoformat(),
+            "family_values": {
+                "BOOK_PRESSURE": {"mlofi": mlofi, "l1_ofi": l1_ofi},
+            },
+        }
+
+    engine.ingest_flow_snapshot(canonical("R1", first, 0.2, 0.1), first)
+    engine.ingest_flow_snapshot(canonical("R2", second, 0.4, 0.2), second)
+    engine.ingest_flow_snapshot(canonical("R3", future, 9.9, 9.9), second)
+    engine.ingest_flow_snapshot(canonical("R2", second, 0.4, 0.2), second)
+
+    diag = engine.compute_flow_diagnostics(second, second)
+    assert len(engine._flow_series) == 3
+    assert diag["current_flow_timestamp"] == second.isoformat()
+    assert diag["current_mlofi"] == 0.4
+    assert diag["flow_prior_median"] == 0.2
+    assert diag["flow_baseline_sample_count"] == 1
+    assert diag["baseline_sample_count"] == 1
+    assert diag["current_flow_x"] == 2.0
+    assert diag["event_flow_x"] == 2.0
+    assert diag["event_flow_direction"] == "BUY"
+    assert diag["event_flow_baseline_sample_count"] == 1
+
+
 def test_2_oi_boundary_single_authority():
     tracker = _OiRollingTracker()
     sid = "61647"
@@ -244,7 +277,7 @@ def test_12_current_flow_upgrades_held_structural_state():
     # Later flow shock
     flow_shock = {"current_mlofi": -0.80, "current_flow_x": 3.8, "current_flow_timestamp": make_dt(10, 2).isoformat(), "flow_new_session_extreme": True}
     ev2, _ = engine.synthesize_resolver_state("CE", contract, {}, flow_shock, {}, make_dt(10, 2))
-    assert ev2["label"] == "SUPPORT GONE 3M · FLOW 3.8X"
+    assert ev2["label"] == "SUPPORT GONE 3M · SELL FLOW 3.8X"
     assert ev2["source_event_time"] == make_dt(10, 2).isoformat()
 
 
@@ -385,6 +418,42 @@ def test_16_exhaustive_vob_single_and_multi_tf_labels():
     }
     ev_full, _ = engine.synthesize_resolver_state("PE", c_full_bull, {}, {}, {}, now)
     assert ev_full["label"] == "FULL VOB ALIGN ↑"
+
+
+def test_16b_canonical_nested_horsepower_uses_actual_latest_event_tuple():
+    engine = ResolverEngine()
+    now = make_dt(11, 0)
+    contract = {
+        "contract": {"security_id": "61670", "strike": 24200},
+        "vob": {
+            "horsepower": {
+                "timeframes": {
+                    "1m": {
+                        "status": "RESISTANCE_OUT",
+                        "event_id": "WRONG_AGGREGATE_ID",
+                        "confirmed_candle": now.isoformat(),
+                        "latest_event": {
+                            "event": "SUPPORT_BACK",
+                            "event_id": "ACTUAL_EVENT_ID",
+                            "confirmed_candle": now.isoformat(),
+                        },
+                    },
+                    "3m": {"status": "NEUTRAL", "latest_event": None},
+                    "5m": {"status": "NEUTRAL", "latest_event": None},
+                }
+            }
+        },
+    }
+
+    event, diagnostics = engine.synthesize_resolver_state("PE", contract, {}, {}, {}, now)
+
+    assert event["label"] == "SUPPORT BACK 1M"
+    assert diagnostics["vob_event_id"] == "ACTUAL_EVENT_ID"
+    assert diagnostics["vob_timeframes"] == {
+        "1m": "SUPPORT_BACK",
+        "3m": "NEUTRAL",
+        "5m": "NEUTRAL",
+    }
 
 
 def test_17_contract_rotation_memory_preservation():
@@ -550,4 +619,62 @@ def test_22_last_meaningful_timestamp_is_immutable_until_new_event_and_rotation(
     assert previous["is_previous_contract"] is True
 
 
+def test_23_held_flow_event_keeps_original_historical_evidence():
+    engine = ResolverEngine()
+    t0 = make_dt(11, 0, 0)
+    contract = _vob_contract("SUPPORT_GONE", t0, "EV_FLOW_MEMORY")
+    contract["quote"] = {"ltp": 55.0, "oi": 1000.0}
+    initial_flow = {
+        "current_mlofi": -0.4,
+        "current_flow_x": 3.7,
+        "flow_new_session_extreme": True,
+        "current_flow_timestamp": t0.isoformat(),
+    }
+    first, _ = engine.synthesize_resolver_state("PE", contract, {}, initial_flow, {}, t0)
+    assert first["label"] == "SUPPORT GONE 1M · SELL FLOW 3.7X"
+    assert first["last_meaningful_event"]["flow_x"] == 3.7
 
+    later_contract = {**contract, "quote": {"ltp": 61.0, "oi": 1200.0}}
+    later_flow = {
+        "current_mlofi": -0.1,
+        "current_flow_x": 0.9,
+        "flow_new_session_extreme": False,
+        "current_flow_timestamp": (t0 + timedelta(seconds=30)).isoformat(),
+    }
+    held, _ = engine.synthesize_resolver_state(
+        "PE", later_contract, {}, later_flow, {}, t0 + timedelta(seconds=30)
+    )
+
+    assert held["label"] == "SUPPORT GONE 1M · SELL FLOW 3.7X"
+    assert held["last_meaningful_event"]["event_timestamp"] == t0.isoformat()
+    assert held["last_meaningful_event"]["flow_x"] == 3.7
+    assert held["last_meaningful_event"]["event_price"] == 55.0
+    assert held["last_meaningful_event"]["event_oi"] == 1000.0
+
+
+def test_24_flow_pill_direction_uses_exact_signed_sample_without_changing_qualification():
+    now = make_dt(11, 10, 0)
+    contract = _vob_contract("RESISTANCE_OUT", now, "EV_SIGNED_FLOW")
+
+    for mlofi, direction in ((0.6, "BUY"), (-0.6, "SELL")):
+        engine = ResolverEngine()
+        event, diagnostics = engine.synthesize_resolver_state(
+            "CE",
+            contract,
+            {},
+            {
+                "event_mlofi": mlofi,
+                "event_flow_x": 4.2,
+                "flow_new_session_extreme": True,
+                "flow_baseline_sample_count": 12,
+            },
+            {},
+            now,
+        )
+        assert event["label"] == f"RES OUT 1M · {direction} FLOW 4.2X"
+        assert diagnostics["event_flow_direction"] == direction
+        assert diagnostics["event_flow_x"] == 4.2
+        assert diagnostics["baseline_sample_count"] == 12
+
+    # The accepted enrichment gate is magnitude-only: SELL flow still enriches
+    # the bullish RES OUT event. This test documents rather than changes it.

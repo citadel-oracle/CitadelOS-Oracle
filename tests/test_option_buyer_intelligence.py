@@ -1,6 +1,8 @@
 from copy import deepcopy
+from datetime import datetime, timedelta
 
 from src.oracle.option_buyer_intelligence import OptionBuyerIntelligenceWorker, black76, implied_volatility
+from src.oracle.fast_lane_publisher import wrap_provider_feed
 
 
 EXPIRY = "2026-08-25"
@@ -73,6 +75,189 @@ def _attach_coherent_market(argus, *, futures_bid=99.95, futures_ask=100.05):
                     "ltp": 999.0, "source_age_seconds": 999.0},
         "option_market_depth": depth,
     }
+
+
+def _prime_sudden_oi_history(worker, argus):
+    worker._hydrated = True
+    selected = argus["data"]["atm_window"][2:7]
+    boundaries = [
+        datetime.fromisoformat("2026-08-19T09:45:00+05:30"),
+        datetime.fromisoformat("2026-08-19T09:50:00+05:30"),
+        datetime.fromisoformat("2026-08-19T09:55:00+05:30"),
+        datetime.fromisoformat(OBSERVED),
+    ]
+    for side in ("ce", "pe"):
+        for index, row in enumerate(selected):
+            leg = row[side]
+            sid = str(leg["security_id"])
+            values = [10_000.0, 10_010.0 + index, 10_030.0 + (2 * index)]
+            prices = [100.0, 99.0, 98.0]
+            if side == "ce" and index == 2:
+                values.append(values[-1] - 300.0)
+                prices.append(103.0)
+            else:
+                values.append(values[-1] + 30.0 + index)
+                prices.append(97.0)
+            for observed_at, oi, ltp in zip(boundaries, values, prices):
+                worker.oi_tracker.record(sid, oi, ltp, observed_at)
+
+
+def test_sudden_oi_uses_prior_only_exact_contract_history_and_factual_squeeze():
+    argus, vob = _inputs()
+    worker = OptionBuyerIntelligenceWorker()
+    _prime_sudden_oi_history(worker, argus)
+
+    sudden = worker.prepare(argus, vob)["sudden_oi"]
+    call = sudden["CALL"]
+
+    assert call["status"] == "LIVE"
+    assert call["prior_sample_count"] == 2
+    assert call["normal_5m_activity"] is not None
+    assert call["current_5m_activity"] > call["previous_session_high"]
+    assert call["percentile"] == 100.0
+    assert call["previous_5m_activity"] is not None
+    assert call["current_to_normal_x"] == round(
+        call["current_5m_activity"] / call["normal_5m_activity"], 4
+    )
+    assert len(call["recent_5m_activity"]) == 3
+    assert call["recent_5m_activity"][-1]["activity"] == call["current_5m_activity"]
+    assert call["new_session_extreme"] is True
+    assert call["top_strike"]["security_id"] == "target-ce"
+    assert call["top_strike"]["state"] == "SHORT COVERING"
+    assert call["top_strike"]["new_5m_high"] is True
+    assert call["top_strike"]["squeeze"] is True
+    assert {event["event_type"] for event in call["alerts"]} == {
+        "SIDE_SESSION_EXTREME", "STRIKE_SESSION_EXTREME", "WRITER_SQUEEZE",
+    }
+
+
+def test_sudden_oi_event_identity_deduplicates_and_contract_rotation_does_not_leak():
+    argus, vob = _inputs()
+    worker = OptionBuyerIntelligenceWorker()
+    _prime_sudden_oi_history(worker, argus)
+    first = worker.prepare(argus, vob)["sudden_oi"]
+    repeated = worker.prepare(argus, vob)["sudden_oi"]
+    assert [event["event_id"] for event in first["alerts"]] == [event["event_id"] for event in repeated["alerts"]]
+
+    rotated = deepcopy(argus)
+    for row in rotated["data"]["atm_window"]:
+        row["ce"]["security_id"] = f"new-{row['ce']['security_id']}"
+        row["pe"]["security_id"] = f"new-{row['pe']['security_id']}"
+    after_rotation = worker.prepare(rotated, vob)["sudden_oi"]
+    assert after_rotation["CALL"]["status"] == "WARMING"
+    assert after_rotation["PUT"]["status"] == "WARMING"
+    assert after_rotation["alerts"] == []
+    assert after_rotation["CALL"]["previous_session_high"] is None
+
+
+def test_sudden_oi_missing_boundary_observation_is_unavailable_not_zero():
+    argus, vob = _inputs()
+    worker = OptionBuyerIntelligenceWorker()
+    worker._hydrated = True
+    selected = argus["data"]["atm_window"][2:7]
+    for row in selected:
+        leg = row["ce"]
+        worker.oi_tracker.record(str(leg["security_id"]), 10_000.0, 100.0, datetime.fromisoformat("2026-08-19T09:55:00+05:30"))
+    call = worker.prepare(argus, vob)["sudden_oi"]["CALL"]
+    assert call["status"] == "WARMING"
+    assert call["current_5m_activity"] is None
+    assert call["percentile"] is None
+    assert call["new_session_extreme"] is False
+
+
+def test_sudden_oi_straddle_activity_rejects_atm_contract_rotation():
+    worker = OptionBuyerIntelligenceWorker()
+    worker._hydrated = True
+    start = datetime.fromisoformat("2026-08-19T09:45:00+05:30")
+    worker._record_timed_value(worker._straddle_series, 200.0, start, identity="old-ce:old-pe")
+    worker._record_timed_value(
+        worker._straddle_series,
+        215.0,
+        start + timedelta(minutes=5),
+        identity="new-ce:new-pe",
+    )
+
+    context = worker._timed_change_context(
+        worker._straddle_series,
+        5,
+        start + timedelta(minutes=5),
+        require_same_identity=True,
+    )
+
+    assert context["change"] is None
+    assert context["percentile"] is None
+
+
+def test_sudden_oi_price_oi_timing_fails_closed_without_canonical_price_event():
+    argus, vob = _inputs()
+    worker = OptionBuyerIntelligenceWorker()
+    _prime_sudden_oi_history(worker, argus)
+    observed_at = datetime.fromisoformat(OBSERVED)
+    worker._record_timed_value(worker._price_series, 24_000.0, observed_at - timedelta(seconds=2))
+    worker._record_timed_value(worker._price_series, 24_100.0, observed_at)
+
+    response = worker.prepare(argus, vob)["sudden_oi"]["price_oi_response"]
+
+    assert response["call_timing"] == "NO CLEAR FOLLOW"
+    assert response["put_timing"] == "NO CLEAR FOLLOW"
+
+
+def test_sudden_oi_same_day_dhan_backfill_is_bounded_ordered_and_rotation_safe(monkeypatch):
+    class FakeDhan:
+        def get_intraday_candles(self, segment, security_id, **kwargs):
+            start = datetime.fromisoformat("2026-08-19T09:15:00+05:30")
+            candles = []
+            for minute in range(26):
+                opened_at = start + timedelta(minutes=minute)
+                row = {
+                    "time": opened_at.timestamp(),
+                    "close": 100.0 + minute / 100.0,
+                    "open_interest": None,
+                }
+                if segment == "NSE_FNO":
+                    row["open_interest"] = 10_000.0 + minute * 10.0 + int(str(security_id).split("-")[-1])
+                candles.append(row)
+            return {"success": True, "candles": candles}
+
+    class FakeMaster:
+        def _rows(self, _underlying):
+            return [
+                {
+                    "SM_EXPIRY_DATE": EXPIRY,
+                    "UNDERLYING_SYMBOL": "NIFTY",
+                    "OPTION_TYPE": side,
+                    "STRIKE_PRICE": str(strike),
+                    "SECURITY_ID": f"{side.lower()}-{strike}",
+                }
+                for strike in range(98, 103)
+                for side in ("CE", "PE")
+            ]
+
+        @staticmethod
+        def _text(row, *keys):
+            return next((row[key] for key in keys if row.get(key) is not None), None)
+
+    monkeypatch.setattr("src.oracle.option_buyer_intelligence.sleep", lambda _seconds: None)
+    worker = OptionBuyerIntelligenceWorker(
+        dhan_history_client=FakeDhan(), instrument_master=FakeMaster()
+    )
+    live_at = datetime.fromisoformat("2026-08-19T09:41:00+05:30")
+    worker.oi_tracker.record("ce-100", 99_999.0, 123.0, live_at)
+    frames = worker._backfill_same_day_dhan(
+        live_at,
+        live_at,
+        {"underlying": {"expiry": EXPIRY}},
+    )
+    worker._rebuild_side_activity_history(frames, live_at)
+
+    ce_series = list(worker.oi_tracker._series["ce-100"])
+    assert ce_series == sorted(ce_series, key=lambda item: item[0])
+    assert ce_series[-1][1] == 99_999.0
+    assert worker._hydration_diagnostics["option_securities_fetched"] == 10
+    assert worker._hydration_diagnostics["historical_observations_recovered"] > 0
+    assert len(worker._session_side_activity["CE"]) >= 3
+    assert len(worker._session_side_activity["PE"]) >= 3
+    assert all(len(item["security_ids"]) == 5 for item in worker._session_side_activity["CE"].values())
 
 
 def test_target_iv_excluded_and_ask_not_ltp_drives_fair_comparison():
@@ -228,6 +413,21 @@ def test_partial_full_quote_batch_fails_closed_without_mixing_chain_quotes():
     assert output["CE"]["quality"]["valid"] is False
 
 
+def test_live_chain_remains_publishable_when_futures_and_option_expiries_differ():
+    argus, vob = _inputs()
+    argus["data"]["futures"]["expiry"] = "2026-09-29"
+
+    output = OptionBuyerIntelligenceWorker().prepare(argus, vob)
+    wrapped = wrap_provider_feed("option_buyer_intelligence", output, None)
+
+    assert output["CE"]["quality"]["valid"] is True
+    assert output["PE"]["quality"]["valid"] is True
+    assert output["option_intelligence"]["status"] == "LIVE"
+    assert output["status"] == "LIVE"
+    assert wrapped["ok"] is True
+    assert wrapped["data"]["option_intelligence"]["status"] == "LIVE"
+
+
 def test_repo_skew_momentum_and_sign_contradiction():
     from src.oracle.option_intelligence import OptionIntelligenceEngine
     from datetime import datetime, timezone
@@ -291,4 +491,3 @@ def test_multi_wing_velocity_and_cadence_metadata():
     assert vels["iv_5m_delta"] is not None
     assert vels["iv_15m_delta"] is not None
     assert vels["repo_skew_velocity"] is not None
-

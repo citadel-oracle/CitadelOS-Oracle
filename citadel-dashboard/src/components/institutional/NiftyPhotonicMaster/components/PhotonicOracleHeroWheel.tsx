@@ -1,7 +1,9 @@
 'use client'
 
 import React, { memo } from 'react'
+import type { OracleHorsepowerProjection } from '@/dashboard/store/oracleStore'
 import styles from '../NiftyPhotonicMaster.module.css'
+import { PhotonicHorsepowerRows } from './PhotonicHorsepowerRows'
 import {
   formatNumber,
   type PhotonicArgusVobViewModel,
@@ -29,6 +31,9 @@ export interface PhotonicOracleHeroWheelProps {
   viewModel?: PhotonicArgusVobViewModel | null
   proximity?: string
   intelligence?: Readonly<Record<string, unknown>> | null
+  horsepower?: OracleHorsepowerProjection | null
+  callHorsepower?: OracleHorsepowerProjection | null
+  putHorsepower?: OracleHorsepowerProjection | null
 }
 
 function positioningTone(positioning: string | null | undefined): string {
@@ -62,8 +67,11 @@ export const PhotonicOracleHeroWheel = memo(function PhotonicOracleHeroWheel({
   viewModel = null,
   proximity = '',
   intelligence = null,
+  horsepower = null,
+  callHorsepower = null,
+  putHorsepower = null,
 }: PhotonicOracleHeroWheelProps) {
-  if (presentation !== 'VOB') return <PhotonicSecondaryWheel presentation={presentation} intelligence={intelligence} />
+  if (presentation !== 'VOB') return <PhotonicSecondaryWheel presentation={presentation} intelligence={intelligence} callHorsepower={callHorsepower} putHorsepower={putHorsepower} />
   const activeDirection = viewModel?.bias && viewModel.bias !== 'UNKNOWN' ? viewModel.bias : direction
   const isCall = activeDirection === 'CALL'
   const isPut = activeDirection === 'PUT'
@@ -81,12 +89,32 @@ export const PhotonicOracleHeroWheel = memo(function PhotonicOracleHeroWheel({
   // Participation Dominance Percentages (Hero Metric)
   const buyPctText = viewModel?.buyPct !== null && viewModel?.buyPct !== undefined ? `${viewModel.buyPct.toFixed(0)}%` : '—'
   const writePctText = viewModel?.writePct !== null && viewModel?.writePct !== undefined ? `${viewModel.writePct.toFixed(0)}%` : '—'
+  const optionIntelligence = intelligence?.option_intelligence && typeof intelligence.option_intelligence === 'object'
+    ? intelligence.option_intelligence as Readonly<Record<string, unknown>>
+    : null
+  const gex = optionIntelligence?.gex && typeof optionIntelligence.gex === 'object'
+    ? optionIntelligence.gex as Readonly<Record<string, unknown>>
+    : null
+  const netGex = typeof gex?.total_net_gex_inr_cr === 'number' && Number.isFinite(gex.total_net_gex_inr_cr)
+    ? gex.total_net_gex_inr_cr
+    : null
+  const gexCrossRaw = gex?.strike_gex_cross ?? gex?.zero_gamma_strike
+  const gexCross = typeof gexCrossRaw === 'number' && Number.isFinite(gexCrossRaw) ? gexCrossRaw : null
+  const netGexText = netGex === null ? '—' : `${netGex >= 0 ? '+' : '-'}₹${Math.abs(netGex).toFixed(2)} Cr`
+  const gexCrossText = gexCross === null ? '—' : gexCross.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  const netGexSign = netGex === null || netGex === 0 ? 'neutral' : netGex > 0 ? 'positive' : 'negative'
+  const netGexColor = netGexSign === 'positive' ? 'var(--mint)' : netGexSign === 'negative' ? 'var(--algory-red)' : 'var(--text-white)'
+  const netGexGlow = netGexSign === 'positive'
+    ? '0 0 10px rgba(0,255,157,0.35)'
+    : netGexSign === 'negative'
+      ? '0 0 10px rgba(255,30,75,0.35)'
+      : 'none'
 
   // Strike Spine & Focus Strike
   const focusStrike = viewModel?.focusStrike ?? null
-  const focusStrikeLabel = viewModel?.focusStrikeLabel ?? (focusStrike !== null ? 'FOCUS STRIKE' : 'STRIKE UNKNOWN')
-  const cePositioning = viewModel?.focusStrikeCePositioning ?? 'UNKNOWN'
-  const pePositioning = viewModel?.focusStrikePePositioning ?? 'UNKNOWN'
+  const focusStrikeLabel = viewModel?.focusStrikeLabel ?? (focusStrike !== null ? 'FOCUS STRIKE' : 'STRIKE UNAVAILABLE')
+  const cePositioning = viewModel?.focusStrikeCePositioning ?? 'NO CLEAN READ'
+  const pePositioning = viewModel?.focusStrikePePositioning ?? 'NO CLEAN READ'
   const ceToneColor = positioningTone(cePositioning)
   const peToneColor = positioningTone(pePositioning)
 
@@ -103,10 +131,10 @@ export const PhotonicOracleHeroWheel = memo(function PhotonicOracleHeroWheel({
     niftyRailPct = Math.min(100, Math.max(0, ((nifty - lowerBound) / (upperBound - lowerBound)) * 100))
   }
 
-  let locationText = proximity || 'CANONICAL PROXIMITY'
-  if (viewModel?.location === 'IN_ZONE') locationText = proximity ? `IN ZONE · ${proximity}` : 'IN VOB ZONE'
-  else if (viewModel?.location === 'BELOW') locationText = proximity ? `BELOW · ${proximity}` : 'BELOW VOB ZONE'
-  else if (viewModel?.location === 'ABOVE') locationText = proximity ? `ABOVE · ${proximity}` : 'ABOVE VOB ZONE'
+  let locationText = 'NO CLEAN READ'
+  if (viewModel?.location === 'IN_ZONE') locationText = 'IN VOB ZONE'
+  else if (viewModel?.location === 'BELOW') locationText = 'BELOW VOB ZONE'
+  else if (viewModel?.location === 'ABOVE') locationText = 'ABOVE VOB ZONE'
 
   return (
     <div
@@ -153,18 +181,18 @@ export const PhotonicOracleHeroWheel = memo(function PhotonicOracleHeroWheel({
             {biasLine}
           </span>
           <b style={{ color: 'var(--text-white)', fontSize: '8.5px', fontWeight: 700, marginTop: '3px', whiteSpace: 'nowrap' }}>
-            {positioningLine !== 'UNKNOWN' ? positioningLine : 'ARGUS PRIME'}
+            {positioningLine !== 'UNKNOWN' ? positioningLine : 'NO CLEAN READ'}
           </b>
         </div>
       </div>
 
-      {/* Hero-like Participation Dominance Metric (BUY XX% · WRITE YY%) */}
+      {/* Hero-like Participation Dominance Metric (BUY XX% · WRITE YY%) + 4-way Decomposition */}
       <div
         style={{
           display: 'flex',
-          justifyContent: 'center',
+          flexDirection: 'column',
           alignItems: 'center',
-          gap: '24px',
+          gap: '6px',
           marginBottom: '12px',
           padding: '8px 14px',
           background: 'rgba(0, 0, 0, 0.45)',
@@ -172,17 +200,42 @@ export const PhotonicOracleHeroWheel = memo(function PhotonicOracleHeroWheel({
           border: '1px solid var(--line-dim)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-          <span className={styles.monoLabel} style={{ color: 'var(--text-mid)', fontSize: '10px', fontWeight: 600 }}>BUY</span>
-          <span className={styles.monoLabel} style={{ color: 'var(--mint)', fontSize: '14.5px', fontWeight: 800, textShadow: '0 0 10px rgba(0,255,157,0.35)' }}>
-            {buyPctText}
-          </span>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+            <span className={styles.monoLabel} style={{ color: 'var(--text-mid)', fontSize: '10px', fontWeight: 600 }}>BUY</span>
+            <span className={styles.monoLabel} style={{ color: 'var(--mint)', fontSize: '14.5px', fontWeight: 800, textShadow: '0 0 10px rgba(0,255,157,0.35)' }}>
+              {buyPctText}
+            </span>
+          </div>
+          <div style={{ width: '1px', height: '14px', background: 'var(--line-dim)' }} />
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+            <span className={styles.monoLabel} style={{ color: 'var(--text-mid)', fontSize: '10px', fontWeight: 600 }}>WRITE</span>
+            <span className={styles.monoLabel} style={{ color: 'var(--algory-red)', fontSize: '14.5px', fontWeight: 800, textShadow: '0 0 10px rgba(255,30,75,0.35)' }}>
+              {writePctText}
+            </span>
+          </div>
         </div>
-        <div style={{ width: '1px', height: '14px', background: 'var(--line-dim)' }} />
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-          <span className={styles.monoLabel} style={{ color: 'var(--text-mid)', fontSize: '10px', fontWeight: 600 }}>WRITE</span>
-          <span className={styles.monoLabel} style={{ color: 'var(--algory-red)', fontSize: '14.5px', fontWeight: 800, textShadow: '0 0 10px rgba(255,30,75,0.35)' }}>
-            {writePctText}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', justifyContent: 'center', columnGap: '16px', rowGap: '2px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '4px', width: '100%' }}>
+          <span className={styles.monoLabel} style={{ color: 'var(--text-mid)', fontSize: '8px' }}>NET GEX</span>
+          <span className={styles.monoLabel} data-gex-metric="net" data-gex-sign={netGexSign} style={{ color: netGexColor, fontSize: '8.5px', fontWeight: 800, textAlign: 'right', textShadow: netGexGlow, transition: 'color .5s ease, text-shadow .5s ease' }}>{netGexText}</span>
+          <span className={styles.monoLabel} style={{ color: 'var(--text-mid)', fontSize: '8px' }}>GEX CROSS · HEURISTIC</span>
+          <span className={styles.monoLabel} data-gex-metric="cross" style={{ color: 'var(--cyan)', fontSize: '8.5px', textAlign: 'right', textShadow: '0 0 8px var(--cyan-glow)' }}>{gexCrossText}</span>
+        </div>
+
+        {/* 4-way Participation Decomposition */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '4px', width: '100%' }}>
+          <span className={styles.monoLabel} style={{ fontSize: '8px', color: 'var(--mint)' }}>
+            CB: {viewModel?.callBuyingPct != null ? `${viewModel.callBuyingPct.toFixed(0)}%` : '—'}
+          </span>
+          <span className={styles.monoLabel} style={{ fontSize: '8px', color: 'var(--algory-red)' }}>
+            CW: {viewModel?.callWritingPct != null ? `${viewModel.callWritingPct.toFixed(0)}%` : '—'}
+          </span>
+          <span className={styles.monoLabel} style={{ fontSize: '8px', color: 'var(--mint)' }}>
+            PB: {viewModel?.putBuyingPct != null ? `${viewModel.putBuyingPct.toFixed(0)}%` : '—'}
+          </span>
+          <span className={styles.monoLabel} style={{ fontSize: '8px', color: 'var(--algory-red)' }}>
+            PW: {viewModel?.putWritingPct != null ? `${viewModel.putWritingPct.toFixed(0)}%` : '—'}
           </span>
         </div>
       </div>
@@ -249,6 +302,7 @@ export const PhotonicOracleHeroWheel = memo(function PhotonicOracleHeroWheel({
           <span className={styles.monoLabel} style={{ color: 'var(--text-white)' }}>{locationText}</span>
         </div>
       </div>
+      <PhotonicHorsepowerRows horsepower={horsepower} label="NIFTY" />
     </div>
   )
 })
@@ -265,20 +319,31 @@ function SecondaryWheelRow({ label, value, primary = false, tone }: { label: str
 const PhotonicSecondaryWheel = memo(function PhotonicSecondaryWheel({
   presentation,
   intelligence,
-}: Pick<PhotonicOracleHeroWheelProps, 'presentation' | 'intelligence'>) {
+  callHorsepower,
+  putHorsepower,
+}: Pick<PhotonicOracleHeroWheelProps, 'presentation' | 'intelligence' | 'callHorsepower' | 'putHorsepower'>) {
   const root: Readonly<Record<string, unknown>> = intelligence && typeof intelligence === 'object' ? intelligence : {}
   const straddle = root.straddle && typeof root.straddle === 'object' ? root.straddle as Record<string, unknown> : {}
-  const fit = root.fit && typeof root.fit === 'object' ? root.fit as Record<string, unknown> : {}
   const isStraddle = presentation === 'STRADDLE'
   const straddleNow = typeof straddle.now === 'number' && Number.isFinite(straddle.now) ? straddle.now : null
   const straddleHolding = typeof straddle.premium_holding === 'number' && Number.isFinite(straddle.premium_holding) ? straddle.premium_holding : null
-  const state = isStraddle ? (straddleNow === null ? '—' : String(straddle.state ?? '—')) : String(fit.state ?? 'NO CLEAN FIT')
-  const call = fit.call_evidence ?? '—'
-  const put = fit.put_evidence ?? '—'
+  const state = isStraddle ? (straddleNow === null ? '—' : String(straddle.state ?? '—')) : '—'
   const money = (value: unknown, signed = false) => typeof value === 'number' && Number.isFinite(value) ? `${signed && value > 0 ? '+' : ''}₹${value.toFixed(2)}` : '—'
   const points = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? `~${value.toFixed(2)} pts` : '—'
-  const driver = straddleNow === null ? '—' : String(straddle.premium_driver ?? 'MIXED')
+  const callChange = typeof straddle.call_change === 'number' && Number.isFinite(straddle.call_change) ? straddle.call_change : null
+  const putChange = typeof straddle.put_change === 'number' && Number.isFinite(straddle.put_change) ? straddle.put_change : null
+  const rawDriver = straddleNow === null || typeof straddle.premium_driver !== 'string' ? null : straddle.premium_driver
+  const driver = rawDriver === 'CALL' && callChange !== null ? `CALL ${money(callChange, true)}`
+    : rawDriver === 'PUT' && putChange !== null ? `PUT ${money(putChange, true)}`
+      : rawDriver === 'MIXED' && callChange !== null && putChange !== null ? `MIXED · CE ${money(callChange, true)} · PE ${money(putChange, true)}`
+        : '—'
   const holding = straddleHolding === null ? '—' : `${money(Math.abs(straddleHolding))} ${straddleHolding >= 0 ? 'STRONGER' : 'WEAKER'}`
+  const ce = root.CE && typeof root.CE === 'object' ? root.CE as Record<string, unknown> : {}
+  const pe = root.PE && typeof root.PE === 'object' ? root.PE as Record<string, unknown> : {}
+  const cePressure = ce.market_pressure && typeof ce.market_pressure === 'object' ? ce.market_pressure as Record<string, unknown> : {}
+  const pePressure = pe.market_pressure && typeof pe.market_pressure === 'object' ? pe.market_pressure as Record<string, unknown> : {}
+  const holdingText = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? `${money(Math.abs(value))} ${value >= 0 ? 'STRONGER' : 'WEAKER'}` : '—'
+  const bookText = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? `BUY ${value.toFixed(0)}% · SELL ${(100 - value).toFixed(0)}%` : '—'
 
   return (
     <div
@@ -290,7 +355,7 @@ const PhotonicSecondaryWheel = memo(function PhotonicSecondaryWheel({
       <div className={styles.tileHoverPool} aria-hidden="true" />
       <div style={{ position: 'relative', zIndex: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
         <div className={styles.monoLabel} style={{ color: 'var(--cyan)' }}>
-          {isStraddle ? 'STRADDLE STATE' : 'CALL / PUT EVIDENCE / FIT'}
+          {isStraddle ? 'STRADDLE STATE' : 'CALL / PUT EVIDENCE'}
         </div>
         <div className={`${styles.pill} ${styles.pillAmber}`}>● {state}</div>
       </div>
@@ -304,7 +369,7 @@ const PhotonicSecondaryWheel = memo(function PhotonicSecondaryWheel({
         <div className={styles.liquidColorCore} />
         <div className={styles.coreGlassBadge} style={{ minWidth: '96px', padding: '6px 10px', textAlign: 'center' }}>
           <span style={{ color: 'var(--cyan)', fontSize: '12px', fontWeight: 800, letterSpacing: '.08em' }}>
-            {isStraddle ? 'STRADDLE' : 'NO CLEAN FIT'}
+            {isStraddle ? 'STRADDLE' : 'EVIDENCE'}
           </span>
           <b style={{ color: 'var(--text-white)', fontSize: '9px', display: 'block', marginTop: '3px' }}>{state}</b>
         </div>
@@ -324,20 +389,17 @@ const PhotonicSecondaryWheel = memo(function PhotonicSecondaryWheel({
               tone={straddleHolding === null ? undefined : straddleHolding >= 0 ? 'var(--mint)' : 'var(--algory-red)'}
             />
             <SecondaryWheelRow label="PREMIUM DRIVER" value={driver} />
-            <SecondaryWheelRow label="CALL" value={money(straddle.call_change, true)} />
-            <SecondaryWheelRow label="PUT" value={money(straddle.put_change, true)} />
-            <SecondaryWheelRow label="VWAP" value="—" />
-            <SecondaryWheelRow label="PREMIUM EXPANSION" value="—" />
           </>
         ) : (
           <>
-            <SecondaryWheelRow label="CALL EVIDENCE" value={call === '—' ? '— / 5' : `${call} / 5`} />
-            <SecondaryWheelRow label="PUT EVIDENCE" value={put === '—' ? '— / 5' : `${put} / 5`} />
-            <SecondaryWheelRow label="PRICE" value="—" />
-            <SecondaryWheelRow label="FLOW" value="—" />
-            <SecondaryWheelRow label="TIME" value="—" />
-            <SecondaryWheelRow label="BOOK" value="—" />
-            <SecondaryWheelRow label="ENTRY" value="—" />
+            <SecondaryWheelRow label="PRICE · CE" value={money(ce.fair_advantage, true)} />
+            <SecondaryWheelRow label="PRICE · PE" value={money(pe.fair_advantage, true)} />
+            <SecondaryWheelRow label="TIME · CE" value={holdingText(ce.premium_holding)} />
+            <SecondaryWheelRow label="TIME · PE" value={holdingText(pe.premium_holding)} />
+            <SecondaryWheelRow label="VOB · CE" value={callHorsepower?.combined ?? '—'} />
+            <SecondaryWheelRow label="VOB · PE" value={putHorsepower?.combined ?? '—'} />
+            <SecondaryWheelRow label="BOOK · CE" value={bookText(cePressure.book_buy_share_pct)} />
+            <SecondaryWheelRow label="BOOK · PE" value={bookText(pePressure.book_buy_share_pct)} />
             <SecondaryWheelRow label="CURRENT LEAN" value="—" />
           </>
         )}
@@ -345,4 +407,3 @@ const PhotonicSecondaryWheel = memo(function PhotonicSecondaryWheel({
     </div>
   )
 })
-

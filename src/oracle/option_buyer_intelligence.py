@@ -14,6 +14,7 @@ from copy import deepcopy
 from datetime import datetime, time, timedelta
 from math import erf, exp, log, sqrt
 from statistics import median
+from time import perf_counter, sleep
 from typing import Any, Mapping
 from zoneinfo import ZoneInfo
 
@@ -190,6 +191,18 @@ class _OiRollingTracker:
             buf = _deque(maxlen=25000)
             self._series[security_id] = buf
         epoch = observed_at.timestamp()
+        if buf and buf[-1][0] == epoch:
+            buf[-1] = (epoch, oi, ltp, observed_at)
+            return
+        if buf and epoch < buf[-1][0]:
+            values = list(buf)
+            if any(item[0] == epoch for item in values):
+                return
+            values.append((epoch, oi, ltp, observed_at))
+            values.sort(key=lambda item: item[0])
+            buf.clear()
+            buf.extend(values[-buf.maxlen:])
+            return
         buf.append((epoch, oi, ltp, observed_at))
 
     def _find_snapshot_at_or_before(
@@ -321,6 +334,52 @@ class _OiRollingTracker:
                 prior_deltas.append(abs(snap_c[1] - snap_p[1]))
         return prior_deltas
 
+    def closed_window_history(
+        self,
+        security_id: str,
+        minutes: int,
+        observed_at: datetime,
+        *,
+        include_current: bool,
+    ) -> list[dict[str, Any]]:
+        """Return exact-contract valid session windows without crossing identities."""
+        if not security_id or not observed_at:
+            return []
+        buf = self._series.get(security_id)
+        if not buf:
+            return []
+        session_start = observed_at.replace(hour=9, minute=15, second=0, microsecond=0)
+        elapsed_minutes = int((observed_at - session_start).total_seconds() // 60)
+        final_index = elapsed_minutes // minutes
+        stop = final_index + 1 if include_current else final_index
+        history: list[dict[str, Any]] = []
+        for i in range(1, max(1, stop)):
+            boundary_curr = session_start + timedelta(minutes=i * minutes)
+            boundary_prev = session_start + timedelta(minutes=(i - 1) * minutes)
+            curr = self._find_snapshot_at_or_before(buf, boundary_curr.timestamp(), 20.0)
+            prev = self._find_snapshot_at_or_before(buf, boundary_prev.timestamp(), 20.0)
+            if curr is None or prev is None or prev[1] <= 0:
+                continue
+            oi_delta = curr[1] - prev[1]
+            price_delta = curr[2] - prev[2]
+            if abs(oi_delta) < 1 and abs(price_delta) < 0.01:
+                structure = "FLAT / NEUTRAL"
+            elif oi_delta > 0 and price_delta > 0:
+                structure = "LONG BUILDUP"
+            elif oi_delta > 0:
+                structure = "SHORT BUILDUP"
+            elif price_delta > 0:
+                structure = "SHORT COVERING"
+            else:
+                structure = "LONG UNWINDING"
+            history.append({
+                "window_closed_at": boundary_curr.isoformat(),
+                "oi_delta": round(oi_delta, 2),
+                "price_delta": round(price_delta, 2),
+                "structure": structure,
+            })
+        return history
+
     def clear_all(self) -> None:
         """Remove all tracked series (e.g. on session reset)."""
         self._series.clear()
@@ -338,77 +397,645 @@ class OptionBuyerIntelligenceWorker:
     option_intelligence_engine: OptionIntelligenceEngine = field(default_factory=OptionIntelligenceEngine)
     rate: float = 0.0
     _hydrated: bool = field(default=False, init=False)
+    _price_series: Any = field(default_factory=lambda: __import__('collections').deque(maxlen=25000), init=False)
+    _straddle_series: Any = field(default_factory=lambda: __import__('collections').deque(maxlen=25000), init=False)
+    _sudden_oi_core_key: tuple[Any, ...] | None = field(default=None, init=False)
+    _sudden_oi_core: dict[str, Any] | None = field(default=None, init=False)
+    dhan_history_client: Any = None
+    instrument_master: Any = None
+    _session_side_activity: dict[str, dict[str, dict[str, Any]]] = field(
+        default_factory=lambda: {"CE": {}, "PE": {}}, init=False
+    )
+    _hydration_diagnostics: dict[str, Any] = field(default_factory=dict, init=False)
 
-    def _hydrate_recent_durable_history(self, observed_at: datetime | None) -> None:
+    def _hydrate_recent_durable_history(
+        self,
+        observed_at: datetime | None,
+        current_data: Mapping[str, Any] | None = None,
+    ) -> None:
         """Hydrate rolling OI, IV, and Resolver memory from recent durable session snapshots on startup."""
         if self._hydrated or observed_at is None:
             return
         self._hydrated = True
         try:
-            session_date = str(observed_at.date())
-            snap_path = f"/Users/ayushmudgal/Developer/CitadelOS/logs/argus/session_snapshots/{session_date}.jsonl"
+            state_root = os.environ.get("CITADEL_STATE_ROOT", "/Users/ayushmudgal/Developer/CitadelOS-Oracle-Post-E9/logs")
+            snap_path = f"{state_root}/argus/session_snapshots/{session_date}.jsonl"
             if not os.path.exists(snap_path):
                 return
-            raw_lines: list[bytes] = []
+            local_frames: list[tuple[datetime, float, list[Mapping[str, Any]]]] = []
             with open(snap_path, "rb") as f:
-                f.seek(0, os.SEEK_END)
-                size = f.tell()
-                f.seek(max(0, size - 12000000), os.SEEK_SET) # last ~12MB (~1200 snapshots / ~40 minutes)
-                raw_lines = f.readlines()
-            for l in raw_lines:
-                try:
-                    s = json.loads(l.decode("utf-8"))
-                    t_str = s.get("observation_timestamp") or s.get("calculated_at") or s.get("source_timestamp")
-                    if not t_str:
-                        continue
-                    dt = datetime.fromisoformat(t_str.replace("Z", "+00:00")).astimezone(IST)
-                    spot = _number(s.get("spot"))
-                    rows = s.get("option_chain_evidence", [])
-                    if spot and spot > 0 and rows:
-                        atm_row = min(rows, key=lambda r: abs(float(r.get("strike") or 0.0) - spot))
-                        c_iv = _number(atm_row.get("CE", {}).get("iv"))
-                        p_iv = _number(atm_row.get("PE", {}).get("iv"))
-                        
-                        r_c25 = min(rows, key=lambda r: abs(float(r.get("CE", {}).get("delta") or 0.0) - 0.25)) if rows else None
-                        r_p25 = min(rows, key=lambda r: abs(float(r.get("PE", {}).get("delta") or 0.0) - (-0.25))) if rows else None
-                        r_c10 = min(rows, key=lambda r: abs(float(r.get("CE", {}).get("delta") or 0.0) - 0.10)) if rows else None
-                        r_p10 = min(rows, key=lambda r: abs(float(r.get("PE", {}).get("delta") or 0.0) - (-0.10))) if rows else None
-                        
-                        c25_iv = _number(r_c25.get("CE", {}).get("iv")) if r_c25 else None
-                        p25_iv = _number(r_p25.get("PE", {}).get("iv")) if r_p25 else None
-                        c10_iv = _number(r_c10.get("CE", {}).get("iv")) if r_c10 else None
-                        p10_iv = _number(r_p10.get("PE", {}).get("iv")) if r_p10 else None
-                        
-                        skew_25 = round(p25_iv - c25_iv, 2) if (p25_iv is not None and c25_iv is not None) else None
-                        skew_10 = round(p10_iv - c10_iv, 2) if (p10_iv is not None and c10_iv is not None) else None
-                        atm_val = round((c_iv + p_iv) / 2.0, 2) if (c_iv is not None and p_iv is not None and c_iv > 0 and p_iv > 0) else None
-
-                        if atm_val is not None or skew_25 is not None:
-                            self.option_intelligence_engine.record_iv_skew(
-                                atm_val,
-                                skew_25,
-                                dt,
-                                c25_iv=c25_iv,
-                                p25_iv=p25_iv,
-                                c10_iv=c10_iv,
-                                p10_iv=p10_iv,
-                                skew_10d=skew_10,
-                            )
-                    for item in rows:
-                        if not isinstance(item, Mapping):
+                for l in f:
+                    try:
+                        s = json.loads(l.decode("utf-8"))
+                        t_str = s.get("observation_timestamp") or s.get("calculated_at") or s.get("source_timestamp")
+                        if not t_str:
                             continue
-                        for side in ("CE", "PE"):
-                            leg = item.get(side, {})
-                            if isinstance(leg, Mapping):
-                                sid = str(leg.get("security_id") or "")
-                                oi = _number(leg.get("oi"))
-                                ltp = _number(leg.get("ltp"))
-                                if sid and oi is not None and ltp is not None:
-                                    self.oi_tracker.record(sid, float(oi), float(ltp), dt)
-                except Exception:
-                    continue
+                        dt = datetime.fromisoformat(t_str.replace("Z", "+00:00")).astimezone(IST)
+                        if dt.date() != observed_at.date():
+                            continue
+                        spot = _number(s.get("spot"))
+                        rows = s.get("option_chain_evidence", [])
+                        if spot is not None and spot > 0 and isinstance(rows, list):
+                            local_frames.append((dt, spot, [row for row in rows if isinstance(row, Mapping)]))
+                        if spot is not None and spot > 0:
+                            self._record_timed_value(self._price_series, spot, dt)
+                        valid_strike_rows = [row for row in rows if _number(row.get("strike")) is not None]
+                        if spot and spot > 0 and valid_strike_rows:
+                            atm_row = min(valid_strike_rows, key=lambda r: abs(float(r["strike"]) - spot))
+                            c_leg = atm_row.get("CE") if isinstance(atm_row.get("CE"), Mapping) else atm_row.get("ce")
+                            p_leg = atm_row.get("PE") if isinstance(atm_row.get("PE"), Mapping) else atm_row.get("pe")
+                            c_leg = c_leg if isinstance(c_leg, Mapping) else {}
+                            p_leg = p_leg if isinstance(p_leg, Mapping) else {}
+                            c_ltp, p_ltp = _number(c_leg.get("ltp")), _number(p_leg.get("ltp"))
+                            c_sid = str(c_leg.get("security_id") or "")
+                            p_sid = str(p_leg.get("security_id") or "")
+                            if c_ltp is not None and p_ltp is not None and c_sid and p_sid:
+                                self._record_timed_value(
+                                    self._straddle_series,
+                                    c_ltp + p_ltp,
+                                    dt,
+                                    identity=f"{c_sid}:{p_sid}",
+                                )
+                            c_iv = _number(c_leg.get("iv"))
+                            p_iv = _number(p_leg.get("iv"))
+
+                            r_c25 = min(rows, key=lambda r: abs(float((r.get("CE") or r.get("ce") or {}).get("delta") or 0.0) - 0.25)) if rows else None
+                            r_p25 = min(rows, key=lambda r: abs(float((r.get("PE") or r.get("pe") or {}).get("delta") or 0.0) - (-0.25))) if rows else None
+                            r_c10 = min(rows, key=lambda r: abs(float((r.get("CE") or r.get("ce") or {}).get("delta") or 0.0) - 0.10)) if rows else None
+                            r_p10 = min(rows, key=lambda r: abs(float((r.get("PE") or r.get("pe") or {}).get("delta") or 0.0) - (-0.10))) if rows else None
+
+                            c25_iv = _number((r_c25.get("CE") or r_c25.get("ce") or {}).get("iv")) if r_c25 else None
+                            p25_iv = _number((r_p25.get("PE") or r_p25.get("pe") or {}).get("iv")) if r_p25 else None
+                            c10_iv = _number((r_c10.get("CE") or r_c10.get("ce") or {}).get("iv")) if r_c10 else None
+                            p10_iv = _number((r_p10.get("PE") or r_p10.get("pe") or {}).get("iv")) if r_p10 else None
+
+                            skew_25 = round(p25_iv - c25_iv, 2) if (p25_iv is not None and c25_iv is not None) else None
+                            skew_10 = round(p10_iv - c10_iv, 2) if (p10_iv is not None and c10_iv is not None) else None
+                            atm_val = round((c_iv + p_iv) / 2.0, 2) if (c_iv is not None and p_iv is not None and c_iv > 0 and p_iv > 0) else None
+
+                            if atm_val is not None or skew_25 is not None:
+                                self.option_intelligence_engine.record_iv_skew(
+                                    atm_val,
+                                    skew_25,
+                                    dt,
+                                    c25_iv=c25_iv,
+                                    p25_iv=p25_iv,
+                                    c10_iv=c10_iv,
+                                    p10_iv=p10_iv,
+                                    skew_10d=skew_10,
+                                )
+                        for item in rows:
+                            if not isinstance(item, Mapping):
+                                continue
+                            for side in ("CE", "PE", "ce", "pe"):
+                                leg = item.get(side, {})
+                                if isinstance(leg, Mapping):
+                                    sid = str(leg.get("security_id") or "")
+                                    oi = _number(leg.get("oi"))
+                                    ltp = _number(leg.get("ltp"))
+                                    if sid and oi is not None and ltp is not None:
+                                        self.oi_tracker.record(sid, float(oi), float(ltp), dt)
+                    except Exception:
+                        continue
+            local_frames.sort(key=lambda item: item[0])
+            historical_frames: list[tuple[datetime, float, list[Mapping[str, Any]]]] = []
+            if local_frames:
+                historical_frames = self._backfill_same_day_dhan(
+                    observed_at,
+                    local_frames[0][0],
+                    current_data or {},
+                )
+            self._rebuild_side_activity_history(historical_frames + local_frames, observed_at)
+            self._hydration_diagnostics.update({
+                "local_session_observations": len(local_frames),
+                "local_earliest_observation": local_frames[0][0].isoformat() if local_frames else None,
+                "local_latest_observation": local_frames[-1][0].isoformat() if local_frames else None,
+            })
         except Exception:
             pass
+
+    def _backfill_same_day_dhan(
+        self,
+        observed_at: datetime,
+        first_local_at: datetime,
+        current_data: Mapping[str, Any],
+    ) -> list[tuple[datetime, float, list[Mapping[str, Any]]]]:
+        """One bounded startup catch-up using canonical Dhan history and identities."""
+        session_start = observed_at.replace(hour=9, minute=15, second=0, microsecond=0)
+        cutoff = min(first_local_at.replace(second=0, microsecond=0), observed_at.replace(second=0, microsecond=0))
+        if cutoff <= session_start + timedelta(minutes=1):
+            return []
+        started = perf_counter()
+        diagnostics = {
+            "backfill_from": session_start.isoformat(),
+            "backfill_to": cutoff.isoformat(),
+            "source": "DHAN_V2_INTRADAY_OI",
+            "option_securities_fetched": 0,
+            "historical_observations_recovered": 0,
+            "error": None,
+        }
+        try:
+            from src.broker.dhan_client import DhanClient
+            from src.paper_trading.contracts import DhanInstrumentMaster
+
+            client = self.dhan_history_client or DhanClient(request_timeout=15)
+            master = self.instrument_master or DhanInstrumentMaster()
+            underlying = current_data.get("underlying") if isinstance(current_data.get("underlying"), Mapping) else {}
+            expiry = str(underlying.get("expiry") or "")
+            if not expiry:
+                raise ValueError("CURRENT_EXPIRY_UNAVAILABLE")
+            date_text = str(observed_at.date())
+            spot_response = client.get_intraday_candles(
+                "IDX_I", "13", instrument="INDEX", interval="1",
+                from_date=date_text, to_date=date_text,
+            )
+            if not spot_response.get("success"):
+                raise ValueError(str(spot_response.get("error") or "DHAN_SPOT_HISTORY_UNAVAILABLE"))
+            spot_points: list[tuple[datetime, float]] = []
+            for candle in spot_response.get("candles") or []:
+                opened_at = datetime.fromtimestamp(float(candle["time"]), tz=IST)
+                finalized_at = opened_at + timedelta(minutes=1)
+                close = _number(candle.get("close"))
+                if close is not None and session_start < finalized_at <= cutoff and finalized_at < first_local_at:
+                    spot_points.append((finalized_at, close))
+                    self._record_timed_value(self._price_series, close, finalized_at)
+
+            master_rows = [
+                row for row in master._rows("NIFTY")
+                if str(master._text(row, "SM_EXPIRY_DATE", "SEM_EXPIRY_DATE") or "")[:10] == expiry
+                and str(master._text(row, "UNDERLYING_SYMBOL", "SM_SYMBOL_NAME") or "").upper() == "NIFTY"
+                and str(master._text(row, "OPTION_TYPE", "SEM_OPTION_TYPE") or "").upper() in {"CE", "PE"}
+            ]
+            contracts: dict[tuple[float, str], str] = {}
+            for row in master_rows:
+                strike = _number(master._text(row, "STRIKE_PRICE", "SEM_STRIKE_PRICE"))
+                side = str(master._text(row, "OPTION_TYPE", "SEM_OPTION_TYPE") or "").upper()
+                sid = str(master._text(row, "SECURITY_ID", "SEM_SMST_SECURITY_ID") or "")
+                if strike is not None and sid:
+                    contracts[(strike, side)] = sid
+            strikes = sorted({strike for strike, side in contracts if (strike, "CE") in contracts and (strike, "PE") in contracts})
+            if len(strikes) < 5:
+                raise ValueError("DHAN_INSTRUMENT_MASTER_ATM_WINDOW_UNAVAILABLE")
+
+            frames: list[tuple[datetime, float, list[Mapping[str, Any]]]] = []
+            union_security_ids: set[str] = set()
+            boundary = session_start + timedelta(minutes=5)
+            while boundary <= cutoff:
+                spot_sample = next(((dt, value) for dt, value in reversed(spot_points) if dt <= boundary and (boundary - dt).total_seconds() <= 70.0), None)
+                if spot_sample is not None:
+                    spot_value = spot_sample[1]
+                    atm_index = min(range(len(strikes)), key=lambda index: (abs(strikes[index] - spot_value), strikes[index]))
+                    chosen = strikes[max(0, atm_index - 2):atm_index + 3]
+                    if len(chosen) == 5:
+                        rows = []
+                        for strike in chosen:
+                            ce_sid, pe_sid = contracts[(strike, "CE")], contracts[(strike, "PE")]
+                            union_security_ids.update((ce_sid, pe_sid))
+                            rows.append({"strike": strike, "ce": {"security_id": ce_sid}, "pe": {"security_id": pe_sid}})
+                        frames.append((boundary, spot_value, rows))
+                boundary += timedelta(minutes=5)
+
+            for index, sid in enumerate(sorted(union_security_ids)):
+                if index:
+                    sleep(0.15)
+                response = client.get_intraday_candles(
+                    "NSE_FNO", sid, instrument="OPTIDX", interval="1",
+                    from_date=date_text, to_date=date_text, include_oi=True,
+                )
+                if not response.get("success"):
+                    continue
+                diagnostics["option_securities_fetched"] += 1
+                for candle in response.get("candles") or []:
+                    opened_at = datetime.fromtimestamp(float(candle["time"]), tz=IST)
+                    finalized_at = opened_at + timedelta(minutes=1)
+                    oi = _number(candle.get("open_interest"))
+                    close = _number(candle.get("close"))
+                    if oi is None or close is None or not (
+                        session_start < finalized_at <= cutoff and finalized_at < first_local_at
+                    ):
+                        continue
+                    self.oi_tracker.record(sid, oi, close, finalized_at)
+                    diagnostics["historical_observations_recovered"] += 1
+
+            diagnostics["duration_ms"] = round((perf_counter() - started) * 1000.0, 2)
+            self._hydration_diagnostics.update(diagnostics)
+            return frames
+        except Exception as error:
+            diagnostics["error"] = str(error)
+            diagnostics["duration_ms"] = round((perf_counter() - started) * 1000.0, 2)
+            self._hydration_diagnostics.update(diagnostics)
+            return []
+
+    def _rebuild_side_activity_history(
+        self,
+        frames: list[tuple[datetime, float, list[Mapping[str, Any]]]],
+        observed_at: datetime,
+    ) -> None:
+        session_date = observed_at.date()
+        eligible_frames = sorted(
+            (frame for frame in frames if frame[0].date() == session_date and frame[0] <= observed_at),
+            key=lambda item: item[0],
+        )
+        latest_by_boundary: dict[datetime, tuple[datetime, float, list[Mapping[str, Any]]]] = {}
+        boundary = observed_at.replace(hour=9, minute=20, second=0, microsecond=0)
+        last_boundary = observed_at.replace(second=0, microsecond=0) - timedelta(minutes=observed_at.minute % 5)
+        while boundary <= last_boundary:
+            sample = next(
+                (frame for frame in reversed(eligible_frames) if frame[0] <= boundary and (boundary - frame[0]).total_seconds() <= 20.0),
+                None,
+            )
+            if sample is not None:
+                latest_by_boundary[boundary] = sample
+            boundary += timedelta(minutes=5)
+        for boundary, (_, spot, rows) in sorted(latest_by_boundary.items()):
+            selected = sorted(
+                sorted([row for row in rows if _number(row.get("strike")) is not None], key=lambda row: abs(float(row["strike"]) - spot))[:5],
+                key=lambda row: float(row["strike"]),
+            )
+            for side in ("CE", "PE"):
+                self._record_side_activity(side, selected, boundary)
+
+    def _record_side_activity(
+        self,
+        side: str,
+        selected_rows: list[Mapping[str, Any]],
+        observed_at: datetime,
+    ) -> None:
+        if len(selected_rows) != 5:
+            return
+        activities = []
+        identities = []
+        window_timestamp = None
+        for row in selected_rows:
+            sid = str(self._leg(row, side).get("security_id") or "")
+            metrics = self.oi_tracker.closed_window_metrics(sid, 5, observed_at) if sid else None
+            if not isinstance(metrics, Mapping) or metrics.get("oi_delta") is None:
+                return
+            activities.append(abs(float(metrics["oi_delta"])))
+            identities.append(sid)
+            window_timestamp = str(metrics.get("window_closed_at") or "")
+        if not window_timestamp:
+            return
+        hour, minute = (int(part) for part in window_timestamp.split(":"))
+        window_iso = observed_at.replace(hour=hour, minute=minute, second=0, microsecond=0).isoformat()
+        self._session_side_activity[side][window_iso] = {
+            "window_timestamp": window_iso,
+            "activity": round(sum(activities), 2),
+            "security_ids": identities,
+        }
+
+    @staticmethod
+    def _record_timed_value(
+        series: Any,
+        value: float,
+        observed_at: datetime,
+        *,
+        identity: str | None = None,
+    ) -> None:
+        epoch = observed_at.timestamp()
+        if series and series[-1][0] == epoch:
+            series[-1] = (epoch, float(value), observed_at, identity)
+            return
+        if series and epoch < series[-1][0]:
+            values = list(series)
+            if any(item[0] == epoch for item in values):
+                return
+            values.append((epoch, float(value), observed_at, identity))
+            values.sort(key=lambda item: item[0])
+            series.clear()
+            series.extend(values[-series.maxlen:])
+            return
+        series.append((epoch, float(value), observed_at, identity))
+
+    @staticmethod
+    def _percentile(current: float | None, prior: list[float]) -> float | None:
+        if current is None or not prior:
+            return None
+        return round(100.0 * sum(1 for value in prior if value <= current) / len(prior), 1)
+
+    @staticmethod
+    def _leg(row: Mapping[str, Any], side: str) -> Mapping[str, Any]:
+        leg = row.get(side.lower())
+        if not isinstance(leg, Mapping):
+            leg = row.get(side.upper())
+        return leg if isinstance(leg, Mapping) else {}
+
+    def _timed_change_context(
+        self,
+        series: Any,
+        minutes: int,
+        observed_at: datetime | None,
+        *,
+        require_same_identity: bool = False,
+    ) -> dict[str, Any]:
+        if observed_at is None or not series:
+            return {"change": None, "percentile": None, "source_timestamp": None, "prior_sample_count": 0}
+        session_start = observed_at.replace(hour=9, minute=15, second=0, microsecond=0)
+        elapsed = int((observed_at - session_start).total_seconds() // 60)
+        k = elapsed // minutes
+        changes: list[tuple[datetime, float]] = []
+        for i in range(1, k + 1):
+            current_boundary = session_start + timedelta(minutes=i * minutes)
+            previous_boundary = current_boundary - timedelta(minutes=minutes)
+            current = self._timed_value_at_or_before(series, current_boundary.timestamp())
+            previous = self._timed_value_at_or_before(series, previous_boundary.timestamp())
+            if current is None or previous is None:
+                continue
+            if require_same_identity:
+                current_identity = current[3] if len(current) > 3 else None
+                previous_identity = previous[3] if len(previous) > 3 else None
+                if not current_identity or current_identity != previous_identity:
+                    continue
+            changes.append((current_boundary, current[1] - previous[1]))
+        if not changes:
+            return {"change": None, "percentile": None, "source_timestamp": None, "prior_sample_count": 0}
+        boundary, change = changes[-1]
+        prior = [abs(value) for _, value in changes[:-1]]
+        return {
+            "change": round(change, 2),
+            "percentile": self._percentile(abs(change), prior),
+            "source_timestamp": boundary.isoformat(),
+            "prior_sample_count": len(prior),
+        }
+
+    @staticmethod
+    def _timed_value_at_or_before(series: Any, boundary_epoch: float) -> tuple[Any, ...] | None:
+        best = None
+        for sample in reversed(series):
+            if sample[0] <= boundary_epoch:
+                best = sample
+                break
+        return best if best is not None and boundary_epoch - best[0] <= 20.0 else None
+
+    def _side_sudden_oi(
+        self,
+        side: str,
+        selected_rows: list[Mapping[str, Any]],
+        observed_at: datetime,
+        session_date: str,
+    ) -> dict[str, Any]:
+        current_strikes: list[dict[str, Any]] = []
+        prior_by_security: dict[str, dict[str, dict[str, Any]]] = {}
+        for row in selected_rows:
+            leg = self._leg(row, side)
+            sid = str(leg.get("security_id") or "")
+            strike = _number(row.get("strike"))
+            if not sid or strike is None:
+                continue
+            current = self.oi_tracker.closed_window_metrics(sid, 5, observed_at)
+            history = self.oi_tracker.closed_window_history(sid, 5, observed_at, include_current=False)
+            prior_by_security[sid] = {str(item["window_closed_at"]): item for item in history}
+            if not isinstance(current, Mapping) or current.get("oi_delta") is None:
+                continue
+            prior_abs = [abs(float(item["oi_delta"])) for item in history]
+            activity = abs(float(current["oi_delta"]))
+            previous_high = max(prior_abs) if prior_abs else None
+            new_high = previous_high is not None and activity > previous_high
+            structure = str(current.get("structure") or "")
+            price_delta = _number(current.get("price_delta"))
+            current_strikes.append({
+                "security_id": sid,
+                "strike": strike,
+                "option_type": side,
+                "ltp": _number(leg.get("ltp")),
+                "oi": _number(leg.get("oi")),
+                "oi_delta_5m": float(current["oi_delta"]),
+                "price_delta_5m": price_delta,
+                "activity_5m": round(activity, 2),
+                "percentile": self._percentile(activity, prior_abs),
+                "prior_sample_count": len(prior_abs),
+                "previous_session_high": round(previous_high, 2) if previous_high is not None else None,
+                "new_5m_high": new_high,
+                "state": structure,
+                "window_closed_at": current.get("window_closed_at"),
+                "squeeze": bool(
+                    structure == "SHORT COVERING"
+                    and price_delta is not None
+                    and price_delta > 0.0
+                    and float(current["oi_delta"]) < 0.0
+                    and new_high
+                ),
+            })
+
+        current_complete = len(current_strikes) == len(selected_rows) == 5
+        current_activity = round(sum(item["activity_5m"] for item in current_strikes), 2) if current_complete else None
+        top = max(current_strikes, key=lambda item: item["activity_5m"], default=None)
+        window = top.get("window_closed_at") if top else None
+        window_iso = None
+        if window:
+            hour, minute = (int(part) for part in str(window).split(":"))
+            window_iso = observed_at.replace(hour=hour, minute=minute, second=0, microsecond=0).isoformat()
+        common_windows: set[str] | None = None
+        for item in current_strikes:
+            windows = set(prior_by_security.get(item["security_id"], {}))
+            common_windows = windows if common_windows is None else common_windows & windows
+        side_history: list[dict[str, Any]] = []
+        for window in sorted(common_windows or set()):
+            components = [prior_by_security[item["security_id"]][window] for item in current_strikes]
+            if len(components) == 5:
+                window_timestamp = (
+                    window
+                    if "T" in window
+                    else observed_at.replace(
+                        hour=int(window.split(":")[0]), minute=int(window.split(":")[1]), second=0, microsecond=0
+                    ).isoformat()
+                )
+                side_history.append({
+                    "window_timestamp": window_timestamp,
+                    "activity": sum(abs(float(component["oi_delta"])) for component in components),
+                })
+        prior_activity = [float(item["activity"]) for item in side_history]
+        if current_complete and window_iso:
+            self._record_side_activity(side, selected_rows, observed_at)
+            canonical_history = [
+                item for key, item in sorted(self._session_side_activity[side].items())
+                if key < window_iso
+            ]
+            if canonical_history:
+                side_history = canonical_history
+                prior_activity = [float(item["activity"]) for item in side_history]
+        normal = float(median(prior_activity)) if prior_activity else None
+        previous_high = max(prior_activity) if prior_activity else None
+        new_extreme = current_activity is not None and previous_high is not None and current_activity > previous_high
+
+        canonical_states = {"LONG BUILDUP", "SHORT BUILDUP", "SHORT COVERING", "LONG UNWINDING"}
+        counts = {state: sum(1 for item in current_strikes if item["state"] == state) for state in canonical_states}
+        peak = max(counts.values(), default=0)
+        leaders = sorted(state for state, count in counts.items() if count == peak and count > 0)
+        dominant = leaders[0] if len(leaders) == 1 else None
+        state_label = self._side_state_label(side, dominant)
+        event_base = f"{session_date}:{side}:{window_iso or 'UNAVAILABLE'}"
+        alerts: list[dict[str, Any]] = []
+        if new_extreme:
+            assert current_activity is not None and normal is not None
+            side_percentile = self._percentile(current_activity, prior_activity)
+            assert side_percentile is not None
+            alerts.append({
+                "event_id": f"{event_base}:SIDE_SESSION_EXTREME",
+                "event_type": "SIDE_SESSION_EXTREME",
+                "side": side,
+                "title": f"🔥 {'CALL' if side == 'CE' else 'PUT'} OI SESSION EXTREME",
+                "detail": f"Current {round(current_activity)} vs Normal {round(normal)} · {side_percentile:g}th percentile · {state_label} · {peak}/5",
+            })
+        if top and top["new_5m_high"]:
+            alerts.append({
+                "event_id": f"{session_date}:{top['security_id']}:{window_iso}:STRIKE_SESSION_EXTREME",
+                "event_type": "STRIKE_SESSION_EXTREME",
+                "side": side,
+                "title": f"🔥 {top['strike']:,.0f} {side} NEW 5M OI HIGH",
+                "detail": f"{top['activity_5m']:,.0f} · {top['state']} · {top['percentile'] if top['percentile'] is not None else '—'}th percentile",
+            })
+        if top and top["squeeze"]:
+            alerts.append({
+                "event_id": f"{session_date}:{top['security_id']}:{window_iso}:WRITER_SQUEEZE",
+                "event_type": "WRITER_SQUEEZE",
+                "side": side,
+                "title": f"⚡ {top['strike']:,.0f} {side} {'CALL' if side == 'CE' else 'PUT'} SHORT-COVERING SURGE",
+                "detail": "SHORT COVERING · NEW 5M HIGH",
+            })
+        status = "LIVE" if current_complete and prior_activity else "PARTIAL_SESSION" if current_strikes else "WARMING"
+        current_to_normal = (
+            round(current_activity / normal, 4)
+            if current_activity is not None and normal is not None and normal > 0.0
+            else None
+        )
+        recent_history = list(side_history)
+        if current_complete and window_iso:
+            current_entry = self._session_side_activity[side].get(window_iso)
+            if current_entry is not None:
+                recent_history.append(current_entry)
+        return {
+            "status": status,
+            "side": side,
+            "strike_scope": "ATM ±2",
+            "normal_5m_activity": round(normal, 2) if normal is not None else None,
+            "previous_5m_activity": round(prior_activity[-1], 2) if prior_activity else None,
+            "current_5m_activity": current_activity,
+            "current_to_normal_x": current_to_normal,
+            "recent_5m_activity": [
+                {"window_timestamp": item["window_timestamp"], "activity": round(float(item["activity"]), 2)}
+                for item in recent_history[-5:]
+            ],
+            "percentile": self._percentile(current_activity, prior_activity),
+            "previous_session_high": round(previous_high, 2) if previous_high is not None else None,
+            "new_session_extreme": new_extreme,
+            "dominant_state": dominant or "MIXED / NO CLEAN DOMINANT STATE",
+            "state_label": state_label,
+            "breadth": {"count": peak, "total": 5, "valid": len(current_strikes)},
+            "read": "NEW SESSION EXTREME" if new_extreme else "NORMAL" if status == "LIVE" else status,
+            "window_closed_at": window_iso,
+            "prior_sample_count": len(prior_activity),
+            "top_strike": top,
+            "strikes": current_strikes,
+            "alerts": alerts,
+        }
+
+    @staticmethod
+    def _side_state_label(side: str, state: str | None) -> str:
+        if state is None:
+            return "MIXED / NO CLEAN DOMINANT STATE"
+        owner = "CALL" if side == "CE" else "PUT"
+        action = {
+            "LONG BUILDUP": "BUYING / LONG BUILDUP",
+            "SHORT BUILDUP": "WRITING / SHORT BUILDUP",
+            "SHORT COVERING": "SHORT COVERING",
+            "LONG UNWINDING": "LONG UNWINDING",
+        }[state]
+        return f"{owner} {action}"
+
+    def _build_sudden_oi(
+        self,
+        rows: list[Mapping[str, Any]],
+        underlying: Mapping[str, Any],
+        forward: float | None,
+        observed_at: datetime | None,
+        straddle: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        started = perf_counter()
+        if observed_at is None or not rows:
+            return {"schema_version": 1, "status": "UNAVAILABLE", "source_timestamp": None, "CALL": None, "PUT": None, "alerts": []}
+        atm = _number(underlying.get("atm_strike")) or _number(underlying.get("spot")) or forward
+        if atm is None:
+            return {"schema_version": 1, "status": "UNAVAILABLE", "source_timestamp": observed_at.isoformat(), "CALL": None, "PUT": None, "alerts": []}
+        valid_strike_rows = [row for row in rows if _number(row.get("strike")) is not None]
+        selected = sorted(
+            sorted(valid_strike_rows, key=lambda row: abs(float(row["strike"]) - atm))[:5],
+            key=lambda row: float(row["strike"]),
+        )
+        session_date = str(observed_at.date())
+        current_window = observed_at.replace(second=0, microsecond=0) - timedelta(minutes=observed_at.minute % 5)
+        identity = tuple((str(self._leg(row, "CE").get("security_id") or ""), str(self._leg(row, "PE").get("security_id") or "")) for row in selected)
+        core_key = (session_date, current_window.isoformat(), identity)
+        if self._sudden_oi_core_key != core_key or self._sudden_oi_core is None:
+            self._sudden_oi_core = {
+                "CALL": self._side_sudden_oi("CE", selected, observed_at, session_date),
+                "PUT": self._side_sudden_oi("PE", selected, observed_at, session_date),
+            }
+            self._sudden_oi_core_key = core_key
+        call = deepcopy(self._sudden_oi_core["CALL"])
+        put = deepcopy(self._sudden_oi_core["PUT"])
+        price = self._timed_change_context(self._price_series, 2, observed_at)
+        straddle_context = self._timed_change_context(
+            self._straddle_series,
+            5,
+            observed_at,
+            require_same_identity=True,
+        )
+        flow_diag = self.resolver_engine.compute_flow_diagnostics(None, observed_at)
+        mlofi = _number(flow_diag.get("current_mlofi"))
+        flow_x = _number(flow_diag.get("current_flow_x"))
+        direction = "BUY" if mlofi is not None and mlofi > 0 else "SELL" if mlofi is not None and mlofi < 0 else "NEUTRAL" if mlofi == 0 else "UNAVAILABLE"
+        alerts = list(call.get("alerts") or []) + list(put.get("alerts") or [])
+        oi_percentiles = [value for value in (call.get("percentile"), put.get("percentile")) if isinstance(value, (int, float))]
+        computed_at = datetime.now(tz=IST)
+        return {
+            "schema_version": 1,
+            "status": "LIVE" if call["status"] == put["status"] == "LIVE" else "PARTIAL_SESSION",
+            "session_date": session_date,
+            "source_timestamp": observed_at.isoformat(),
+            "computed_at": computed_at.isoformat(),
+            "compute_duration_ms": round((perf_counter() - started) * 1000.0, 3),
+            "atm_strike": atm,
+            "strike_scope": "ATM ±2",
+            "history_source": (
+                "DHAN_V2_INTRADAY_OI + SAME_DAY_ARGUS_SESSION_SNAPSHOTS + LIVE_EXACT_SECURITY_ID_TRACKER"
+                if self._hydration_diagnostics.get("option_securities_fetched")
+                else "SAME_DAY_ARGUS_SESSION_SNAPSHOTS + LIVE_EXACT_SECURITY_ID_TRACKER"
+            ),
+            "hydration": deepcopy(self._hydration_diagnostics),
+            "CALL": call,
+            "PUT": put,
+            "price_oi_response": {
+                "nifty_price_change_2m": price["change"],
+                "price_speed_percentile": price["percentile"],
+                "source_timestamp": price["source_timestamp"],
+                "call_oi_percentile": call.get("percentile"),
+                "put_oi_percentile": put.get("percentile"),
+                # No canonical price-impulse event exists.  Keep timing
+                # explicitly unavailable rather than deriving lead/lag from
+                # the largest recent tick plus an arbitrary coincidence band.
+                "call_timing": "NO CLEAR FOLLOW",
+                "put_timing": "NO CLEAR FOLLOW",
+                "read": "OI ACTIVITY AT SESSION HIGH" if call.get("new_session_extreme") or put.get("new_session_extreme") else "DESCRIPTIVE PRICE ↔ OI CONTEXT",
+            },
+            "nifty_book": {
+                "scope": "GLOBAL NIFTY FUTURES BOOK PRESSURE",
+                "direction": direction,
+                "mlofi": mlofi,
+                "pressure_x": flow_x,
+                "source_timestamp": flow_diag.get("current_flow_timestamp"),
+            },
+            "activity_release": {
+                "price_speed_percentile": price["percentile"],
+                "oi_activity_percentile": max(oi_percentiles) if oi_percentiles else None,
+                "straddle_activity_percentile": straddle_context["percentile"],
+                "straddle_change_5m": straddle_context["change"],
+                "book_pressure_direction": direction,
+                "book_pressure_x": flow_x,
+                "read": "OI ACTIVITY AT SESSION HIGH" if call.get("new_session_extreme") or put.get("new_session_extreme") else "ACTIVITY CONTEXT",
+            },
+            "alerts": alerts,
+        }
 
     def prepare(self, argus: Mapping[str, Any], vob: Mapping[str, Any], flow: Mapping[str, Any] | None = None) -> dict[str, Any]:
         data = argus.get("data") if isinstance(argus.get("data"), Mapping) else argus
@@ -418,7 +1045,7 @@ class OptionBuyerIntelligenceWorker:
         
         # ── Hydrate durable session history on startup ──
         if observed_at is not None and not self._hydrated:
-            self._hydrate_recent_durable_history(observed_at)
+            self._hydrate_recent_durable_history(observed_at, data)
         market_futures = market.get("futures") if isinstance(market.get("futures"), Mapping) else {}
         legacy_futures = data.get("futures") if isinstance(data.get("futures"), Mapping) else {}
         futures = market_futures or legacy_futures
@@ -426,12 +1053,23 @@ class OptionBuyerIntelligenceWorker:
         fut_ask = _number(futures.get("best_ask_price"))
         forward = (fut_bid + fut_ask) / 2.0 if fut_bid is not None and fut_ask is not None and 0.0 < fut_bid <= fut_ask else _number(futures.get("ltp"))
         chain_expiry = str(underlying.get("expiry") or "")
-        futures_expiry = str(futures.get("expiry") or chain_expiry)
         raw_rows = [row for row in data.get("atm_window") or [] if isinstance(row, Mapping)]
         rows, surface_age = self._coherent_rows(raw_rows, market, observed_at)
         contracts = vob.get("current_itm1_contracts") if isinstance(vob.get("current_itm1_contracts"), Mapping) else {}
         source_age = self._quote_age(futures, observed_at)
-        expiry_valid = bool(chain_expiry) and futures_expiry == chain_expiry
+        ce_contract = contracts.get("CE", {}).get("contract", {}) if isinstance(contracts.get("CE"), Mapping) else {}
+        pe_contract = contracts.get("PE", {}).get("contract", {}) if isinstance(contracts.get("PE"), Mapping) else {}
+        ce_c_expiry = str(ce_contract.get("expiry") or "")
+        pe_c_expiry = str(pe_contract.get("expiry") or "")
+        
+        contracts_expiry_valid = (
+            (not ce_c_expiry or ce_c_expiry == chain_expiry)
+            and (not pe_c_expiry or pe_c_expiry == chain_expiry)
+            and (not ce_c_expiry or not pe_c_expiry or ce_c_expiry == pe_c_expiry)
+        )
+        futures_expiry = str(futures.get("expiry") or "")
+        futures_valid = bool(futures_expiry) and (futures.get("security_id") is not None or futures.get("ltp") is not None)
+        expiry_valid = bool(chain_expiry) and futures_valid and contracts_expiry_valid
         valid = observed_at is not None and forward is not None and forward > 0 and bool(rows) and source_age is not None and source_age <= 20.0 and expiry_valid
         base = self._unavailable(observed_at, source_age, "MODEL_INPUT_UNAVAILABLE" if not valid else None)
         forward_quality = self._forward_quality(rows, forward, futures, chain_expiry)
@@ -441,6 +1079,28 @@ class OptionBuyerIntelligenceWorker:
         pe.update(self._direct_market_truth(contracts.get("PE"), market))
         straddle = self._straddle(rows, forward, observed_at, valid, ce, pe)
         option_intel = self.option_intelligence_engine.evaluate(rows, forward, observed_at, chain_expiry)
+        if observed_at is not None:
+            spot_value = _number(underlying.get("ltp")) or _number(underlying.get("spot")) or forward
+            straddle_value = _number(straddle.get("now"))
+            if spot_value is not None:
+                self._record_timed_value(self._price_series, spot_value, observed_at)
+            if straddle_value is not None:
+                atm_strike = _number(straddle.get("atm_strike"))
+                atm_row = next(
+                    (row for row in rows if _number(row.get("strike")) == atm_strike),
+                    None,
+                )
+                call_leg = self._leg(atm_row, "CE") if isinstance(atm_row, Mapping) else {}
+                put_leg = self._leg(atm_row, "PE") if isinstance(atm_row, Mapping) else {}
+                call_sid = str(call_leg.get("security_id") or "")
+                put_sid = str(put_leg.get("security_id") or "")
+                if call_sid and put_sid:
+                    self._record_timed_value(
+                        self._straddle_series,
+                        straddle_value,
+                        observed_at,
+                        identity=f"{call_sid}:{put_sid}",
+                    )
 
         # ── Session Reset Order: check session before ingesting new session flow ──
         session_date = str(observed_at.date()) if observed_at else None
@@ -490,8 +1150,9 @@ class OptionBuyerIntelligenceWorker:
             )
             cvob = cpayload.get("vob") if isinstance(cpayload.get("vob"), Mapping) else {}
             chp = cvob.get("horsepower") if isinstance(cvob.get("horsepower"), Mapping) else {}
-            chp_3m = chp.get("3m") if isinstance(chp.get("3m"), Mapping) else {}
-            chp_5m = chp.get("5m") if isinstance(chp.get("5m"), Mapping) else {}
+            chp_lanes = self.resolver_engine.extract_vob_timeframes(chp)
+            chp_3m = chp_lanes["3m"]
+            chp_5m = chp_lanes["5m"]
             vob_event_time = _timestamp(chp_5m.get("confirmed_candle") or chp_3m.get("confirmed_candle"))
 
             flow_diag = self.resolver_engine.compute_flow_diagnostics(vob_event_time, observed_at)
@@ -505,15 +1166,26 @@ class OptionBuyerIntelligenceWorker:
             )
             side_result["resolver_event"] = resolver_ev
             side_result["resolver_diagnostics"] = resolver_diag
+        sudden_oi = self._build_sudden_oi(rows, underlying, forward, observed_at, straddle)
         return {
             "schema_version": 1,
-            "status": "MODEL_DERIVED_RESEARCH" if valid else "UNAVAILABLE",
+            # Availability is owned by the complete Option Buyer projection,
+            # not only by the optional Black-76 fair-price branch.  The
+            # current option-chain IV/skew/GEX engine can be fully live while
+            # fair pricing correctly fails closed (for example when the
+            # futures and weekly-option expiries differ).
+            "status": (
+                "LIVE"
+                if option_intel.get("status") == "LIVE"
+                else "MODEL_DERIVED_RESEARCH" if valid else "UNAVAILABLE"
+            ),
             "source_timestamp": observed_at.isoformat() if observed_at else None,
             "feed_age_seconds": source_age,
             "provenance": "CANONICAL_ARGUS_DHAN_OPTION_CHAIN + DHAN_FULL_QUOTE + EXISTING_FUTURES",
             "CE": ce,
             "PE": pe,
             "straddle": straddle,
+            "sudden_oi": sudden_oi,
             "option_intelligence": option_intel,
             "fit": {"call_evidence": None, "put_evidence": None, "state": "NO_CLEAN_FIT", "provenance": "NO_INVENTED_FIT_FORMULA"},
             "capture": {"state": "STAGED_INACTIVE", "reason": "CURRENT_CANONICAL_QUOTE_HAS_5_LEVEL_DEPTH_NOT_OPTION_TRADE_TAPE_OR_20_LEVEL_BOOK"},

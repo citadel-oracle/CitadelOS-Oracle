@@ -6,6 +6,7 @@ export const DASHBOARD_FEED_KEYS = [
   'development', 'strategy_lab', 'comparison',
   'strategies', 'eye_oracle_projection', 'order_flow', 'futures_chart',
   'fusion_shadow', 'options_structure', 'vob_reversal',
+  'option_buyer_intelligence', 'market_info',
 ] as const
 
 
@@ -260,6 +261,8 @@ export interface DashboardSourceSnapshot {
   provider: DashboardProviderKind
   traceId: string
   generatedAt: string
+  sourceRevision?: number
+  runtimeInstanceId?: string
   selectedSymbol: string
   feeds: Record<DashboardFeedKey, unknown>
   feedMeta: Record<DashboardFeedKey, DashboardFeedMeta>

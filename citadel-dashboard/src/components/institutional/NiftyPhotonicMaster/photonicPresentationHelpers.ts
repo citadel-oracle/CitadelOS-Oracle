@@ -1,5 +1,6 @@
 import type {
   OracleEvidenceObservation,
+  OracleOiWindowChange,
   OracleOptionDisplay,
   OracleOptionVobLane,
   OracleTradeRecord,
@@ -39,7 +40,7 @@ export function truthTone(value: string | null | undefined): 'fresh' | 'bad' | '
 export function proximityLabel(option: OracleOptionDisplay): string {
   if (option.relation === 'TOUCHING') return 'TOUCHING VOB'
   if (option.insideZone === true) return 'INSIDE VOB'
-  if (option.distancePoints === null || option.relation === 'UNKNOWN') return 'UNKNOWN'
+  if (option.distancePoints === null) return 'UNKNOWN'
   const points = option.distancePoints.toFixed(2)
   if (option.relation === 'ABOVE') return `${points} pts ABOVE VOB`
   if (option.relation === 'BELOW') return `${points} pts BELOW VOB`
@@ -270,6 +271,10 @@ export interface PhotonicArgusVobViewModel {
     | 'UNKNOWN'
   buyPct: number | null
   writePct: number | null
+  callWritingPct?: number | null
+  putWritingPct?: number | null
+  callBuyingPct?: number | null
+  putBuyingPct?: number | null
   flowShift:
     | 'SELLERS → BUYERS'
     | 'BUYERS → SELLERS'
@@ -318,9 +323,13 @@ export function buildArgusVobViewModel({
     positioning = 'MIXED'
   }
 
-  // 3. Buy & Write percentages
+  // 3. Buy & Write percentages + 4-way decomposition
   const buyPct = argus?.buyerDominancePct ?? null
   const writePct = argus?.writerDominancePct ?? null
+  const callWritingPct = (argus as any)?.callWritingScore ?? (argus as any)?.call_writing_score ?? null
+  const putWritingPct = (argus as any)?.putWritingScore ?? (argus as any)?.put_writing_score ?? null
+  const callBuyingPct = (argus as any)?.callBuyingScore ?? (argus as any)?.call_buying_score ?? null
+  const putBuyingPct = (argus as any)?.putBuyingScore ?? (argus as any)?.put_buying_score ?? null
 
   // 4. Flow Shift (Dominant reversal / flow state)
   let flowShift: PhotonicArgusVobViewModel['flowShift'] = 'UNKNOWN'
@@ -390,6 +399,10 @@ export function buildArgusVobViewModel({
     positioning,
     buyPct,
     writePct,
+    callWritingPct,
+    putWritingPct,
+    callBuyingPct,
+    putBuyingPct,
     flowShift,
     focusStrike,
     focusStrikeLabel,
@@ -427,4 +440,33 @@ export function formatBuildup(positioning: string | null | undefined, side: 'CE'
   if (norm.includes('WRIT')) return `${side === 'CE' ? 'CALL' : 'PUT'} WRITING`
   if (norm.includes('BUY')) return `${side === 'CE' ? 'CALL' : 'PUT'} BUYING`
   return norm
+}
+
+export function formatOiWindowLabel(_label: string, change: OracleOiWindowChange | null | undefined): {
+  oiText: string
+  priceText: string
+  structureText: string
+  oiPositive: boolean
+} | null {
+  if (!change) return null
+  if (change.oiDelta === null) {
+    if (change.reason) {
+      return {
+        oiText: change.reason.toUpperCase(),
+        priceText: '',
+        structureText: change.status || 'WARMING',
+        oiPositive: true,
+      }
+    }
+    return null
+  }
+  const oiLacs = change.oiDelta / 100000
+  const sign = oiLacs >= 0 ? '+' : ''
+  const pctStr = change.oiPct !== null ? ` (${change.oiPct >= 0 ? '+' : ''}${change.oiPct.toFixed(1)}%)` : ''
+  const oiText = `${sign}${oiLacs.toFixed(2)}L${pctStr}`
+  const priceSign = (change.priceDelta ?? 0) >= 0 ? '+' : '-'
+  const absPrice = change.priceDelta !== null ? Math.abs(change.priceDelta).toFixed(2) : null
+  const priceText = absPrice !== null ? `PRICE ${priceSign}₹${absPrice}` : 'PRICE —'
+  const structureText = change.structure ?? '—'
+  return { oiText, priceText, structureText, oiPositive: (change.oiDelta ?? 0) >= 0 }
 }

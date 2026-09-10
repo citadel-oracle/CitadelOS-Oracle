@@ -111,7 +111,7 @@ The original Pullback V2 Pine source is golden authority. Underlying NIFTY VOB, 
 
 ## Final verified freeze closure
 
-- `FINAL_HEAD=e48f63a9e3108b9834c979623fed4fee7f969225`
+- `FINAL_HEAD=f556067bf75cf948b62a99dbef6ea1a8d255b87b`
 - `FINAL_TAG=R3_INFRA_FREEZE_VERIFIED`
 - `ORACLE_INFRA_STATUS=FROZEN` after the exact-HEAD regression suite.
 - Canonical Runtime Truth is the sole public readiness authority; legacy readiness output cannot override its public status fields.

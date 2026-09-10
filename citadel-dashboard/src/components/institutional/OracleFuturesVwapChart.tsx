@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
 import {
+  BaselineSeries,
   CandlestickSeries,
   CrosshairMode,
   LineSeries,
@@ -13,8 +14,15 @@ import {
   type Time,
   type UTCTimestamp,
 } from 'lightweight-charts'
+import { feedSelectors, useDashboardSelector } from '@/dashboard'
 import type { DashboardFeedState } from '@/dashboard/types'
 import { LiquidGlassRail, type RailAccent } from './OracleArgusPrime01C'
+import {
+  BubblesPrimitive,
+  HeatmapPrimitive,
+  type DepthSnapshot,
+  type VisualFlowEvent,
+} from './FlowMapPrimitives'
 
 import styles from './OracleFuturesVwapChart.module.css'
 
@@ -347,6 +355,7 @@ export const OracleFuturesVwapChart = memo(function OracleFuturesVwapChart({ fee
   feed: DashboardFeedState<unknown>
 }) {
   const [selectedTimeframe, setSelectedTimeframe] = useState<ChartTimeframe>('5m')
+  const [flowMapActive, setFlowMapActive] = useState<boolean>(false)
   const visualLiveFixture = useSyncExternalStore(
     subscribeStaticLocation,
     () => process.env.NODE_ENV !== 'production'
@@ -371,6 +380,9 @@ export const OracleFuturesVwapChart = memo(function OracleFuturesVwapChart({ fee
   const p10SeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
   const p50SeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
   const p90SeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const cvdSeriesRef = useRef<ISeriesApi<'Baseline'> | null>(null)
+  const bubblesPrimitiveRef = useRef<BubblesPrimitive | null>(null)
+  const heatmapPrimitiveRef = useRef<HeatmapPrimitive | null>(null)
   const profilePriceLinesRef = useRef<IPriceLine[]>([])
   const overlayRef = useRef<HTMLDivElement>(null)
   const liveDotRef = useRef<HTMLSpanElement>(null)
@@ -382,6 +394,10 @@ export const OracleFuturesVwapChart = memo(function OracleFuturesVwapChart({ fee
   const lastCandleRef = useRef<OracleFuturesCandle | null>(null)
   const lastForecastRef = useRef<FuturesForecast | null>(null)
   const forecastFitIdentityRef = useRef<string | null>(null)
+  const prevFlowMapActiveRef = useRef<boolean>(false)
+  const lastCvdLengthRef = useRef<number>(0)
+  const lastCvdPointRef = useRef<{ time: UTCTimestamp; value: number } | null>(null)
+  const orderFlowFeed = useDashboardSelector(feedSelectors.orderFlow) as DashboardFeedState<unknown>
   const rootData = useMemo(() => record(feed.data), [feed.data])
   const data = useMemo(() => {
     const root = rootData
@@ -555,6 +571,13 @@ export const OracleFuturesVwapChart = memo(function OracleFuturesVwapChart({ fee
       color: 'rgba(47,240,216,.5)', lineWidth: 1, lineStyle: LineStyle.Dashed,
       priceLineVisible: false, lastValueVisible: false, title: '',
     })
+    const bubblesPrimitive = new BubblesPrimitive({ showBubbles: flowMapActive })
+    const heatmapPrimitive = new HeatmapPrimitive({ showHeatmap: flowMapActive })
+    candleSeries.attachPrimitive(heatmapPrimitive)
+    candleSeries.attachPrimitive(bubblesPrimitive)
+    bubblesPrimitiveRef.current = bubblesPrimitive
+    heatmapPrimitiveRef.current = heatmapPrimitive
+
     chartRef.current = chart
     candleSeriesRef.current = candleSeries
     vwapSeriesRef.current = vwapSeries
@@ -593,6 +616,8 @@ export const OracleFuturesVwapChart = memo(function OracleFuturesVwapChart({ fee
         divider.style.opacity = x === null ? '0' : '1'
         if (x !== null) divider.style.left = `${x}px`
       } else if (divider) divider.style.opacity = '0'
+      if (bubblesPrimitiveRef.current) bubblesPrimitiveRef.current.requestUpdate()
+      if (heatmapPrimitiveRef.current) heatmapPrimitiveRef.current.requestUpdate()
     })
     syncOverlayRef.current = syncOverlay
     chart.timeScale().subscribeVisibleLogicalRangeChange(syncOverlay)
@@ -614,6 +639,11 @@ export const OracleFuturesVwapChart = memo(function OracleFuturesVwapChart({ fee
       p10SeriesRef.current = null
       p50SeriesRef.current = null
       p90SeriesRef.current = null
+      cvdSeriesRef.current = null
+      lastCvdLengthRef.current = 0
+      lastCvdPointRef.current = null
+      bubblesPrimitiveRef.current = null
+      heatmapPrimitiveRef.current = null
       initializedIdentityRef.current = null
       lastCandleRef.current = null
       lastForecastRef.current = null
@@ -622,6 +652,138 @@ export const OracleFuturesVwapChart = memo(function OracleFuturesVwapChart({ fee
       syncOverlayRef.current = () => undefined
     }
   }, [])
+
+  const orderFlowData = useMemo(() => record(orderFlowFeed?.data), [orderFlowFeed?.data])
+  const visualEvents = useMemo<VisualFlowEvent[]>(() => {
+    return Array.isArray(orderFlowData.visual_events)
+      ? (orderFlowData.visual_events as VisualFlowEvent[])
+      : []
+  }, [orderFlowData.visual_events])
+  const depthSnapshots = useMemo<DepthSnapshot[]>(() => {
+    return Array.isArray(orderFlowData.depth_snapshots)
+      ? (orderFlowData.depth_snapshots as DepthSnapshot[])
+      : []
+  }, [orderFlowData.depth_snapshots])
+  const cvdSeriesData = useMemo<Array<{ time: number; cvd: number }>>(() => {
+    return Array.isArray(orderFlowData.cvd_series)
+      ? (orderFlowData.cvd_series as Array<{ time: number; cvd: number }>)
+      : []
+  }, [orderFlowData.cvd_series])
+  const candleTimes = useMemo(() => candles.map((c) => c.time), [candles])
+
+  useEffect(() => {
+    const bubbles = bubblesPrimitiveRef.current
+    const heatmap = heatmapPrimitiveRef.current
+    if (bubbles) {
+      bubbles.setOptions({ showBubbles: flowMapActive })
+      bubbles.setCandleTimes(candleTimes)
+      bubbles.setEvents(flowMapActive ? visualEvents : [])
+    }
+    if (heatmap) {
+      heatmap.setOptions({ showHeatmap: flowMapActive })
+      heatmap.setCandleTimes(candleTimes)
+      heatmap.setDepthSnapshots(flowMapActive ? depthSnapshots : [])
+    }
+
+    const chart = chartRef.current
+    if (!chart) return
+
+    if (flowMapActive) {
+      if (!cvdSeriesRef.current) {
+        try {
+          const cvdPane = chart.addPane()
+          const cvdSeries = cvdPane.addSeries(BaselineSeries, {
+            baseValue: { type: 'price', price: 0 },
+            topFillColor1: 'rgba(38, 166, 154, 0.28)',
+            topFillColor2: 'rgba(38, 166, 154, 0.04)',
+            topLineColor: '#26a69a',
+            bottomFillColor1: 'rgba(239, 83, 80, 0.04)',
+            bottomFillColor2: 'rgba(239, 83, 80, 0.28)',
+            bottomLineColor: '#ef5350',
+            lineWidth: 1,
+            priceLineVisible: false,
+            lastValueVisible: true,
+            title: 'CVD',
+          })
+          cvdPane.setStretchFactor(0.20)
+          if (chart.panes().length > 0) {
+            chart.panes()[0].setStretchFactor(0.80)
+          }
+          cvdSeriesRef.current = cvdSeries
+        } catch {}
+      }
+
+      // Default to focused recent 28-candle window on toggle ON to preserve normal candle density
+      if (!prevFlowMapActiveRef.current && candles.length > 0) {
+        try {
+          const fromLogical = Math.max(0, candles.length - 28)
+          const toLogical = candles.length + 3
+          chart.timeScale().setVisibleLogicalRange({
+            from: fromLogical,
+            to: toLogical,
+          })
+        } catch {}
+      }
+
+      if (cvdSeriesRef.current && candles.length > 0) {
+        const canonicalCvd = number(orderFlowData.cvd) ?? 0
+        let lastKnownCvd = 0
+        const cvdData = candles.map((c, i) => {
+          if (cvdSeriesData.length > 0) {
+            for (let j = cvdSeriesData.length - 1; j >= 0; j--) {
+              if (cvdSeriesData[j].time <= c.time + 300) {
+                lastKnownCvd = cvdSeriesData[j].cvd
+                break
+              }
+            }
+          } else if (i === candles.length - 1 && canonicalCvd !== 0) {
+            lastKnownCvd = canonicalCvd
+          }
+          return { time: c.time as UTCTimestamp, value: lastKnownCvd }
+        })
+
+        const lastPoint = cvdData[cvdData.length - 1]
+        if (
+          lastCvdLengthRef.current > 0 &&
+          (candles.length === lastCvdLengthRef.current || candles.length === lastCvdLengthRef.current + 1)
+        ) {
+          if (
+            !lastCvdPointRef.current ||
+            lastCvdPointRef.current.time !== lastPoint.time ||
+            lastCvdPointRef.current.value !== lastPoint.value
+          ) {
+            cvdSeriesRef.current.update(lastPoint)
+            lastCvdPointRef.current = lastPoint
+            lastCvdLengthRef.current = candles.length
+          }
+        } else {
+          cvdSeriesRef.current.setData(cvdData)
+          lastCvdPointRef.current = lastPoint
+          lastCvdLengthRef.current = candles.length
+        }
+      }
+    } else {
+      if (cvdSeriesRef.current) {
+        try {
+          if (chart.panes().length > 1) {
+            chart.removePane(1)
+          }
+          if (chart.panes().length > 0) {
+            chart.panes()[0].setStretchFactor(1)
+          }
+        } catch {}
+        cvdSeriesRef.current = null
+        lastCvdLengthRef.current = 0
+        lastCvdPointRef.current = null
+      }
+      if (prevFlowMapActiveRef.current) {
+        try {
+          chart.timeScale().fitContent()
+        } catch {}
+      }
+    }
+    prevFlowMapActiveRef.current = flowMapActive
+  }, [flowMapActive, visualEvents, depthSnapshots, cvdSeriesData, candleTimes, candles, orderFlowData])
 
   useEffect(() => {
     const candleSeries = candleSeriesRef.current
@@ -751,6 +913,15 @@ export const OracleFuturesVwapChart = memo(function OracleFuturesVwapChart({ fee
           <h2>NIFTY FUT LIVE</h2>
         </div>
         <div className={styles.headerRight}>
+          <button
+            type="button"
+            className={styles.flowMapToggle}
+            aria-pressed={flowMapActive}
+            onClick={() => setFlowMapActive((prev) => !prev)}
+            aria-label="Toggle Flow Map order flow visualization"
+          >
+            [ FLOW MAP ]
+          </button>
           <div className={styles.timeframes} role="group" aria-label="Futures chart timeframe">
             {TIMEFRAMES.map((timeframe) => (
               <button
@@ -785,7 +956,7 @@ export const OracleFuturesVwapChart = memo(function OracleFuturesVwapChart({ fee
         </div>
         <DecisionSide label="PE" semantic={decisionHudSemantic.put} flowStrength={decisionHud.put.flowStrength} oiStrength={decisionHud.put.oiStrength} />
       </div>
-      <div className={styles.chartFrame}>
+      <div className={flowMapActive ? styles.chartFrameFlowMap : styles.chartFrame}>
         <div ref={containerRef} className={styles.chart} />
         <div ref={overlayRef} className={styles.profile} data-status={profile.status} aria-label="Canonical session volume profile">
           {profile.status === 'AVAILABLE' ? profile.bins.map((bin) => (
@@ -811,7 +982,7 @@ export const OracleFuturesVwapChart = memo(function OracleFuturesVwapChart({ fee
         )}
       </div>
       <footer>
-        <span>DHAN FUTURES · FINALIZED HISTORY + LIVE FORMING BAR</span>
+        <span>UPSTOX FUTURES · FINALIZED HISTORY + LIVE FORMING BAR</span>
         <span>VWAP · SESSION RESET</span>
         <span>{profile.status === 'AVAILABLE' ? 'PROFILE · POC' : 'PROFILE DEGRADED'}</span>
         <span>KRONOS GHOST · CHRONOS P10 / P50 / P90</span>

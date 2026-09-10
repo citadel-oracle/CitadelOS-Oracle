@@ -193,7 +193,7 @@ class CanonicalStatusEngine:
                 dep_reason = f"Deployment {dep_id} is not loaded into memory."
                 dep_action = True
                 dep_rec = f"Load or deploy runtime for {dep_id}."
-            elif health_str != "HEALTHY":
+            elif health_str not in {"HEALTHY", "LIVE"}:
                 connectivity = "STALE"
                 readiness = "NOT_READY"
                 dep_code = "DEPLOYMENT_DEGRADED"
@@ -202,7 +202,7 @@ class CanonicalStatusEngine:
                 dep_rec = f"Check logs and dependencies for {dep_id}."
             else:
                 connectivity = "CONNECTED"
-                readiness = "READY" if readiness_str in {"READY", "DATA_READY"} else "NOT_READY"
+                readiness = "READY" if readiness_str in {"READY", "DATA_READY", "LIVE"} else "NOT_READY"
                 dep_code = "DEPLOYMENT_NORMAL"
                 dep_reason = f"Deployment {dep_id} is healthy."
                 dep_action = False
@@ -221,7 +221,7 @@ class CanonicalStatusEngine:
                 if connectivity == "CONNECTED":
                     connectivity = "STALE"
 
-            if lifecycle == "RUNNING" and connectivity == "CONNECTED" and health_str == "HEALTHY":
+            if lifecycle == "RUNNING" and connectivity == "CONNECTED" and health_str in {"HEALTHY", "LIVE"}:
                 healthy_dep_count += 1
 
             cursor_lag = sched.get("cursor_lag") if isinstance(sched, dict) else None

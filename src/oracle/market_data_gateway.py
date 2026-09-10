@@ -16,11 +16,18 @@ from websockets.exceptions import ConnectionClosed
 
 from src.broker.dhan_full_packet import DhanFullPacketDecoder, DhanPacketError
 from src.broker.dhan_time import normalize_dhan_ltt
+from src.broker.exchange_time import normalize_upstox_ltt
+from src.broker.upstox_client import UpstoxClient, UpstoxMarketDataFeedV3
+from src.order_flow.instrument_mapping import instrument_mapping
 
 logger = logging.getLogger(__name__)
 
 
 class MarketDataGateway:
+    # Reuse the existing health contract: a required instrument is STALE after
+    # 45 seconds.  This is transport health, never a trading threshold.
+    LIVE_PACKET_STALE_SECONDS = 45.0
+    BACKPRESSURE_LOG_INTERVAL_SECONDS = 5.0
     """
     Connects to Dhan's Live Market Data WebSocket API.
     Handles Dhan binary protocol, automatic pong/reconnect, and health exposure.
@@ -44,6 +51,7 @@ class MarketDataGateway:
         on_transport_event: Optional[Callable[[str, Dict[str, Any]], None]] = None,
         queue_size: int = 2048,
         lossless_tick_delivery: bool = False,
+        upstox_client: Optional[UpstoxClient] = None,
     ):
         self.client_id = client_id or os.getenv("DHAN_CLIENT_ID", "")
         self.access_token = access_token or os.getenv("DHAN_ACCESS_TOKEN", "")
@@ -51,6 +59,25 @@ class MarketDataGateway:
         self.on_raw_packet = on_raw_packet
         self.on_transport_event = on_transport_event
         self._lossless_tick_delivery = bool(lossless_tick_delivery)
+
+        # Upstox Analytics Token Dual-Source Integration
+        self.upstox_client = upstox_client or UpstoxClient()
+        self._upstox_feed: Optional[UpstoxMarketDataFeedV3] = None
+        if self.upstox_client and self.upstox_client.has_token:
+            self._upstox_feed = UpstoxMarketDataFeedV3(
+                client=self.upstox_client,
+                on_tick=self._handle_upstox_tick,
+                on_raw_packet=self._handle_upstox_raw,
+                on_transport_event=self._handle_upstox_transport_event,
+                subscription_mode="full",
+            )
+        self._provider_latest_ticks: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
+        self._divergence_count = 0
+        self._latest_divergence: Optional[Dict[str, Any]] = None
+        self._upstox_received_packet_count = 0
+        self._upstox_received_tick_count = 0
+        self._upstox_last_tick_time: Optional[datetime] = None
+        self._dhan_dormant: bool = False
 
         self.ws = None
         self._connection_state_lock = threading.RLock()
@@ -83,11 +110,15 @@ class MarketDataGateway:
         self._last_connection_result = "NOT_ATTEMPTED"
         self._last_connection_http_status: int | None = None
         self._last_successful_connection_at: str | None = None
+        self._last_usable_feed_at: str | None = None
+        self._usable_feed_generation = -1
         self._last_backoff_seconds: float | None = None
         self._receive_loop_alive = False
         self._connection_state = "DISCONNECTED"
         self._last_socket_activity_at: str | None = None
         self._last_binary_packet_at: str | None = None
+        self._generation_started_monotonic: float | None = None
+        self._last_full_packet_monotonic: float | None = None
         self._last_disconnect_exception_class: str | None = None
         self._last_close_code: int | None = None
         self._last_close_reason: str | None = None
@@ -97,6 +128,8 @@ class MarketDataGateway:
         self._ack_status = "NOT_AVAILABLE"
         self._queued_volume: dict[tuple[Any, Any], int | None] = {}
         self._queue_state_lock = threading.RLock()
+        self._last_flow_backpressure_log_monotonic: float | None = None
+        self._flow_backpressure_logs_suppressed = 0
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._subscription_event: Optional[asyncio.Event] = None
         self._subscription_send_lock: Optional[asyncio.Lock] = None
@@ -164,6 +197,31 @@ class MarketDataGateway:
                 event = self._subscription_event
                 if loop is not None and loop.is_running() and event is not None:
                     loop.call_soon_threadsafe(event.set)
+
+        # Dual-source: forward mapped keys to Upstox feed
+        if self._upstox_feed is not None:
+            upstox_keys = set()
+            for inst in values:
+                seg = str(inst.get("exchange_segment") or "")
+                sec_id = str(inst.get("security_id") or "")
+                role = str(inst.get("role") or "")
+                canon = instrument_mapping.get_by_dhan_key(seg, sec_id)
+                if canon and canon.upstox_key:
+                    upstox_keys.add(canon.upstox_key)
+                elif role == "NIFTY_SPOT" or (seg in ("IDX_I", "0") and sec_id == "13"):
+                    upstox_keys.add("NSE_INDEX|Nifty 50")
+                elif role == "BANKNIFTY_SPOT" or (seg in ("IDX_I", "0") and sec_id == "25"):
+                    upstox_keys.add("NSE_INDEX|Nifty Bank")
+                elif role == "MIDCPNIFTY_SPOT" or (seg in ("IDX_I", "0") and sec_id == "442"):
+                    upstox_keys.add("NSE_INDEX|NIFTY MID SELECT")
+                elif role == "NIFTY_FUTURE" or seg in ("NSE_FNO", "2"):
+                    upstox_keys.add(f"NSE_FO|{sec_id}")
+                elif seg in ("NSE_EQ", "1"):
+                    upstox_keys.add(f"NSE_EQ|{sec_id}")
+            # Realtime India VIX and GIFT Nifty
+            upstox_keys.add("NSE_INDEX|India VIX")
+            upstox_keys.add("GLOBAL_INDEX|SGX NIFTY")
+            self._upstox_feed.subscribe(list(upstox_keys))
 
     def _start_dispatch_workers(self) -> None:
         """Start the two non-async callback lanes exactly once per gateway."""
@@ -265,7 +323,7 @@ class MarketDataGateway:
                 self._recorder_queue.task_done()
 
     async def start(self):
-        """Start the WebSocket connection loop with auto-reconnect."""
+        """Start the WebSocket connection loops for Dhan and Upstox with auto-reconnect."""
         if self._is_running:
             return
         self._is_running = True
@@ -276,31 +334,104 @@ class MarketDataGateway:
         self._start_dispatch_workers()
         self._worker_task = asyncio.create_task(self._worker_lifecycle_waiter())
 
+        tasks = []
+        self._dhan_task = asyncio.create_task(self._run_dhan_lifecycle())
+        tasks.append(self._dhan_task)
+
+        if self._upstox_feed is not None:
+            self._upstox_task = asyncio.create_task(self._run_upstox_lifecycle())
+            tasks.append(self._upstox_task)
+
+        try:
+            await asyncio.gather(*tasks)
+        except asyncio.CancelledError:
+            self._is_running = False
+            logger.info("MarketDataGateway stopped via cancellation.")
+        finally:
+            if self._worker_task is not None:
+                self._worker_task.cancel()
+                await asyncio.gather(self._worker_task, return_exceptions=True)
+            self._stop_dispatch_workers()
+
+    async def _run_dhan_lifecycle(self) -> None:
+        """Runs the Dhan WebSocket connection loop with bounded backoff and dormancy detection."""
+        if not self.access_token or not self.client_id or self._dhan_dormant:
+            self._dhan_dormant = True
+            with self._connection_state_lock:
+                self._connection_state = "DORMANT"
+            logger.info("Dhan market-data feed is unauthenticated/dormant. Upstox is active canonical provider.")
+            while self._is_running and self._dhan_dormant:
+                await self._sleep(30.0)
+            if not self._is_running:
+                return
+
+        consecutive_failures = 0
         while self._is_running:
             try:
                 await self._connect_once()
+                if self._usable_feed_generation < 0:
+                    consecutive_failures += 1
+                    if consecutive_failures >= 3:
+                        self._dhan_dormant = True
+                        with self._connection_state_lock:
+                            self._connection_state = "DORMANT"
+                        logger.warning(
+                            "Dhan unauthenticated or unusable across %d attempts. Transitioning Dhan to DORMANT; Upstox remains active canonical provider.",
+                            consecutive_failures,
+                        )
+                        while self._is_running and self._dhan_dormant:
+                            await self._sleep(30.0)
+                        break
+                else:
+                    consecutive_failures = 0
             except asyncio.CancelledError:
-                self._is_running = False
-                logger.info("MarketDataGateway stopped via cancellation.")
                 break
             except Exception as e:
+                consecutive_failures += 1
                 self._record_connection_failure(e)
+                err_str = str(e).upper()
+                if any(kw in err_str for kw in ("DH-901", "EXPIRED", "UNAUTHORIZED", "401", "403")) or (
+                    self._usable_feed_generation <= 0
+                    and consecutive_failures >= 3
+                ):
+                    self._dhan_dormant = True
+                    with self._connection_state_lock:
+                        self._connection_state = "DORMANT"
+                    logger.warning(
+                        "Dhan authentication failure (%s). Transitioning Dhan to DORMANT; Upstox remains active canonical provider.",
+                        e,
+                    )
+                    while self._is_running and self._dhan_dormant:
+                        await self._sleep(30.0)
+                    break
+                elif any(kw in err_str for kw in ("429", "RATE")):
+                    delay = 60.0
+                    logger.warning("Dhan rate limited (HTTP 429). Backing off for %.1fs before reconnect...", delay)
+                    await self._sleep(delay)
+                    continue
+
                 delay = self._next_reconnect_delay()
-                logger.error("WebSocket connection error: %s. Reconnecting in %.3fs...", e, delay)
-            finally:
-                if self._is_running:
-                    # A clean disconnect follows the same bounded policy; an
-                    # exception has already selected and recorded its delay.
+                logger.error("Dhan WebSocket connection error: %s. Reconnecting in %.3fs...", e, delay)
+            if self._is_running and not self._dhan_dormant:
+                try:
                     delay = self._last_backoff_seconds
                     if delay is None:
                         delay = self._next_reconnect_delay()
                     await self._sleep(delay)
                     self._last_backoff_seconds = None
+                except asyncio.CancelledError:
+                    break
 
-        if self._worker_task is not None:
-            self._worker_task.cancel()
-            await asyncio.gather(self._worker_task, return_exceptions=True)
-        self._stop_dispatch_workers()
+    async def _run_upstox_lifecycle(self) -> None:
+        """Runs the Upstox V3 WebSocket connection loop with Protobuf decoding."""
+        if self._upstox_feed is None:
+            return
+        try:
+            await self._upstox_feed.start()
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.error("Upstox feed loop error: %s", e)
 
     async def _connect_once(self) -> None:
         """Run one connection attempt under the gateway's single-flight lock."""
@@ -319,13 +450,31 @@ class MarketDataGateway:
                 self._connection_attempt_active = False
 
     def _record_connection_success(self) -> None:
-        self._reconnect_delay = self.RECONNECT_INITIAL_DELAY_SECONDS
-        self._last_backoff_seconds = None
+        """Record provider admission without claiming the feed is usable yet.
+
+        Dhan can admit a websocket and then close it before any subscribed Full
+        packet arrives.  Resetting exponential backoff at handshake time turns
+        that pattern into a hot reconnect loop when admissions alternate with
+        HTTP 429 rejections.  First canonical packet receipt owns stabilization.
+        """
         self._last_connection_result = "CONNECTED"
         self._last_connection_http_status = None
         self._last_successful_connection_at = datetime.now(timezone.utc).isoformat()
         with self._connection_state_lock:
             self._connection_state = "CONNECTED"
+
+    def _record_usable_feed(self, generation: int, received_at: datetime) -> None:
+        """Reset transport backoff once per generation after usable evidence."""
+
+        with self._connection_state_lock:
+            if generation != self._generation or generation == self._usable_feed_generation:
+                return
+            self._usable_feed_generation = generation
+            self._reconnect_delay = self.RECONNECT_INITIAL_DELAY_SECONDS
+            self._last_backoff_seconds = None
+            self._last_usable_feed_at = received_at.isoformat()
+            self._last_connection_result = "RECEIVING"
+            self._connection_state = "LIVE"
 
     def _record_connection_failure(self, error: Exception) -> None:
         reason = f"{type(error).__name__}:{error}"
@@ -363,11 +512,15 @@ class MarketDataGateway:
 
     async def _connect_and_run(self):
         import urllib.parse
+        import certifi
+        import ssl
         url = f"wss://api-feed.dhan.co?version=2&token={urllib.parse.quote(self.access_token)}&clientId={self.client_id}&authType=2"
         logger.info(f"Connecting to Dhan WebSocket for clientId={self.client_id} (authType=2)...")
 
+        ssl_ctx = ssl.create_default_context(cafile=certifi.where())
         async with websockets.connect(
             url,
+            ssl=ssl_ctx,
             ping_interval=10,
             ping_timeout=40,
             max_queue=256,
@@ -375,6 +528,8 @@ class MarketDataGateway:
             with self._connection_state_lock:
                 self._generation += 1
                 generation = self._generation
+                self._generation_started_monotonic = time.perf_counter()
+                self._last_full_packet_monotonic = None
                 if generation > 1:
                     self._reconnect_count += 1
                 self.ws = ws
@@ -453,6 +608,31 @@ class MarketDataGateway:
             lag_ms = max(0.0, (now - expected - interval_seconds) * 1_000.0)
             self._event_loop_lag_ms.append(lag_ms)
             expected = now
+            if self._live_feed_is_deaf(now_monotonic=now, now_utc=datetime.now(timezone.utc)):
+                reason = f"NO_USABLE_FULL_PACKET_{int(self.LIVE_PACKET_STALE_SECONDS)}S"
+                with self._connection_state_lock:
+                    if not self._is_current_generation(ws, generation):
+                        return
+                    self._connection_state = "DEGRADED"
+                    self._last_connection_result = "STALE_RECEIVE_LOOP"
+                    self._last_reconnect_reason = reason
+                logger.warning("Dhan socket is open but required Full packets are stale; recycling current owner")
+                await ws.close(code=1012, reason=reason)
+                return
+
+    def _live_feed_is_deaf(self, *, now_monotonic: float, now_utc: datetime) -> bool:
+        """Return true only for an open-session socket with no usable Full packet."""
+
+        if not _nse_market_open(now_utc):
+            return False
+        with self._connection_state_lock:
+            anchor = self._last_full_packet_monotonic or self._generation_started_monotonic
+            connected = self.ws is not None and not bool(getattr(self.ws, "closed", False))
+        return bool(
+            connected
+            and anchor is not None
+            and now_monotonic - anchor >= self.LIVE_PACKET_STALE_SECONDS
+        )
 
     async def _watch_subscriptions(self, ws: Any = None, generation: int | None = None) -> None:
         """Push basket revisions even when the current basket has no traffic."""
@@ -523,10 +703,135 @@ class MarketDataGateway:
             return
         self._sent_instruments = inst_list
         self._sent_subscription_revision = revision
-        with self._connection_state_lock:
-            if self._generation == generation:
-                self._connection_state = "LIVE"
         self._emit_transport_event("BASKET_RESET", instrument_count=len(inst_list))
+
+    def _handle_upstox_tick(self, raw_tick: Dict[str, Any]) -> None:
+        """Process decoded Upstox V3 Protobuf tick and normalize to CITADEL conventions."""
+        inst_key = str(raw_tick.get("instrument_key") or raw_tick.get("instrument_token") or "")
+        canon = instrument_mapping.get_by_upstox_key(inst_key)
+        if canon:
+            segment = canon.dhan_segment or "IDX_I"
+            security_id = canon.dhan_security_id or inst_key
+            role = canon.role
+        elif inst_key.startswith("NSE_FO|"):
+            segment = "NSE_FNO"
+            security_id = inst_key.split("|", 1)[1]
+            role = "NIFTY_FUTURE" if any(i.get("role") == "NIFTY_FUTURE" and str(i.get("security_id")) == security_id for i in self.instruments) else "NIFTY_DERIVATIVE"
+        elif inst_key.startswith("NSE_INDEX|"):
+            segment = "IDX_I"
+            if "Nifty 50" in inst_key:
+                security_id = "13"
+                role = "NIFTY_SPOT"
+            elif "Bank" in inst_key:
+                security_id = "25"
+                role = "BANKNIFTY_SPOT"
+            elif "MID" in inst_key:
+                security_id = "442"
+                role = "MIDCPNIFTY_SPOT"
+            else:
+                security_id = "15"
+                role = "INDIA_VIX"
+        elif inst_key.startswith("GLOBAL_INDEX|"):
+            segment = "GLOBAL"
+            security_id = inst_key
+            role = "GIFT_NIFTY" if "SGX NIFTY" in inst_key else "GLOBAL_INDEX"
+        else:
+            segment = "NSE_EQ"
+            security_id = inst_key
+            role = "UNSPECIFIED"
+
+        receive_wall = (
+            raw_tick.get("receive_wall")
+            or (datetime.fromisoformat(raw_tick["receive_wall_utc"]) if "receive_wall_utc" in raw_tick else None)
+            or datetime.now(timezone.utc)
+        )
+        receive_ns = time.perf_counter_ns()
+        tick = dict(raw_tick)
+        tick.update({
+            "provider": "UPSTOX",
+            "exchange_segment": segment,
+            "security_id": str(security_id),
+            "instrument_role": role,
+            "role": role,
+            "feed_code": 8,
+            "response_code": 8,
+            "feed_generation": getattr(self._upstox_feed, "_generation", 1),
+            "feed_receive_ns": receive_ns,
+            "decode_done_ns": receive_ns,
+            "receive_wall_utc": receive_wall.isoformat(),
+            "source_timestamp": tick.get("source_timestamp") or receive_wall.isoformat(),
+            "transport_gap_count": self._transport_gap_count,
+        })
+        if "cumulative_volume" in tick:
+            tick["volume"] = tick["cumulative_volume"]
+
+        raw_ltt = tick.get("ltt") or tick.get("timestamp")
+        if raw_ltt is not None:
+            try:
+                normalized = normalize_upstox_ltt(raw_ltt, receive_wall, segment=segment)
+                tick.update({
+                    "ltt_raw_epoch": normalized.raw_epoch,
+                    "ltt_raw_utc": normalized.raw_utc.isoformat(),
+                    "ltt_raw_ist": normalized.raw_ist.isoformat(),
+                    "ltt_normalized_epoch": normalized.normalized_epoch,
+                    "ltt_utc": normalized.utc.isoformat(),
+                    "ltt_ist": normalized.ist.isoformat(),
+                    "receive_time_ist": normalized.receive_ist.isoformat() if normalized.receive_ist else None,
+                    "ltt_raw_receive_skew_ms": normalized.raw_receive_skew_ms,
+                    "ltt_receive_skew_ms": normalized.receive_skew_ms,
+                    "ltt_session_accepted": normalized.session_accepted,
+                    "ltt_event_session_accepted": normalized.event_session_accepted,
+                })
+            except (TypeError, ValueError, OverflowError):
+                tick["ltt_session_accepted"] = False
+        else:
+            tick["ltt_session_accepted"] = False
+
+        # Dual-source Divergence Detection
+        with self._packet_lock:
+            key = (str(segment), str(security_id))
+            self._provider_latest_ticks[("UPSTOX", key[0], key[1])] = tick
+            dhan_tick = self._provider_latest_ticks.get(("DHAN", key[0], key[1]))
+            if dhan_tick and dhan_tick.get("ltp") is not None and tick.get("ltp") is not None:
+                dhan_ltp = float(dhan_tick["ltp"])
+                upstox_ltp = float(tick["ltp"])
+                base_price = upstox_ltp if upstox_ltp > 0 else dhan_ltp
+                diff_pct = (abs(dhan_ltp - upstox_ltp) / base_price) if base_price > 0 else 0.0
+                if diff_pct > 0.0015:
+                    tick["SOURCE_DIVERGENCE"] = True
+                    tick["provenance_state"] = "SOURCE_DIVERGENCE"
+                    tick["divergence_details"] = {
+                        "dhan_ltp": dhan_ltp,
+                        "upstox_ltp": upstox_ltp,
+                        "diff_pct": round(diff_pct * 100, 3),
+                    }
+                    self._divergence_count += 1
+                    self._latest_divergence = tick["divergence_details"]
+                else:
+                    tick["provenance_state"] = "DUAL_VERIFIED"
+            else:
+                tick["provenance_state"] = "LIVE"
+
+        self._upstox_received_tick_count += 1
+        self._upstox_last_tick_time = receive_wall
+        self._record_packet_receipt(tick, receive_wall, provider="UPSTOX")
+        self._enqueue_tick(tick)
+        try:
+            from src.oracle.live_island.hub import LiveIslandIntelligenceHub
+            LiveIslandIntelligenceHub.get_instance().on_tick(raw_tick)
+        except Exception:
+            pass
+
+    def _handle_upstox_raw(self, raw_bytes: bytes) -> None:
+        self._upstox_received_packet_count += 1
+        self._enqueue_recorder_tick({
+            "provider": "UPSTOX",
+            "raw_packet": raw_bytes,
+            "received_wall_utc": datetime.now(timezone.utc).isoformat(),
+        })
+
+    def _handle_upstox_transport_event(self, event_type: str, payload: Dict[str, Any]) -> None:
+        self._emit_transport_event(f"UPSTOX_{event_type}", **payload)
 
     def _handle_binary_message(self, message: bytes, *, generation: int | None = None):
         """
@@ -553,6 +858,7 @@ class MarketDataGateway:
             self._last_message_time = receive_wall
             self._last_response_code = 50
             self._enqueue_tick({
+                "provider": "DHAN",
                 "security_id": str(int.from_bytes(message[4:8], "little", signed=True)),
                 "exchange_segment": message[3],
                 "response_code": 50,
@@ -569,6 +875,7 @@ class MarketDataGateway:
                 self._last_response_code = packet.response_code
                 tick = packet.to_dict()
                 tick.update({
+                    "provider": "DHAN",
                     "feed_code": packet.response_code,
                     "feed_generation": self._generation or 1,
                     "feed_receive_ns": receive_ns,
@@ -610,9 +917,35 @@ class MarketDataGateway:
                         }
                     except (TypeError, ValueError, OverflowError):
                         tick["ltt_session_accepted"] = False
+
+                seg_canon = self._canonical_segment(tick.get("exchange_segment"))
+                sec_id_str = str(tick.get("security_id") or "")
+                with self._packet_lock:
+                    self._provider_latest_ticks[("DHAN", seg_canon, sec_id_str)] = tick
+                    upstox_tick = self._provider_latest_ticks.get(("UPSTOX", seg_canon, sec_id_str))
+                    if upstox_tick and upstox_tick.get("ltp") is not None and tick.get("ltp") is not None:
+                        dhan_ltp = float(tick["ltp"])
+                        upstox_ltp = float(upstox_tick["ltp"])
+                        base_price = upstox_ltp if upstox_ltp > 0 else dhan_ltp
+                        diff_pct = (abs(dhan_ltp - upstox_ltp) / base_price) if base_price > 0 else 0.0
+                        if diff_pct > 0.0015:
+                            tick["SOURCE_DIVERGENCE"] = True
+                            tick["provenance_state"] = "SOURCE_DIVERGENCE"
+                            tick["divergence_details"] = {
+                                "dhan_ltp": dhan_ltp,
+                                "upstox_ltp": upstox_ltp,
+                                "diff_pct": round(diff_pct * 100, 3),
+                            }
+                            self._divergence_count += 1
+                            self._latest_divergence = tick["divergence_details"]
+                        else:
+                            tick["provenance_state"] = "DUAL_VERIFIED"
+                    else:
+                        tick["provenance_state"] = "LIVE"
+
                 if packet.response_code == 8:
                     self._ws_received_packet_count += 1
-                    self._record_packet_receipt(tick, receive_wall)
+                    self._record_packet_receipt(tick, receive_wall, provider="DHAN")
                 if "cumulative_volume" in tick:
                     tick["volume"] = tick["cumulative_volume"]
                 if packet.response_code == 50:
@@ -636,7 +969,21 @@ class MarketDataGateway:
                     self._flow_required_drops += 1
                     self._transport_gap_count += 1
                     self._emit_transport_event("FEED_GAP", reason="FLOW_REQUIRED_BACKPRESSURE")
-                    logger.error("Lossless Flow handoff queue full; required packet rejected")
+                    now = time.monotonic()
+                    if (
+                        self._last_flow_backpressure_log_monotonic is None
+                        or now - self._last_flow_backpressure_log_monotonic
+                        >= self.BACKPRESSURE_LOG_INTERVAL_SECONDS
+                    ):
+                        logger.error(
+                            "Lossless Flow handoff queue full; required packet rejected"
+                            " (suppressed_since_last=%d)",
+                            self._flow_backpressure_logs_suppressed,
+                        )
+                        self._last_flow_backpressure_log_monotonic = now
+                        self._flow_backpressure_logs_suppressed = 0
+                    else:
+                        self._flow_backpressure_logs_suppressed += 1
                     return
                 if volume is not None and self._queued_volume.get(key) == volume:
                     self._coalesced_quote_updates += 1
@@ -685,7 +1032,7 @@ class MarketDataGateway:
             8: "BSE_FNO",
         }.get(value, str(value))
 
-    def _record_packet_receipt(self, tick: Mapping[str, Any], received_at: datetime) -> None:
+    def _record_packet_receipt(self, tick: Mapping[str, Any], received_at: datetime, provider: str = "DHAN") -> None:
         """Record Full-packet receipt independently of socket/text traffic."""
 
         key = (
@@ -694,11 +1041,14 @@ class MarketDataGateway:
         )
         if not key[1]:
             return
+        self._last_full_packet_monotonic = time.perf_counter()
+        self._record_usable_feed(self._generation, received_at)
         with self._packet_lock:
             state = self._packet_state.setdefault(key, {"packet_count": 0})
             state["packet_count"] = int(state.get("packet_count") or 0) + 1
             state["last_packet_timestamp"] = received_at.isoformat()
             state["last_response_code"] = int(tick.get("response_code") or 8)
+            state["provider"] = provider
             self._last_any_packet_time = received_at
 
     def _emit_transport_event(
@@ -707,16 +1057,18 @@ class MarketDataGateway:
         *,
         instrument_count: int | None = None,
         reason: str | None = None,
+        **extra: Any,
     ) -> None:
         if self.on_transport_event is None:
             return
         payload = {
-            "feed_generation": self._generation,
+            "feed_generation": extra.get("generation", self._generation),
             "subscription_revision": self._subscription_revision,
             "transport_gap_count": self._transport_gap_count,
             "instrument_count": len(self.instruments) if instrument_count is None else instrument_count,
             "receive_wall_utc": datetime.now(timezone.utc).isoformat(),
-            "reason": reason,
+            "reason": reason or extra.get("error"),
+            **extra,
         }
         try:
             self._recorder_queue.put_nowait(("TRANSPORT", (event_type, payload)))
@@ -745,9 +1097,23 @@ class MarketDataGateway:
     async def stop(self):
         """Stop the gateway and close connections."""
         self._is_running = False
-        if self._worker_task is not None:
-            self._worker_task.cancel()
-            await asyncio.gather(self._worker_task, return_exceptions=True)
+        tasks_to_cancel = [
+            t for t in (
+                getattr(self, "_worker_task", None),
+                getattr(self, "_dhan_task", None),
+                getattr(self, "_upstox_task", None),
+            )
+            if t is not None and not t.done()
+        ]
+        for t in tasks_to_cancel:
+            t.cancel()
+        if tasks_to_cancel:
+            await asyncio.gather(*tasks_to_cancel, return_exceptions=True)
+        if self._upstox_feed is not None and hasattr(self._upstox_feed, "stop"):
+            try:
+                await self._upstox_feed.stop()
+            except Exception:
+                pass
         self._stop_dispatch_workers()
         if self.ws:
             try:
@@ -793,7 +1159,40 @@ class MarketDataGateway:
             disconnect_exception_class = self._last_disconnect_exception_class
             close_code = self._last_close_code
             close_reason = self._last_close_reason
-        is_connected = ws is not None and not bool(getattr(ws, "closed", False))
+        dhan_connected = ws is not None and not bool(getattr(ws, "closed", False))
+        upstox_ws_connected = bool(
+            self._upstox_feed
+            and (
+                getattr(self._upstox_feed, "is_baseline_ready", False)
+                or getattr(self._upstox_feed, "connection_state", "") in ("LIVE", "BASELINE_READY", "SOCKET_CONNECTED")
+            )
+        )
+        upstox_token_valid = bool(
+            self.upstox_client
+            and getattr(self.upstox_client, "has_token", False)
+            and not getattr(self.upstox_client, "is_token_expired", True)
+        )
+        upstox_healthy = upstox_ws_connected or upstox_token_valid
+        upstox_connected = upstox_healthy
+        is_connected = dhan_connected or upstox_connected
+
+        if dhan_connected and upstox_connected:
+            coexistence_state = "DUAL_SOURCE_HEALTHY"
+            canonical_source = "DYNAMIC_PARALLEL"
+            primary_provider = "DYNAMIC_PARALLEL"
+        elif upstox_connected:
+            coexistence_state = "DHAN_UNAVAILABLE / UPSTOX_HEALTHY"
+            canonical_source = "UPSTOX"
+            primary_provider = "UPSTOX"
+        elif dhan_connected:
+            coexistence_state = "DHAN_HEALTHY / UPSTOX_UNAVAILABLE"
+            canonical_source = "DHAN"
+            primary_provider = "DHAN"
+        else:
+            coexistence_state = "DHAN_UNAVAILABLE / UPSTOX_UNAVAILABLE"
+            canonical_source = "NONE"
+            primary_provider = "NONE"
+
         last_msg = self._last_message_time.isoformat() if self._last_message_time else None
         now = datetime.now(timezone.utc)
         with self._subscription_lock:
@@ -825,7 +1224,7 @@ class MarketDataGateway:
                 freshness = "LATE"
                 late += 1
                 currently_receiving += 1
-            elif age_ms <= 45_000.0:
+            elif age_ms <= self.LIVE_PACKET_STALE_SECONDS * 1_000.0:
                 freshness = "DEGRADED"
                 degraded += 1
                 currently_receiving += 1
@@ -839,6 +1238,7 @@ class MarketDataGateway:
                 "security_id": security_id,
                 "role": instrument.get("role") or "UNSPECIFIED",
                 "exchange_segment": segment,
+                "provider": receipt.get("provider", "UNKNOWN"),
                 "last_packet_timestamp": timestamp,
                 "last_packet_age_ms": round(age_ms, 3) if age_ms is not None else None,
                 "packet_count": int(receipt.get("packet_count") or 0),
@@ -876,6 +1276,36 @@ class MarketDataGateway:
             # fields are the truthful P0 contract and must not be conflated.
             "status": "UP" if is_connected else "DOWN",
             "WS_CONNECTED": is_connected,
+            "DHAN_WS_CONNECTED": dhan_connected,
+            "UPSTOX_WS_CONNECTED": upstox_ws_connected,
+            "COEXISTENCE_STATE": coexistence_state,
+            "CANONICAL_SOURCE": canonical_source,
+            "ACTIVE_SOURCE": canonical_source,
+            "PRIMARY_PROVIDER": primary_provider,
+            "DHAN_STATE": "DORMANT" if (getattr(self, "_dhan_dormant", False) or not dhan_connected) else "HEALTHY",
+            "UPSTOX_STATE": "HEALTHY" if upstox_connected else "UNAVAILABLE",
+            "SOURCE_DIVERGENCE_COUNT": self._divergence_count,
+            "LATEST_SOURCE_DIVERGENCE": self._latest_divergence,
+            "PROVIDERS": {
+                "DHAN": {
+                    "status": "UP" if dhan_connected else "DOWN",
+                    "connection_state": connection_state,
+                    "http_status": self._last_connection_http_status,
+                    "last_reconnect_reason": self._last_reconnect_reason,
+                    "reconnect_count": self._reconnect_count,
+                    "packet_count": self._ws_received_packet_count,
+                },
+                "UPSTOX": {
+                    "status": "UP" if upstox_connected else "DOWN",
+                    "connection_state": getattr(self._upstox_feed, "connection_state", "DISABLED") if self._upstox_feed else ("CONNECTED" if upstox_token_valid else "NOT_CONFIGURED"),
+                    "token_valid": upstox_token_valid,
+                    "token_fingerprint": getattr(self.upstox_client, "fingerprint", "NO_TOKEN"),
+                    "days_remaining": self.upstox_client.claims.get("days_remaining") if self.upstox_client else None,
+                    "packet_count": self._upstox_received_packet_count,
+                    "tick_count": self._upstox_received_tick_count,
+                    "last_tick_time": self._upstox_last_tick_time.isoformat() if self._upstox_last_tick_time else None,
+                },
+            },
             "ACK_STATUS": self._ack_status,
             "EXPECTED_INSTRUMENTS": len(instruments),
             "REQUESTED_INSTRUMENTS": requested_count,
@@ -897,6 +1327,10 @@ class MarketDataGateway:
             "LAST_CONNECT_RESULT": self._last_connection_result,
             "LAST_CONNECT_HTTP_STATUS": self._last_connection_http_status,
             "LAST_SUCCESSFUL_CONNECTION_TS": self._last_successful_connection_at,
+            "LAST_USABLE_FEED_TS": self._last_usable_feed_at,
+            "USABLE_FEED_GENERATION": (
+                self._usable_feed_generation if self._usable_feed_generation >= 0 else None
+            ),
             "LAST_BACKOFF_MS": (
                 round(self._last_backoff_seconds * 1000.0, 3)
                 if self._last_backoff_seconds is not None else None
@@ -932,6 +1366,8 @@ class MarketDataGateway:
             "coalesced_quote_updates": coalesced,
             "FLOW_DELIVERY_SEMANTICS": "LOSSLESS_EVENT" if self._lossless_tick_delivery else "LEGACY_COALESCIBLE",
             "FLOW_REQUIRED_DROPS": self._flow_required_drops,
+            "FLOW_BACKPRESSURE_LOGS_SUPPRESSED": self._flow_backpressure_logs_suppressed,
+            "LIVE_PACKET_STALE_RECONNECT_SECONDS": self.LIVE_PACKET_STALE_SECONDS,
             "RECORDER_INGRESS_QUEUE_DEPTH": self._recorder_queue.qsize(),
             "RECORDER_INGRESS_QUEUE_CAPACITY": self._recorder_queue.maxsize,
             "RECORDER_INGRESS_QUEUE_HIGH_WATER": self._recorder_ingress_high_water,

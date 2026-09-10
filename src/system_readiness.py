@@ -41,7 +41,7 @@ class OpenMarketReadinessService:
             self._argus(values["argus"], market_open, checked),
             self._alpha(values["kronos_alpha"], market_open, checked),
             self._technical(values["technical"], market_open, checked),
-            self._item("KRONOS CORE", "READY" if values["kronos_core"].get("status") == "AVAILABLE" else "WAITING_FOR_MARKET" if not market_open else "NOT_READY", str(values["kronos_core"].get("status") or "UNAVAILABLE"), "Scanner cache exposes setup and timing", checked, market_open and values["kronos_core"].get("status") != "AVAILABLE"),
+            self._item("KRONOS CORE", "READY" if values["kronos_core"].get("status") in {"AVAILABLE", "LIVE"} else "WAITING_FOR_MARKET" if not market_open else "NOT_READY", str(values["kronos_core"].get("status") or "UNAVAILABLE"), "Scanner cache exposes setup and timing", checked, market_open and values["kronos_core"].get("status") not in {"AVAILABLE", "LIVE"}),
             self._item("ATHENA", "READY" if values["athena"].get("athena_status") in {"READY","DEGRADED"} else "NOT_READY", str(values["athena"].get("recommendation") or "UNAVAILABLE"), "Authoritative risk and paper projections readable", checked, values["athena"].get("athena_status") not in {"READY","DEGRADED"}),
             self._item("HERMES", "READY_WITH_LIMITATIONS", "EXTERNAL_PROVIDER_NOT_CONFIGURED", "Cached truthful event-risk projection", checked, False, "No live HERMES provider configured"),
             self._item("Personal ORACLE", "READY_WITH_LIMITATIONS", "LIMITED_CONTEXT", "Read-only personal evidence projection", checked, False, "Historical context coverage remains limited"),
@@ -99,7 +99,7 @@ class OpenMarketReadinessService:
 
     def _argus(self, value, market_open, checked):
         status = str(value.get("status") or "UNAVAILABLE").lower()
-        if status == "available": return self._item("ARGUS","READY","PROVIDER_AUTH_AND_MAPPING_READY","Valid NIFTY/expiry/ATM/OI mapping",checked,False)
+        if status in {"available", "live"}: return self._item("ARGUS","READY","PROVIDER_AUTH_AND_MAPPING_READY","Valid NIFTY/expiry/ATM/OI mapping",checked,False)
         if status == "stale" and not market_open: return self._item("ARGUS","READY_WITH_LIMITATIONS","STALE_CACHE_USABLE_MARKET_CLOSED","Fresh read-only chain at market open",checked,False,"Weekend cache is stale by policy")
         reason = str(value.get("reason") or "ARGUS_CACHE_UNAVAILABLE")
         if reason not in {"ARGUS_CACHE_UNAVAILABLE", "ARGUS_SOURCE_STALE"}:

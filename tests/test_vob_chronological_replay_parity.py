@@ -97,6 +97,24 @@ def test_1m_vob_api_accepts_1m_parameter_synthetic():
     assert "nearest_bearish_resistance" in res
 
 
+@pytest.mark.unit
+def test_ingest_1m_candles_publishes_canonical_1m_lane():
+    """The public fan-out must retain genuine 1m alongside 3m/5m buckets."""
+    engine = NiftyVOBEngine()
+    candles = [
+        {
+            "timestamp": f"2026-08-17T09:{15 + i:02d}:00+05:30",
+            "open": 100.0 + i, "high": 105.0 + i, "low": 98.0 + i,
+            "close": 102.0 + i, "volume": 1000,
+        }
+        for i in range(25)
+    ]
+    result = engine.ingest_1m_candles(candles, current_nifty_price=126.0)
+    assert set((result.get("timeframes") or {})) >= {"1m", "3m", "5m"}
+    assert result["timeframes"]["1m"]["timeframe"] == "1m"
+    assert result["timeframes"]["1m"]["evaluated_through"] == candles[-1]["timestamp"]
+
+
 def test_dual_track_same_episode_isolation():
     """Verify Track A (VOB_ONLY) and Track B (CONFIRMED_REVERSAL) maintain isolated state and records."""
     reversal = VobReversalEngine()

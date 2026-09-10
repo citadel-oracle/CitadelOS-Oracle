@@ -75,6 +75,8 @@ def main() -> None:
     args = parser.parse_args()
     if not args.stdio:
         raise SystemExit("TiRex worker requires --stdio")
+    if os.environ.get("CITADEL_TIREX_ENABLED", "0") != "1":
+        raise SystemExit("TIREX_DISABLED_BY_CONFIGURATION")
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
     serve(args.device)
 

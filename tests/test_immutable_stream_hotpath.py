@@ -1,5 +1,7 @@
 import json
 import os
+import hashlib
+import multiprocessing
 import threading
 from time import perf_counter
 from copy import deepcopy
@@ -10,6 +12,13 @@ from unittest import mock
 import pytest
 
 from src.strategy_lab.storage import ImmutableStream
+
+
+def _append_from_process(path: str, prefix: str, count: int) -> None:
+    stream = ImmutableStream(Path(path))
+    for index in range(count):
+        stream.append("TEST", {"writer": prefix, "sequence": index}, idempotency_key=f"{prefix}-{index}")
+    stream.close()
 
 
 def test_append_batch_preserves_chain_and_idempotency_with_one_logical_batch(temp_stream_path):
@@ -222,12 +231,8 @@ def test_cross_process_safety_invariant_documentation(temp_stream_path):
     """
     DOCUMENTATION INVARIANT:
     ImmutableStream relies on threading.RLock() for concurrent within-process appends.
-    It does NOT use OS-level locks (e.g. fcntl.flock).
-    Cross-process sequential appends (process A writes, then process B writes) are safe 
-    because _file_signature() forces an idempotency/hash resync.
-    However, strictly concurrent cross-process appends might interleave write() calls 
-    at the OS level, creating corrupted JSON segments.
-    Single-writer invariant per file is strongly recommended.
+    The stream uses an OS advisory lock in addition to its per-instance RLock,
+    so accidental concurrent process writers cannot fork the hash chain.
     """
     stream1 = ImmutableStream(temp_stream_path)
     stream2 = ImmutableStream(temp_stream_path)
@@ -237,6 +242,52 @@ def test_cross_process_safety_invariant_documentation(temp_stream_path):
     
     # The second instance safely triggers a resync before appending
     assert r2["previous_hash"] == r1["record_hash"]
+
+
+def test_concurrent_process_writers_cannot_fork_hash_chain(temp_stream_path):
+    context = multiprocessing.get_context("spawn")
+    workers = [
+        context.Process(target=_append_from_process, args=(str(temp_stream_path), prefix, 30))
+        for prefix in ("a", "b")
+    ]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join(timeout=20)
+        assert worker.exitcode == 0
+
+    stream = ImmutableStream(temp_stream_path)
+    assert stream.verify() == {"valid": True, "records": 60, "failure_index": None}
+
+
+def test_corrupt_segment_is_preserved_before_fresh_chain_starts(temp_stream_path):
+    stream = ImmutableStream(temp_stream_path)
+    first = stream.append("TEST", {"sequence": 1}, idempotency_key="one")
+    second = stream.append("TEST", {"sequence": 2}, idempotency_key="two")
+
+    body = {
+        "event_type": "TEST",
+        "recorded_at": "2026-09-02T06:49:30+00:00",
+        "payload": {"sequence": 3},
+        "idempotency_key": "three",
+        "previous_hash": first["record_hash"],
+    }
+    canonical = json.dumps(body, sort_keys=True, separators=(",", ":"), default=str)
+    record_hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    branched = {"record_id": f"lab_{record_hash[:24]}", **body, "record_hash": record_hash}
+    with temp_stream_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(branched, sort_keys=True, separators=(",", ":")) + "\n")
+    original_bytes = temp_stream_path.read_bytes()
+
+    with pytest.raises(RuntimeError, match="HASH_CHAIN_INVALID"):
+        ImmutableStream(temp_stream_path).append("TEST", {"sequence": 4})
+    quarantine = stream.quarantine_corrupted_segment(suffix="fixture")
+    assert quarantine.read_bytes() == original_bytes
+    assert temp_stream_path.read_bytes() == b""
+
+    fresh = stream.append("TEST", {"sequence": 4}, idempotency_key="four")
+    assert fresh["previous_hash"] == "GENESIS"
+    assert stream.verify() == {"valid": True, "records": 1, "failure_index": None}
 
 
 def test_valid_checkpoint_resumes_without_scanning_history(temp_stream_path):

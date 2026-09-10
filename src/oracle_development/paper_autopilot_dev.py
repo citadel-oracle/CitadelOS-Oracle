@@ -99,7 +99,7 @@ class OracleDevPaperAutopilot:
             now_str = self.clock().isoformat()
             
             # Form position
-            qty = lots * contract.get("lot_size", 75)
+            qty = lots * contract.get("lot_size", 65)
             trade_value = price * qty
             commission = 20.0 # flat mock commission
             

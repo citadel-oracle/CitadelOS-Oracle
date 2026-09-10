@@ -1,0 +1,80 @@
+{
+  "audit_repository": "https://github.com/citadel-oracle/CitadelOS-Oracle",
+  "authoritative_local_workspace": "/Users/ayushmudgal/Developer/CitadelOS-Oracle-Post-E9",
+  "gemini_status": "PAUSED \u00b7 INPUT/ARCHITECTURE HARDENING",
+  "luna_status": "CURRENT",
+  "raw_evidence_not_copied": [
+    "raw provider request bodies",
+    "screenshots/videos",
+    "logs/order_flow raw_full_packets",
+    "bulk data/sol_shadow/luna_inputs",
+    "reports/",
+    "artifacts/ except summarized soak metrics"
+  ],
+  "safety_invariants": {
+    "ai_execution_influence": 0.0,
+    "ai_vob_influence": 0.0,
+    "broker_submission": false,
+    "gemini_dispatch_enabled": false,
+    "sol_dispatch_enabled": false
+  },
+  "schema_version": "citadel-session-forensic-summary-v1",
+  "session_date": "2026-09-10",
+  "snapshot_created_utc": "2026-09-10T07:50:41.798771+00:00",
+  "soak_window": {
+    "browser_probes_count": 30,
+    "duration_seconds": 1800.4454018339998,
+    "end_ist": "2026-09-10T10:02:09.284807+05:30",
+    "samples_collected": 617,
+    "start_ist": "2026-09-10T09:32:08.772232+05:30"
+  },
+  "sol_status": "PAUSED \u00b7 INPUT HARDENING",
+  "source_branch": "checkpoint/vob-photonic-preintegration-current-oracle-20260816",
+  "source_head": "b1bccd46f01edd145fb7aed59042875d294de822",
+  "top_proven_defects": [
+    {
+      "count": 595,
+      "evidence": "artifacts/soak_30m_20260910/defects_detected.jsonl",
+      "id": "same_receipt_mismatch",
+      "impact": "Gemini and Sol displayed stale outputs bound to different receipts during soak samples; trace BrainPacket/receipt/projection boundary."
+    },
+    {
+      "count": null,
+      "evidence": "data/sol_shadow/live_shadow_status.json sol_readiness_checklist",
+      "id": "sol_input_hardening_required",
+      "impact": "Sol readiness was 5/14 with option-economic and flow inputs missing."
+    },
+    {
+      "count": null,
+      "evidence": "data/oracle_sol/live_cognitive_status.json decision.model_tension",
+      "id": "challenger_unavailable_state",
+      "impact": "Decision state reports no challenger read while Luna remains current; separate intentional pause from projection bug."
+    },
+    {
+      "count": 617,
+      "evidence": "artifacts/soak_30m_20260910/soak_summary.json",
+      "id": "large_fast_lane_payload_tail_latency",
+      "impact": "Fast Lane P95/P99 tails coincide with large payloads; audit serialization and payload trimming."
+    },
+    {
+      "count": 617,
+      "evidence": "artifacts/soak_30m_20260910/soak_summary.json",
+      "id": "vob_zero_active_zones_during_soak",
+      "impact": "VOB active zone count stayed zero in the 30m soak; verify true absence vs projection/data-contract issue."
+    }
+  ],
+  "transport_summary": {
+    "basket_health_counts": {
+      "FULLY_FRESH": 615,
+      "UNKNOWN": 2
+    },
+    "max_queue_depth": 5,
+    "provider_samples": {
+      "DYNAMIC_PARALLEL": 2,
+      "UPSTOX": 615
+    },
+    "total_drops": 0,
+    "unique_receipts": 24,
+    "unique_revisions": 58
+  }
+}

@@ -1,4 +1,4 @@
-export { NiftyPhotonicMaster } from './NiftyPhotonicMaster'
+export { NiftyPhotonicMaster, PhotonicOptionBuyerIntelligenceBottom } from './NiftyPhotonicMaster'
 export type { NiftyPhotonicMasterProps } from './NiftyPhotonicMaster'
 export { PhotonicTradeLedger } from './components/PhotonicTradeLedger'
 export type { PhotonicTradeLedgerProps } from './components/PhotonicTradeLedger'

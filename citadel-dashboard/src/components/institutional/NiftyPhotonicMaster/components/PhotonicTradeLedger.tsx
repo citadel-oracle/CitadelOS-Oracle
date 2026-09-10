@@ -27,6 +27,7 @@ export const PhotonicTradeLedger = memo(function PhotonicTradeLedger({
   isHistorical = false,
 }: PhotonicTradeLedgerProps) {
   const tradeCount = activeTrades.length
+  const activeTradeCount = activeTrades.filter((trade) => trade.status === 'ACTIVE').length
 
   return (
     <div
@@ -62,7 +63,7 @@ export const PhotonicTradeLedger = memo(function PhotonicTradeLedger({
               border: tradeCount > 0 ? '1px solid rgba(0, 255, 157, 0.3)' : '1px solid var(--line-dim)',
             }}
           >
-            {tradeCount} {tradeCount === 1 ? 'ACTIVE RECORD' : 'ACTIVE RECORDS'}
+            {activeTradeCount} {activeTradeCount === 1 ? 'ACTIVE RECORD' : 'ACTIVE RECORDS'}
           </span>
           {isHistorical && (
             <span

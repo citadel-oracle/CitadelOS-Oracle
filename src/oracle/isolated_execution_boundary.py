@@ -37,6 +37,134 @@ class WorkerState(str, Enum):
     CRASH_LOOP = "CRASH_LOOP"
 
 
+def _sample_percentiles(values) -> dict[str, float | int]:
+    ordered = sorted(float(value) for value in values)
+    if not ordered:
+        return {"count": 0, "p50": 0.0, "p95": 0.0, "p99": 0.0, "max": 0.0}
+
+    def point(fraction: float) -> float:
+        return ordered[min(len(ordered) - 1, int((len(ordered) - 1) * fraction))]
+
+    return {
+        "count": len(ordered),
+        "p50": round(point(0.50), 3),
+        "p95": round(point(0.95), 3),
+        "p99": round(point(0.99), 3),
+        "max": round(ordered[-1], 3),
+    }
+
+
+def _spawn_safe_child_main(
+    name: str,
+    owner_pid: int,
+    input_queue,
+    output_queue,
+    stop_event,
+    processor,
+    snapshotter,
+    on_start,
+    on_stop,
+    publish_interval_seconds: float,
+    processed_shared,
+    coalesces_shared,
+) -> None:
+    """Module-level child target so a local ``spawn`` context is picklable."""
+
+    def publish(message: Mapping[str, Any]) -> bool:
+        try:
+            output_queue.put_nowait(dict(message))
+            return True
+        except queue.Full:
+            with coalesces_shared.get_lock():
+                coalesces_shared.value += 1
+        try:
+            output_queue.get_nowait()
+        except queue.Empty:
+            pass
+        try:
+            output_queue.put_nowait(dict(message))
+            return True
+        except queue.Full:
+            return False
+
+    owner_pid = int(owner_pid)
+
+    def stop_if_owner_exits() -> None:
+        while not stop_event.is_set():
+            time.sleep(0.25)
+            if os.getppid() != owner_pid:
+                os._exit(0)
+
+    threading.Thread(
+        target=stop_if_owner_exits,
+        name=f"{name}-owner-watchdog",
+        daemon=True,
+    ).start()
+    last_publish = 0.0
+    processed = 0
+    started_at = time.monotonic()
+    queue_age_ms = deque(maxlen=4096)
+    compute_ms = deque(maxlen=4096)
+    pending_result = None
+    try:
+        if callable(on_start):
+            on_start()
+        while not stop_event.is_set():
+            envelope = None
+            try:
+                envelope = input_queue.get(timeout=min(0.25, publish_interval_seconds))
+            except queue.Empty:
+                pass
+            if envelope is None and stop_event.is_set():
+                break
+            if isinstance(envelope, Mapping):
+                received_at = time.monotonic()
+                queue_age_ms.append(
+                    max(0.0, received_at - float(envelope.get("submitted_monotonic") or received_at)) * 1000.0
+                )
+                compute_started = time.perf_counter()
+                result = processor(str(envelope["kind"]), envelope.get("payload"))
+                compute_ms.append((time.perf_counter() - compute_started) * 1000.0)
+                processed += 1
+                with processed_shared.get_lock():
+                    processed_shared.value = processed
+                if result is not None:
+                    pending_result = result
+            now = time.monotonic()
+            if pending_result is None and callable(snapshotter) and now - last_publish >= publish_interval_seconds:
+                pending_result = snapshotter()
+            if pending_result is not None:
+                publish_started = time.monotonic()
+                if publish({
+                    "pid": os.getpid(),
+                    "processed": processed,
+                    "published_monotonic": publish_started,
+                    "telemetry": {
+                        "input_rate": round(processed / max(0.001, now - started_at), 3),
+                        "processing_rate": round(processed / max(0.001, now - started_at), 3),
+                        "queue_age_ms": _sample_percentiles(queue_age_ms),
+                        "compute_ms": _sample_percentiles(compute_ms),
+                    },
+                    "payload": pending_result,
+                }):
+                    pending_result = None
+                    last_publish = publish_started
+    except BaseException as error:
+        try:
+            publish({
+                "pid": os.getpid(),
+                "processed": processed,
+                "published_monotonic": time.monotonic(),
+                "error": f"{type(error).__name__}:{error}",
+            })
+        except Exception:
+            pass
+        raise
+    finally:
+        if callable(on_stop):
+            on_stop()
+
+
 class IsolatedExecutionBoundary:
     """One explicitly-owned child process with ordered input/latest output and supervision."""
 
@@ -55,6 +183,7 @@ class IsolatedExecutionBoundary:
         max_restarts_per_minute: int = 5,
         enable_supervision: bool = True,
         max_stale_seconds: float = 5.0,
+        coalesce_input: bool = False,
     ) -> None:
         self.name = str(name)
         self.processor = processor
@@ -62,7 +191,8 @@ class IsolatedExecutionBoundary:
         self.on_start = on_start
         self.on_stop = on_stop
         self.on_snapshot = on_snapshot
-        self.input_capacity = max(8, int(input_capacity))
+        self.coalesce_input = bool(coalesce_input)
+        self.input_capacity = 1 if self.coalesce_input else max(8, int(input_capacity))
         self.publish_interval_seconds = max(0.05, float(publish_interval_seconds))
         self.max_restarts_per_minute = max(1, int(max_restarts_per_minute))
         self.enable_supervision = bool(enable_supervision)
@@ -92,12 +222,15 @@ class IsolatedExecutionBoundary:
         self._received = 0
         self._processed = 0
         self._required_drops = 0
+        self._input_coalesces = 0
         self._snapshot_coalesces = 0
         self._last_error: str | None = None
         self._last_output_monotonic: float | None = None
         self._last_input_monotonic: float | None = None
         self._last_heartbeat_at: str | None = None
         self._last_output_at: str | None = None
+        self._first_output_at: str | None = None
+        self._first_output_latency_seconds: float | None = None
         self._exit_code: int | None = None
         self._latest_telemetry: dict[str, Any] = {}
         self._restart_count = 0
@@ -116,10 +249,26 @@ class IsolatedExecutionBoundary:
             self._listener_stop.clear()
             self._supervisor_stop.clear()
             self._exit_code = None
+            self._first_output_at = None
+            self._first_output_latency_seconds = None
             self._state = WorkerState.REHYDRATING if is_restart else WorkerState.STARTING
+            spawn_args = (
+                self.name,
+                os.getpid(),
+                self._input,
+                self._output,
+                self._stop,
+                self.processor,
+                self.snapshotter,
+                self.on_start,
+                self.on_stop,
+                self.publish_interval_seconds,
+                self._processed_shared,
+                self._coalesces_shared,
+            )
             self._process = self._context.Process(
-                target=self._child_main,
-                args=(os.getpid(),),
+                target=_spawn_safe_child_main if self.context_name == "spawn" else self._child_main,
+                args=spawn_args if self.context_name == "spawn" else (os.getpid(),),
                 name=self.name,
                 daemon=True,
             )
@@ -182,10 +331,36 @@ class IsolatedExecutionBoundary:
         try:
             input_queue.put(envelope, block=True, timeout=max(0.01, float(timeout)))
         except queue.Full:
+            if not self.coalesce_input:
+                with self._lock:
+                    self._required_drops += 1
+                    self._last_error = "INPUT_QUEUE_FULL"
+                return False
+            replaced = False
+            for _ in range(2):
+                try:
+                    input_queue.get_nowait()
+                except queue.Empty:
+                    # The consumer may have removed the prior value between
+                    # Queue.Full and this replacement attempt.
+                    pass
+                try:
+                    input_queue.put(
+                        envelope,
+                        block=True,
+                        timeout=max(0.01, float(timeout)),
+                    )
+                    replaced = True
+                    break
+                except queue.Full:
+                    continue
+            if not replaced:
+                with self._lock:
+                    self._required_drops += 1
+                    self._last_error = "INPUT_QUEUE_REPLACE_FAILED"
+                return False
             with self._lock:
-                self._required_drops += 1
-                self._last_error = "INPUT_QUEUE_FULL"
-            return False
+                self._input_coalesces += 1
         with self._lock:
             self._submitted = sequence
             self._last_input_monotonic = now_mono
@@ -359,14 +534,22 @@ class IsolatedExecutionBoundary:
                 "submitted": self._submitted,
                 "received": self._received,
                 "processed": max(self._processed, int(self._processed_shared.value)),
-                "processing_debt": max(0, self._submitted - max(self._processed, int(self._processed_shared.value))),
+                "processing_debt": max(
+                    0,
+                    self._submitted
+                    - max(self._processed, int(self._processed_shared.value))
+                    - self._input_coalesces,
+                ),
                 "required_event_drops": self._required_drops,
+                "input_coalesces": self._input_coalesces,
                 "snapshot_coalesces": self._snapshot_coalesces,
                 "child_snapshot_coalesces": int(self._coalesces_shared.value),
                 "last_output_age_seconds": round(output_age, 3) if output_age is not None else None,
                 "last_error": self._last_error,
                 "last_heartbeat_at": self._last_heartbeat_at,
                 "last_output_at": self._last_output_at,
+                "first_output_at": self._first_output_at,
+                "first_output_latency_seconds": self._first_output_latency_seconds,
                 "last_good_timestamp": self._last_good_timestamp,
                 "exit_code": self._exit_code,
                 "restart_count": self._restart_count,
@@ -512,7 +695,19 @@ class IsolatedExecutionBoundary:
                 self._last_good_timestamp = now_utc
                 self._last_output_monotonic = now_mono
                 self._last_output_at = now_utc
+                if self._first_output_at is None:
+                    self._first_output_at = now_utc
+                    self._first_output_latency_seconds = round(
+                        max(0.0, time.time() - float(self._started_at or time.time())),
+                        3,
+                    )
                 self._latest_telemetry = deepcopy(message.get("telemetry") or {})
+                published_monotonic = message.get("published_monotonic")
+                if isinstance(published_monotonic, (int, float)):
+                    self._latest_telemetry["ipc_delivery_ms"] = round(
+                        max(0.0, now_mono - float(published_monotonic)) * 1000.0,
+                        3,
+                    )
 
                 if self._state in (WorkerState.STARTING, WorkerState.REHYDRATING, WorkerState.AGING, WorkerState.STALE):
                     self._state = WorkerState.HEALTHY
@@ -526,17 +721,4 @@ class IsolatedExecutionBoundary:
 
     @staticmethod
     def _percentiles(values) -> dict[str, float | int]:
-        ordered = sorted(float(value) for value in values)
-        if not ordered:
-            return {"count": 0, "p50": 0.0, "p95": 0.0, "p99": 0.0, "max": 0.0}
-
-        def point(fraction: float) -> float:
-            return ordered[min(len(ordered) - 1, int((len(ordered) - 1) * fraction))]
-
-        return {
-            "count": len(ordered),
-            "p50": round(point(0.50), 3),
-            "p95": round(point(0.95), 3),
-            "p99": round(point(0.99), 3),
-            "max": round(ordered[-1], 3),
-        }
+        return _sample_percentiles(values)

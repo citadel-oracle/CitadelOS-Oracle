@@ -3,7 +3,7 @@ import asyncio
 import json
 import pickle
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from threading import Event, Thread
 from time import monotonic
@@ -497,6 +497,8 @@ def test_recorder_basket_matches_future_and_atm_plus_minus_two(tmp_path):
 
 
 def test_argus_basket_routes_future_and_atm_plus_minus_two():
+    option_expiry = (date.today() + timedelta(days=7)).isoformat()
+    futures_expiry = (date.today() + timedelta(days=28)).isoformat()
     rows = []
     for index, strike in enumerate((24300, 24400, 24500, 24600, 24700)):
         rows.append({
@@ -505,8 +507,8 @@ def test_argus_basket_routes_future_and_atm_plus_minus_two():
             "pe": {"security_id": 200 + index},
         })
     projection = {"data": {
-        "underlying": {"atm_strike": 24500, "expiry": "2026-08-13"},
-        "futures": {"security_id": 999, "segment": "NSE_FNO", "expiry": "2026-08-27"},
+        "underlying": {"atm_strike": 24500, "expiry": option_expiry},
+        "futures": {"security_id": 999, "segment": "NSE_FNO", "expiry": futures_expiry},
         "atm_window": rows,
     }}
     basket = basket_from_argus(projection)
@@ -534,11 +536,13 @@ def test_expired_persisted_basket_is_never_used_for_bootstrap():
 async def test_gateway_requests_full_packets_and_chunks_deterministically():
     gateway = MarketDataGateway(client_id="x", access_token="y")
     gateway.ws = AsyncMock()
+    gateway._connection_state = "CONNECTED"
     gateway.subscribe([{"exchange_segment": "NSE_FNO", "security_id": str(index)} for index in range(101)])
     await gateway._send_subscriptions()
     messages = [json.loads(call.args[0]) for call in gateway.ws.send.call_args_list]
     assert [row["RequestCode"] for row in messages] == [21, 21]
     assert [row["InstrumentCount"] for row in messages] == [100, 1]
+    assert gateway.health()["DHAN_CONNECTION_STATE"] == "CONNECTED"
 
 
 @pytest.mark.asyncio
@@ -613,15 +617,60 @@ async def test_gateway_429_has_bounded_backoff_and_explicit_telemetry():
     assert gateway._reconnect_delay == gateway.RECONNECT_INITIAL_DELAY_SECONDS * 2
 
 
-def test_gateway_success_resets_backoff_and_records_success_timestamp():
+def test_gateway_handshake_does_not_reset_backoff_until_first_full_packet():
     gateway = MarketDataGateway(client_id="x", access_token="y")
+    gateway._generation = 7
     gateway._reconnect_delay = 32.0
     gateway._record_connection_success()
     health = gateway.health()
-    assert gateway._reconnect_delay == gateway.RECONNECT_INITIAL_DELAY_SECONDS
+    assert gateway._reconnect_delay == 32.0
     assert health["LAST_CONNECT_RESULT"] == "CONNECTED"
     assert health["LAST_CONNECT_HTTP_STATUS"] is None
     assert health["LAST_SUCCESSFUL_CONNECTION_TS"] is not None
+    assert health["LAST_USABLE_FEED_TS"] is None
+    assert health["DHAN_CONNECTION_STATE"] == "CONNECTED"
+
+    gateway._record_packet_receipt(
+        {"exchange_segment": 2, "security_id": "58072", "response_code": 8},
+        datetime.now(timezone.utc),
+    )
+    health = gateway.health()
+    assert gateway._reconnect_delay == gateway.RECONNECT_INITIAL_DELAY_SECONDS
+    assert health["LAST_CONNECT_RESULT"] == "RECEIVING"
+    assert health["LAST_USABLE_FEED_TS"] is not None
+    assert health["USABLE_FEED_GENERATION"] == 7
+    assert health["DHAN_CONNECTION_STATE"] == "LIVE"
+
+
+@pytest.mark.asyncio
+async def test_gateway_alternating_admission_and_429_cannot_hot_reset_backoff():
+    gateway = MarketDataGateway(client_id="x", access_token="y")
+    gateway._backoff_jitter = lambda delay: delay
+    delays = []
+    attempt = 0
+
+    async def unstable_provider():
+        nonlocal attempt
+        attempt += 1
+        if attempt % 2:
+            gateway._generation += 1
+            gateway._record_connection_success()
+            return
+        raise RuntimeError("server rejected WebSocket connection: HTTP 429")
+
+    async def capture_backoff(delay):
+        delays.append(delay)
+        if len(delays) == 7:
+            gateway._is_running = False
+
+    gateway._connect_and_run = unstable_provider
+    gateway._sleep = capture_backoff
+    await gateway.start()
+
+    assert delays == [1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 60.0]
+    assert gateway.health()["CONNECTION_ATTEMPTS"] == 7
+    assert gateway.health()["LAST_USABLE_FEED_TS"] is None
+    assert gateway._reconnect_delay == gateway.RECONNECT_MAX_DELAY_SECONDS
 
 
 def test_gateway_queue_is_bounded_and_coalesces_quote_only_updates():
@@ -632,6 +681,149 @@ def test_gateway_queue_is_bounded_and_coalesces_quote_only_updates():
     assert gateway._tick_queue.qsize() == 16
     assert gateway.health()["queue_capacity"] == 16
     assert gateway.health()["coalesced_quote_updates"] == 1
+
+
+def test_lossless_backpressure_logging_is_bounded(caplog, monkeypatch):
+    gateway = MarketDataGateway(queue_size=16, lossless_tick_delivery=True)
+    for index in range(16):
+        gateway._enqueue_tick({"exchange_segment": 2, "security_id": str(index)})
+    ticks = iter((100.0, 101.0, 106.0))
+    monkeypatch.setattr(gateway_module.time, "monotonic", lambda: next(ticks))
+
+    gateway._enqueue_tick({"exchange_segment": 2, "security_id": "drop-1"})
+    gateway._enqueue_tick({"exchange_segment": 2, "security_id": "drop-2"})
+    gateway._enqueue_tick({"exchange_segment": 2, "security_id": "drop-3"})
+
+    lines = [row for row in caplog.messages if "Lossless Flow handoff queue full" in row]
+    assert len(lines) == 2
+    assert "suppressed_since_last=1" in lines[-1]
+    assert gateway.health()["FLOW_REQUIRED_DROPS"] == 3
+
+
+def test_lossless_backpressure_counter_survives_consumer_recovery():
+    gateway = MarketDataGateway(queue_size=16, lossless_tick_delivery=True)
+    for index in range(16):
+        gateway._enqueue_tick({"exchange_segment": 2, "security_id": str(index)})
+
+    gateway._enqueue_tick({"exchange_segment": 2, "security_id": "rejected"})
+    drained = gateway._tick_queue.get_nowait()
+    gateway._tick_queue.task_done()
+    gateway._enqueue_tick({"exchange_segment": 2, "security_id": "recovered"})
+
+    assert drained["security_id"] == "0"
+    assert gateway._tick_queue.qsize() == 16
+    assert gateway.health()["FLOW_REQUIRED_DROPS"] == 1
+
+
+def test_late_previous_generation_binary_callback_is_ignored(monkeypatch):
+    gateway = MarketDataGateway(client_id="x", access_token="y")
+    gateway._generation = 8
+    monkeypatch.setattr(
+        gateway_module.DhanFullPacketDecoder,
+        "decode_stream",
+        lambda _payload: (_ for _ in ()).throw(AssertionError("stale bytes reached decoder")),
+    )
+
+    gateway._handle_binary_message(b"stale-generation", generation=7)
+
+    assert gateway.health()["ws_received_packet_count"] == 0
+    assert gateway.health()["malformed_packets"] == 0
+
+
+def test_concurrent_background_start_requests_keep_one_gateway_owner():
+    gateway = MarketDataGateway(client_id="x", access_token="y")
+    started = Event()
+    release = Event()
+    starts = []
+
+    async def isolated_start():
+        starts.append(1)
+        started.set()
+        while not release.is_set():
+            await asyncio.sleep(0.01)
+
+    gateway.start = isolated_start  # type: ignore[method-assign]
+    callers = [Thread(target=gateway.start_background) for _ in range(12)]
+    for caller in callers:
+        caller.start()
+    for caller in callers:
+        caller.join(timeout=1.0)
+
+    assert started.wait(timeout=1.0)
+    assert len(starts) == 1
+    assert gateway._background_thread is not None and gateway._background_thread.is_alive()
+
+    release.set()
+    gateway._background_thread.join(timeout=1.0)
+
+
+def test_open_but_deaf_socket_uses_existing_stale_health_boundary(monkeypatch):
+    gateway = MarketDataGateway(client_id="x", access_token="y")
+    gateway.ws = SimpleNamespace(closed=False)
+    gateway._generation_started_monotonic = 100.0
+    gateway._last_full_packet_monotonic = 120.0
+    monkeypatch.setattr(gateway_module, "_nse_market_open", lambda _: True)
+
+    assert gateway._live_feed_is_deaf(now_monotonic=164.9, now_utc=datetime.now(timezone.utc)) is False
+    assert gateway._live_feed_is_deaf(now_monotonic=165.0, now_utc=datetime.now(timezone.utc)) is True
+
+    monkeypatch.setattr(gateway_module, "_nse_market_open", lambda _: False)
+    assert gateway._live_feed_is_deaf(now_monotonic=999.0, now_utc=datetime.now(timezone.utc)) is False
+
+
+@pytest.mark.asyncio
+async def test_open_but_deaf_watchdog_closes_only_the_current_generation(monkeypatch):
+    gateway = MarketDataGateway(client_id="x", access_token="y")
+    current_ws = AsyncMock()
+    current_ws.closed = False
+    old_ws = AsyncMock()
+    old_ws.closed = False
+    gateway.ws = current_ws
+    gateway._generation = 7
+    gateway._is_running = True
+    gateway._generation_started_monotonic = 100.0
+    gateway._last_full_packet_monotonic = 120.0
+    ticks = iter((120.0, 165.0, 166.0))
+    monkeypatch.setattr(gateway_module.time, "perf_counter", lambda: next(ticks))
+    monkeypatch.setattr(gateway_module, "_nse_market_open", lambda _: True)
+
+    await gateway._measure_event_loop_lag(current_ws, 7)
+
+    current_ws.close.assert_awaited_once_with(code=1012, reason="NO_USABLE_FULL_PACKET_45S")
+    assert gateway.health()["RECONNECT_REASON"] == "NO_USABLE_FULL_PACKET_45S"
+    await gateway._measure_event_loop_lag(old_ws, 6)
+    old_ws.close.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_new_generation_rearms_exact_recorded_eleven_instrument_basket_once():
+    recorded_ids = [str(value) for value in range(42631, 42641)] + ["68407"]
+    gateway = MarketDataGateway(client_id="x", access_token="y")
+    gateway.subscribe([
+        {"exchange_segment": "NSE_FNO", "security_id": security_id}
+        for security_id in recorded_ids
+    ])
+
+    first_ws = AsyncMock()
+    first_ws.closed = False
+    gateway.ws = first_ws
+    gateway._generation = 1
+    await gateway._send_subscriptions(ws=first_ws, generation=1)
+
+    second_ws = AsyncMock()
+    second_ws.closed = False
+    gateway.ws = second_ws
+    gateway._generation = 2
+    gateway._sent_instruments = []
+    gateway._sent_subscription_revision = -1
+    await gateway._send_subscriptions(ws=second_ws, generation=2)
+
+    for ws in (first_ws, second_ws):
+        messages = [json.loads(call.args[0]) for call in ws.send.await_args_list]
+        assert len(messages) == 1
+        assert messages[0]["RequestCode"] == 21
+        assert messages[0]["InstrumentCount"] == 11
+        assert {row["SecurityId"] for row in messages[0]["InstrumentList"]} == set(recorded_ids)
 
 
 def test_gateway_health_distinguishes_requested_from_actual_packet_receipt(monkeypatch):

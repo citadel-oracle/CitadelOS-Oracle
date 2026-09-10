@@ -438,7 +438,13 @@ class StrategyLabService:
             "fill_ledger": workspace.fill_ledger.read(limit=100),
         }
 
-    def dashboard(self) -> Dict[str, Any]:
+    def dashboard(
+        self,
+        *,
+        live_publication: bool = False,
+        prepared_options_structure: Optional[Mapping[str, Any]] = None,
+        prepared_nifty_vob: Optional[Mapping[str, Any]] = None,
+    ) -> Dict[str, Any]:
         dashboard_started = perf_counter()
         lock_started = perf_counter()
         timings: Dict[str, float] = {}
@@ -483,15 +489,24 @@ class StrategyLabService:
             execution = self.execution_projection(
                 paper_states, authoritative_positions=open_positions,
                 reconciliation=position_reconciliation,
+                live_publication=live_publication,
+                prepared_options_structure=prepared_options_structure,
+                prepared_nifty_vob=prepared_nifty_vob,
             )
             timings["execution_projection_ms"] = round((perf_counter() - operation_started) * 1000, 3)
             operation_started = perf_counter()
             review_signature = self._review_execution_signature(paper_states)
-            review_cache_hit = (
+            review_cache_hit = live_publication or (
                 self._review_cache is not None
                 and self._review_cache_signature == review_signature
             )
-            if review_cache_hit:
+            if live_publication:
+                review = {
+                    "status": "DEFERRED_FROM_LIVE_SNAPSHOT",
+                    "journal": [],
+                    "paper_only": True,
+                }
+            elif review_cache_hit:
                 review = self._review_cache
             else:
                 review = self.review_projection(deployments)
@@ -562,6 +577,9 @@ class StrategyLabService:
         self, states: Optional[Sequence[Mapping[str, Any]]] = None, *,
         authoritative_positions: Optional[Sequence[Mapping[str, Any]]] = None,
         reconciliation: Optional[Mapping[str, Any]] = None,
+        live_publication: bool = False,
+        prepared_options_structure: Optional[Mapping[str, Any]] = None,
+        prepared_nifty_vob: Optional[Mapping[str, Any]] = None,
     ) -> Dict[str, Any]:
         states = list(states) if states is not None else self._paper_states()
         positions = [dict(item) for state in states for item in state.get("positions") or []]
@@ -569,6 +587,58 @@ class StrategyLabService:
             [dict(item) for item in authoritative_positions]
             if authoritative_positions is not None else authoritative_open_positions(states)
         )
+        if live_publication:
+            orders = [dict(item) for state in states for item in state.get("orders") or []][-10:]
+            fills = [dict(item) for state in states for item in state.get("fills") or []][-10:]
+            closed_trades = [
+                dict(item) for state in states for item in state.get("closed_trades") or []
+            ][-5:]
+            options_structure = (
+                deepcopy(dict(prepared_options_structure))
+                if isinstance(prepared_options_structure, Mapping)
+                else {
+                    "status": "UNAVAILABLE",
+                    "reason": "PREPARED_OPTIONS_NOT_YET_RECEIVED",
+                    "execution_influence": 0,
+                    "advisory_only": True,
+                }
+            )
+            nifty_vob = (
+                deepcopy(dict(prepared_nifty_vob))
+                if isinstance(prepared_nifty_vob, Mapping)
+                else {
+                    "status": "UNAVAILABLE",
+                    "reason": "PREPARED_NIFTY_VOB_NOT_PUBLISHED",
+                    "execution_influence": 0.0,
+                    "advisory_only": True,
+                }
+            )
+            return {
+                "status": "available",
+                "positions": positions,
+                "authoritative_open_positions": open_positions,
+                "orders": orders,
+                "fills": fills,
+                "closed_trades": closed_trades,
+                "nifty_vob": nifty_vob,
+                "options_structure": options_structure,
+                "timeline": [],
+                "position_count": len(open_positions),
+                "order_count": len(orders),
+                "fill_count": len(fills),
+                "closed_trade_count": len(closed_trades),
+                "paper_only": True,
+                "live_trading_enabled": False,
+                "broker_submission": False,
+                "reconciliation": dict(reconciliation or {
+                    "status": "RECONCILED",
+                    "authoritative_open_count": len(open_positions),
+                    "mapped_open_count": len(open_positions),
+                    "warnings": [],
+                }),
+                "mtm": self._open_position_totals(open_positions),
+                "publication_scope": "MINIMUM_CURRENT_STRATEGY_TRUTH",
+            }
         orders = [dict(item) for state in states for item in state.get("orders") or []]
         fills = [dict(item) for state in states for item in state.get("fills") or []]
         closed_trades = [dict(item) for state in states for item in state.get("closed_trades") or []]
@@ -676,64 +746,89 @@ class StrategyLabService:
             "exchange_date": today_date_str,
         }
 
-        # NIFTY VOB Multi-Timeframe Intelligence
-        import os
-        from pathlib import Path
-        from src.vob import NiftyVOBEngine
-
-        state_root = Path(os.environ.get("CITADEL_STATE_ROOT", "/Users/ayushmudgal/Developer/CitadelOS/logs"))
-        vob_state_path = state_root / "vob_state.json"
-        vob_1m_path = state_root / "vob_1m_candles.json"
-
-        vob_engine = NiftyVOBEngine(persistence_path=vob_state_path)
-        
-        vob_data = {}
-        try:
-            from src.broker.dhan_client import DhanClient
-            from src.vob.backfill import mark_vob_evaluated, sync_current_session
-
-            dhan_client = DhanClient()
-            try:
-                vob_sync = sync_current_session(vob_1m_path, dhan_client)
-            except Exception as exc:
-                vob_sync = {"status": "DEGRADED", "runtime_status": "CATCHING_UP", "reason": type(exc).__name__}
-            candles_1m = []
-            if vob_1m_path.exists():
-                try:
-                    c_file = json.loads(vob_1m_path.read_text(encoding="utf-8"))
-                    candles_1m = c_file.get("candles") or []
-                except Exception:
-                    pass
-
-            if candles_1m:
-                latest_spot = float(candles_1m[-1]["close"]) if candles_1m else None
-                # Try fetching live Nifty Spot quote from DhanClient
-                try:
-                    spot_quote = dhan_client.get_ltp()
-                    if spot_quote and isinstance(spot_quote, dict) and spot_quote.get("ltp") is not None:
-                        latest_spot = float(spot_quote["ltp"])
-                except Exception:
-                    pass
-
-                vob_data = vob_engine.ingest_1m_candles(candles_1m, current_nifty_price=latest_spot)
-                latest_source = datetime.fromtimestamp(float(candles_1m[-1]["time"]), tz=timezone.utc)
-                vob_data["source_1m_sync"] = mark_vob_evaluated(vob_1m_path, latest_source)
-                vob_data["source_1m_sync"]["added"] = vob_sync.get("added", 0)
-                vob_data["source_1m_sync"]["invalid_removed"] = vob_sync.get("invalid_removed", 0)
-            else:
-                vob_data = {
-                    "status": "UNAVAILABLE",
-                    "reason": "CANONICAL_1M_RESERVOIR_UNAVAILABLE",
-                    "execution_influence": 0.0,
-                    "advisory_only": True,
-                }
-        except Exception as e:
-            vob_data = {
+        # The live heartbeat must never rebuild NIFTY history or create a Dhan
+        # client. It accepts only an already-prepared immutable projection.
+        vob_data = (
+            deepcopy(dict(prepared_nifty_vob))
+            if live_publication and isinstance(prepared_nifty_vob, Mapping)
+            else {
                 "status": "UNAVAILABLE",
-                "reason": f"VOB_CALCULATION_ERROR: {str(e)}",
+                "reason": "PREPARED_NIFTY_VOB_NOT_PUBLISHED",
                 "execution_influence": 0.0,
                 "advisory_only": True,
             }
+            if live_publication
+            else {}
+        )
+        if not live_publication:
+            import os
+            from pathlib import Path
+            from src.vob import NiftyVOBEngine
+
+            state_root = Path(os.environ.get("CITADEL_STATE_ROOT", "/Users/ayushmudgal/Developer/CitadelOS/logs"))
+            vob_state_path = state_root / "vob_state.json"
+            vob_1m_path = state_root / "vob_1m_candles.json"
+            vob_engine = NiftyVOBEngine(persistence_path=vob_state_path)
+            try:
+                from src.broker.dhan_client import DhanClient
+                from src.vob.backfill import mark_vob_evaluated, sync_current_session
+
+                active_client = None
+                try:
+                    from src.broker.dhan_client import DhanClient
+                    dhan = DhanClient()
+                    if hasattr(dhan, "has_token") and dhan.has_token():
+                        active_client = dhan
+                except Exception:
+                    pass
+                if active_client is None:
+                    try:
+                        from src.broker.upstox_client import UpstoxClient
+                        upstox = UpstoxClient()
+                        if getattr(upstox, "has_token", False):
+                            active_client = upstox
+                    except Exception:
+                        pass
+                try:
+                    vob_sync = sync_current_session(vob_1m_path, active_client)
+                except Exception as exc:
+                    vob_sync = {"status": "DEGRADED", "runtime_status": "CATCHING_UP", "reason": type(exc).__name__}
+                candles_1m = []
+                if vob_1m_path.exists():
+                    try:
+                        c_file = json.loads(vob_1m_path.read_text(encoding="utf-8"))
+                        candles_1m = c_file.get("candles") or []
+                    except Exception:
+                        pass
+
+                if candles_1m:
+                    latest_spot = float(candles_1m[-1]["close"]) if candles_1m else None
+                    try:
+                        spot_quote = dhan_client.get_ltp()
+                        if spot_quote and isinstance(spot_quote, dict) and spot_quote.get("ltp") is not None:
+                            latest_spot = float(spot_quote["ltp"])
+                    except Exception:
+                        pass
+
+                    vob_data = vob_engine.ingest_1m_candles(candles_1m, current_nifty_price=latest_spot)
+                    latest_source = datetime.fromtimestamp(float(candles_1m[-1]["time"]), tz=timezone.utc)
+                    vob_data["source_1m_sync"] = mark_vob_evaluated(vob_1m_path, latest_source)
+                    vob_data["source_1m_sync"]["added"] = vob_sync.get("added", 0)
+                    vob_data["source_1m_sync"]["invalid_removed"] = vob_sync.get("invalid_removed", 0)
+                else:
+                    vob_data = {
+                        "status": "UNAVAILABLE",
+                        "reason": "CANONICAL_1M_RESERVOIR_UNAVAILABLE",
+                        "execution_influence": 0.0,
+                        "advisory_only": True,
+                    }
+            except Exception as e:
+                vob_data = {
+                    "status": "UNAVAILABLE",
+                    "reason": f"VOB_CALCULATION_ERROR: {str(e)}",
+                    "execution_influence": 0.0,
+                    "advisory_only": True,
+                }
 
         options_structure = {
             "status": "UNAVAILABLE",
@@ -745,7 +840,9 @@ class StrategyLabService:
             "live_trading_enabled": False,
             "broker_submission": False,
         }
-        if callable(self._options_structure_provider):
+        if live_publication and isinstance(prepared_options_structure, Mapping):
+            options_structure = deepcopy(dict(prepared_options_structure))
+        elif not live_publication and callable(self._options_structure_provider):
             try:
                 projected = self._options_structure_provider()
                 if isinstance(projected, Mapping):

@@ -1,0 +1,135 @@
+{
+  "ai_latencies_ms": {
+    "gemini": {
+      "count": 0,
+      "max": null,
+      "p50": null,
+      "p95": null,
+      "p99": null
+    },
+    "luna": {
+      "count": 617,
+      "max": 33698.73,
+      "p50": 15726.47,
+      "p95": 20158.01,
+      "p99": 33698.73
+    },
+    "sol": {
+      "count": 0,
+      "max": null,
+      "p50": null,
+      "p95": null,
+      "p99": null
+    }
+  },
+  "browser": {
+    "console_errors_total": 0,
+    "dom_time_ms": {
+      "count": 30,
+      "max": 4287,
+      "p50": 1014.0,
+      "p95": 1537.3,
+      "p99": 3511.25
+    },
+    "render_time_ms": {
+      "count": 30,
+      "max": 6321,
+      "p50": 3020.0,
+      "p95": 3545.5,
+      "p99": 5538.29
+    },
+    "samples": 30,
+    "successful_samples": 30
+  },
+  "endpoints": {
+    "argus_oi": {
+      "count": 617,
+      "max": 1328.15,
+      "p50": 54.09,
+      "p95": 399.54,
+      "p99": 840.7
+    },
+    "cognitive_decision": {
+      "count": 617,
+      "max": 1640.68,
+      "p50": 19.59,
+      "p95": 473.09,
+      "p99": 1043.32
+    },
+    "fast_lane": {
+      "count": 617,
+      "max": 3010.94,
+      "p50": 13.44,
+      "p95": 930.96,
+      "p99": 1685.56
+    },
+    "live_island": {
+      "count": 617,
+      "max": 3006.64,
+      "p50": 5.08,
+      "p95": 257.1,
+      "p99": 581.78
+    },
+    "oracle_status": {
+      "count": 617,
+      "max": 2416.13,
+      "p50": 19.63,
+      "p95": 586.7,
+      "p99": 1433.36
+    },
+    "runtime_diag": {
+      "count": 617,
+      "max": 3009.28,
+      "p50": 37.36,
+      "p95": 340.6,
+      "p99": 1168.91
+    }
+  },
+  "payload_bytes": {
+    "argus_oi": {
+      "count": 617,
+      "max": 249372,
+      "p50": 247013,
+      "p95": 248815,
+      "p99": 249251
+    },
+    "cognitive_decision": {
+      "count": 617,
+      "max": 179143,
+      "p50": 161856,
+      "p95": 173723,
+      "p99": 179131
+    },
+    "fast_lane": {
+      "count": 617,
+      "max": 1187051,
+      "p50": 1155549,
+      "p95": 1186269,
+      "p99": 1186828
+    },
+    "live_island": {
+      "count": 617,
+      "max": 3778,
+      "p50": 2390,
+      "p95": 3732,
+      "p99": 3772
+    },
+    "oracle_status": {
+      "count": 617,
+      "max": 1965,
+      "p50": 1959,
+      "p95": 1959,
+      "p99": 1961
+    },
+    "runtime_diag": {
+      "count": 617,
+      "max": 19426,
+      "p50": 19359,
+      "p95": 19392,
+      "p99": 19408
+    }
+  },
+  "schema_version": "citadel-latency-summary-v1",
+  "session_date": "2026-09-10",
+  "source": "artifacts/soak_30m_20260910/soak_summary.json"
+}

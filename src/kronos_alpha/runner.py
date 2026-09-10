@@ -119,6 +119,9 @@ def main():
     parser.add_argument("--device", choices=("mps", "cpu"), default="cpu")
     parser.add_argument("--stdio", action="store_true")
     args = parser.parse_args()
+    import os
+    if os.environ.get("CITADEL_KRONOS_ALPHA_ENABLED", "0") != "1":
+        raise SystemExit("KRONOS_ALPHA_DISABLED_BY_CONFIGURATION")
     if args.stdio:
         serve(args.source_root, args.model_path, args.tokenizer_path, args.device)
         return

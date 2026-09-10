@@ -254,7 +254,7 @@ class OracleDevInstrumentResolver:
             pass  # keep nearest-expiry default
 
         sec_id = best_candidate.get("SECURITY_ID") or best_candidate.get("SEM_SMST_SECURITY_ID")
-        lot_size = int(float(best_candidate.get("LOT_SIZE") or best_candidate.get("SEM_LOT_UNITS") or 75))
+        lot_size = int(float(best_candidate.get("LOT_SIZE") or best_candidate.get("SEM_LOT_UNITS") or 65))
         expiry_str = best_candidate.get("SM_EXPIRY_DATE") or best_candidate.get("SEM_EXPIRY_DATE")
         symbol = best_candidate.get("SYMBOL_NAME") or best_candidate.get("DISPLAY_NAME") or "NIFTY-FUT"
 
@@ -475,7 +475,7 @@ class OracleDevInstrumentResolver:
                             "strike": strike,
                             "expiry": weekly_expiry,
                             "option_type": option_type,
-                            "lot_size": 75,
+                            "lot_size": 65,
                             "segment": "NSE_FNO",
                             "instrument": "OPTIDX"
                         }

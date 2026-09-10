@@ -67,6 +67,14 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    ".next",
+    "out",
+    "build",
+    "dist",
+    "coverage",
+    "public/market_forces",
+    "**/*.test.ts",
+    "**/*.test.tsx"
   ]
 }

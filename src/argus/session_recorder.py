@@ -210,26 +210,23 @@ class ArgusSessionRecorder:
                 result[output_key] = None
                 continue
             result[output_key] = {
-                key: deepcopy(leg.get(key))
-                for key in (
-                    "security_id",
-                    "trading_symbol",
-                    "option_type",
-                    "ltp",
-                    "previous_close",
-                    "oi",
-                    "previous_oi",
-                    "volume",
-                    "iv",
-                    "bid_price",
-                    "ask_price",
-                    "bid_quantity",
-                    "ask_quantity",
-                    "delta",
-                    "gamma",
-                    "theta",
-                    "vega",
-                    "source_timestamp",
-                )
+                "security_id": deepcopy(leg.get("security_id")),
+                "trading_symbol": deepcopy(leg.get("trading_symbol")),
+                "option_type": deepcopy(leg.get("option_type")),
+                "ltp": deepcopy(leg.get("ltp")),
+                "previous_close": deepcopy(leg.get("previous_close")),
+                "oi": deepcopy(leg.get("oi")),
+                "previous_oi": deepcopy(leg.get("previous_oi")),
+                "volume": deepcopy(leg.get("volume")),
+                "iv": deepcopy(leg.get("iv")),
+                "bid_price": deepcopy(leg.get("bid_price") if leg.get("bid_price") is not None else leg.get("top_bid_price")),
+                "ask_price": deepcopy(leg.get("ask_price") if leg.get("ask_price") is not None else leg.get("top_ask_price")),
+                "bid_quantity": deepcopy(leg.get("bid_quantity") if leg.get("bid_quantity") is not None else leg.get("top_bid_quantity")),
+                "ask_quantity": deepcopy(leg.get("ask_quantity") if leg.get("ask_quantity") is not None else leg.get("top_ask_quantity")),
+                "delta": deepcopy(leg.get("delta")),
+                "gamma": deepcopy(leg.get("gamma")),
+                "theta": deepcopy(leg.get("theta")),
+                "vega": deepcopy(leg.get("vega")),
+                "source_timestamp": deepcopy(leg.get("source_timestamp")),
             }
         return result

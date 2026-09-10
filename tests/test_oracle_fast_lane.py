@@ -4,6 +4,7 @@ import json
 from time import monotonic, perf_counter_ns, sleep
 
 from src.api.oracle_fast_lane import OracleFastLane
+from src.oracle.fast_lane_publisher import FastLaneSnapshotProcessor, _make_lean_live_feed
 
 
 def _wire_event(event):
@@ -36,7 +37,11 @@ def test_fast_lane_serves_pre_serialized_cache_and_atomic_feed_patches():
             raise AssertionError("fast lane did not publish")
         first = json.loads(body)
         assert first["feeds"]["argus"]["data"]["snapshot_id"] == "argus-a"
+        assert first["runtime_instance_id"] == lane.health()["runtime_instance_id"]
         assert first["safety"]["execution_influence"] == "ZERO"
+        stages = lane.health()["latest_latency_stages"]
+        assert stages["fastlane_build_start_ns"] <= stages["fastlane_value_tree_done_ns"]
+        assert stages["fastlane_serialization_start_ns"] <= stages["fastlane_serialized_ns"]
 
         state["argus"] = {"status": "LIVE", "snapshot_id": "argus-b", "source_timestamp": "2026-08-10T09:30:01Z"}
         for _ in range(30):
@@ -65,6 +70,69 @@ def test_fast_lane_preserves_truthful_degraded_source_state():
     assert feed["meta"]["freshness"] == "STALE"
     assert feed["meta"]["stale_reason"] == "SOURCE_INCOMPLETE"
     assert feed["meta"]["source_timestamp"] == "2026-08-10T09:30:00Z"
+
+
+def test_base_oracle_refresh_preserves_existing_live_workspace():
+    processor = FastLaneSnapshotProcessor()
+    first = processor("BUILD", {
+        "source_revisions": {"oracle": "base-1", "oracle_live_workspace": "workspace-1"},
+        "changed": ["oracle", "oracle_live_workspace"],
+        "base_updates": {"oracle": {"ok": True, "data": {"status": "READY", "revision": 1}}},
+        "workspace_update": {"value": {"sync_state": "SYNCED", "content_hash": "workspace-a"}, "error": None},
+        "build_revision": 1,
+    })
+    assert json.loads(first["body"])["feeds"]["oracle"]["data"]["live_workspace"]["content_hash"] == "workspace-a"
+
+    refreshed = processor("BUILD", {
+        "source_revisions": {"oracle": "base-2", "oracle_live_workspace": "workspace-1"},
+        "changed": ["oracle"],
+        "base_updates": {"oracle": {"ok": True, "data": {"status": "READY", "revision": 2}}},
+        "build_revision": 2,
+    })
+    oracle = json.loads(refreshed["body"])["feeds"]["oracle"]["data"]
+    assert oracle["revision"] == 2
+    assert oracle["live_workspace"] == {"sync_state": "SYNCED", "content_hash": "workspace-a"}
+
+
+def test_fast_lane_runtime_identity_is_in_rest_and_sse_contracts():
+    processor = FastLaneSnapshotProcessor()
+    result = processor("BUILD", {
+        "runtime_instance_id": "runtime-a",
+        "source_revisions": {"argus": "a"},
+        "changed": ["argus"],
+        "provider_updates": {"argus": {"value": {"status": "LIVE"}, "error": None}},
+        "build_revision": 7,
+    })
+    assert json.loads(result["body"])["runtime_instance_id"] == "runtime-a"
+    assert json.loads(result["patch_event"])["runtime_instance_id"] == "runtime-a"
+    assert result["runtime_instance_id"] == "runtime-a"
+    stages = result["latency_stages"]
+    assert stages["fastlane_build_start_ns"] <= stages["fastlane_value_tree_done_ns"]
+    assert stages["fastlane_serialization_start_ns"] <= stages["fastlane_serialized_ns"]
+
+
+def test_fast_lane_chart_keeps_four_bounded_finalized_timeframe_lanes():
+    def candles(count, *, forming=False):
+        return [
+            {"time": index, "open": 1, "high": 2, "low": 0, "close": 1, "is_forming": forming and index == count - 1}
+            for index in range(count)
+        ]
+
+    feed = {"ok": True, "data": {
+        "candles": candles(140, forming=True),
+        "timeframes": {
+            timeframe: {"candles": candles(140, forming=True), "vwap_series": list(range(140))}
+            for timeframe in ("1m", "3m", "5m", "15m")
+        },
+    }}
+    lean = _make_lean_live_feed("futures_chart", feed)["data"]
+    assert lean["available_timeframes"] == ["1m", "3m", "5m", "15m"]
+    assert len(lean["candles"]) == 100
+    assert lean["candles"][-1]["time"] == 138
+    for timeframe in lean["available_timeframes"]:
+        assert len(lean["timeframes"][timeframe]["candles"]) == 100
+        assert lean["timeframes"][timeframe]["candles"][-1]["time"] == 138
+        assert len(lean["timeframes"][timeframe]["vwap_series"]) == 100
 
 
 def test_fast_lane_can_refresh_one_provider_after_atomic_restore():

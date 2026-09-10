@@ -431,7 +431,11 @@ class BigBelugaVOBEngine:
             if all(c.get(k) is not None for k in ("open", "high", "low", "close"))
         ]
 
+        # The BigBeluga public ingestion path must expose the canonical 1m
+        # stream as well as its derived buckets.  1m replay is handled by the
+        # same state machine; it was previously dropped at this adapter.
         tf_candles = {
+            "1m": valid_1m,
             "3m":  _helper._resample_1m(valid_1m, 3),
             "5m":  _helper._resample_1m(valid_1m, 5),
             "15m": _helper._resample_1m(valid_1m, 15),

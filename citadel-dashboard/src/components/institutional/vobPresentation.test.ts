@@ -5,7 +5,9 @@ import type { OracleOptionDisplay } from '@/dashboard/store/oracleStore'
 import {
   acceptSemanticEvent,
   auraTone,
+  canonicalNiftyVobPresentation,
   formatDisplayTradeId,
+  horsepowerAlert,
   magnetGeometry,
   pnlTone,
   proximityLabel,
@@ -90,6 +92,40 @@ describe('VOB presentation-only semantics', () => {
     expect(acceptSemanticEvent(seen, entry)).toBe(true)
     expect(acceptSemanticEvent(seen, entry)).toBe(false)
     expect(trackATradeAlert(entered, exited)?.kind).toBe('TARGET')
+  })
+
+  it('uses the backend Horsepower event id as the exact alert dedupe key', () => {
+    const frame = {
+      eventId: 'CE:61647:3m:RESISTANCE_OUT:zone-a:2026-08-20T11:48:00+05:30',
+      instrument: 'CE:61647', timeframe: '3M', event: 'RESISTANCE_OUT',
+      zoneId: 'zone-a', confirmedCandle: '2026-08-20T11:48:00+05:30',
+      close: 217.45, notificationEligible: true,
+    }
+    const alert = horsepowerAlert(frame)
+    const seen = new Set<string>()
+    expect(alert.key).toBe(frame.eventId)
+    expect(alert.kind).toBe('READY')
+    expect(acceptSemanticEvent(seen, alert)).toBe(true)
+    expect(acceptSemanticEvent(seen, horsepowerAlert(frame))).toBe(false)
+  })
+
+  it('projects global VOB structure only from canonical Fast Lane Horsepower data', () => {
+    const projection = canonicalNiftyVobPresentation({
+      canonical_market: { reference_price: 24_219.05 },
+      nifty_horsepower: {
+        instrument: 'NIFTY',
+        timeframes: { '1m': { status: 'SUPPORT_BACK' }, '3m': {}, '5m': {} },
+        structure_zones: [
+          { timeframe: '5M', role: 'SUPPORT', zone_id: 'support-a', zone_low: 24_194.2, zone_high: 24_202.05, state: 'SUPPORT_RECLAIMED', resolved_at: '2026-08-24T15:30:00+05:30' },
+          { timeframe: '5M', role: 'RESISTANCE', zone_id: 'resistance-a', zone_low: 24_243.95, zone_high: 24_249.85, state: 'RESISTANCE_BROKEN', broken_at: '2026-08-24T11:01:00+05:30' },
+        ],
+        events: [],
+      },
+    })
+    const lane = projection.timeframes as Record<string, any>
+    expect(projection.status).toBe('AVAILABLE')
+    expect(lane['5m'].nearest_bullish_support).toMatchObject({ zone_id: 'support-a', status: 'ACTIVE', distance_points: 17 })
+    expect(lane['5m'].nearest_bearish_resistance).toMatchObject({ zone_id: 'resistance-a', status: 'BROKEN', distance_points: 24.9 })
   })
 
   it('persists explicit alert and sound preferences', () => {

@@ -6,6 +6,7 @@ canonical provider snapshots; outputs are immutable encoded REST/SSE bytes.
 """
 
 from __future__ import annotations
+import time
 
 import hashlib
 import json
@@ -146,14 +147,43 @@ def _make_lean_live_feed(name: str, feed: dict[str, Any]) -> dict[str, Any]:
 
     elif name == "futures_chart":
         fc_data = dict(data)
+        def finalized_tail(value: Any) -> list[Any]:
+            if not isinstance(value, list):
+                return []
+            return [
+                item for item in value
+                if not isinstance(item, Mapping)
+                or (item.get("is_forming") is not True and item.get("finalized") is not False)
+            ][-100:]
+
         if "candles" in fc_data and isinstance(fc_data["candles"], list):
-            fc_data["candles"] = fc_data["candles"][-30:]
+            fc_data["candles"] = finalized_tail(fc_data["candles"])
+        if "vwap_series" in fc_data and isinstance(fc_data["vwap_series"], list):
+            fc_data["vwap_series"] = fc_data["vwap_series"][-100:]
         if "timeframes" in fc_data and isinstance(fc_data["timeframes"], Mapping):
-            tf_5m = dict(fc_data["timeframes"].get("5m", {}))
-            if "candles" in tf_5m and isinstance(tf_5m["candles"], list):
-                tf_5m["candles"] = tf_5m["candles"][-30:]
-            fc_data["timeframes"] = {"5m": tf_5m}
+            bounded_timeframes: dict[str, Any] = {}
+            for timeframe in ("1m", "3m", "5m", "15m"):
+                raw_lane = fc_data["timeframes"].get(timeframe)
+                if not isinstance(raw_lane, Mapping):
+                    continue
+                lane = dict(raw_lane)
+                lane["candles"] = finalized_tail(lane.get("candles"))
+                if isinstance(lane.get("vwap_series"), list):
+                    lane["vwap_series"] = lane["vwap_series"][-100:]
+                bounded_timeframes[timeframe] = lane
+            fc_data["timeframes"] = bounded_timeframes
+            fc_data["available_timeframes"] = list(bounded_timeframes)
         return {**feed, "data": fc_data}
+
+    elif name == "order_flow":
+        of_data = dict(data)
+        if "visual_events" in of_data and isinstance(of_data["visual_events"], list):
+            of_data["visual_events"] = of_data["visual_events"][-5000:]
+        if "depth_snapshots" in of_data and isinstance(of_data["depth_snapshots"], list):
+            of_data["depth_snapshots"] = of_data["depth_snapshots"][-1000:]
+        if "cvd_series" in of_data and isinstance(of_data["cvd_series"], list):
+            of_data["cvd_series"] = of_data["cvd_series"][-5000:]
+        return {**feed, "data": of_data}
 
     elif name == "argus":
         arg_raw = dict(data)
@@ -182,6 +212,76 @@ def _make_lean_live_feed(name: str, feed: dict[str, Any]) -> dict[str, Any]:
                 inner_d["tactical_edge"] = tac_d
             arg_raw["data"] = inner_d
             return {**feed, "data": arg_raw}
+
+    elif name == "vob_reversal":
+        # Canonical analytics/replay retains complete zone ladders. The live
+        # browser consumes selected lanes plus the prepared Horsepower result.
+        # Removing transport-only duplication keeps VOB truth unchanged.
+        vob_data = dict(data)
+        vob_data.pop("current_itm_vobs", None)
+        for collection_name in ("current_itm1_contracts", "option_contracts"):
+            collection = vob_data.get(collection_name)
+            if not isinstance(collection, Mapping):
+                continue
+            lean_collection: dict[str, Any] = {}
+            for side, raw_item in collection.items():
+                if not isinstance(raw_item, Mapping):
+                    lean_collection[str(side)] = raw_item
+                    continue
+                item = dict(raw_item)
+                vob = item.get("vob")
+                if isinstance(vob, Mapping):
+                    lean_vob = dict(vob)
+                    horsepower = lean_vob.get("horsepower")
+                    if isinstance(horsepower, Mapping):
+                        lean_horsepower = dict(horsepower)
+                        lean_horsepower.pop("session_ledger", None)
+                        if isinstance(lean_horsepower.get("events"), list):
+                            lean_horsepower["events"] = lean_horsepower["events"][-32:]
+                        lean_vob["horsepower"] = lean_horsepower
+                    timeframes = lean_vob.get("timeframes")
+                    if isinstance(timeframes, Mapping):
+                        lean_timeframes: dict[str, Any] = {}
+                        for timeframe, raw_lane in timeframes.items():
+                            if isinstance(raw_lane, Mapping):
+                                lane = dict(raw_lane)
+                                lane.pop("zone_ladder", None)
+                                lean_timeframes[str(timeframe)] = lane
+                            else:
+                                lean_timeframes[str(timeframe)] = raw_lane
+                        lean_vob["timeframes"] = lean_timeframes
+                    item["vob"] = lean_vob
+                lean_collection[str(side)] = item
+            vob_data[collection_name] = lean_collection
+        nifty_horsepower = vob_data.get("nifty_horsepower")
+        if isinstance(nifty_horsepower, Mapping):
+            lean_nifty = dict(nifty_horsepower)
+            ledger = lean_nifty.get("session_ledger")
+            if isinstance(ledger, list):
+                bounded_ledger = [
+                    row
+                    for timeframe in ("1M", "3M", "5M")
+                    for row in [
+                        item for item in ledger
+                        if isinstance(item, Mapping)
+                        and str(item.get("timeframe") or "").upper() == timeframe
+                    ][-42:]
+                ]
+                lean_nifty["structure_zones"] = [
+                    {
+                        key: row.get(key)
+                        for key in (
+                            "zone_id", "timeframe", "role", "zone_low", "zone_high",
+                            "formed_at", "broken_at", "resolved_at", "state",
+                        )
+                    }
+                    for row in bounded_ledger
+                ]
+            lean_nifty.pop("session_ledger", None)
+            if isinstance(lean_nifty.get("events"), list):
+                lean_nifty["events"] = lean_nifty["events"][-32:]
+            vob_data["nifty_horsepower"] = lean_nifty
+        return {**feed, "data": vob_data}
 
     return feed
 
@@ -217,6 +317,7 @@ class FastLaneSnapshotProcessor:
             return None
 
         build_started = perf_counter()
+        build_started_ns = time.perf_counter_ns()
         changed = set(str(name) for name in (payload.get("changed") or ()))
         base_updates = payload.get("base_updates") or {}
         provider_updates = payload.get("provider_updates") or {}
@@ -228,7 +329,21 @@ class FastLaneSnapshotProcessor:
             self._encoded_feeds.pop(name, None)
 
         for name, feed in base_updates.items():
-            self._cache_feed(str(name), dict(feed))
+            feed_name = str(name)
+            next_feed = dict(feed)
+            if feed_name == "oracle":
+                previous_data = (self._feeds.get("oracle") or {}).get("data")
+                next_data = next_feed.get("data")
+                if (
+                    isinstance(previous_data, Mapping)
+                    and "live_workspace" in previous_data
+                    and isinstance(next_data, Mapping)
+                    and "live_workspace" not in next_data
+                ):
+                    next_data = dict(next_data)
+                    next_data["live_workspace"] = previous_data["live_workspace"]
+                    next_feed["data"] = next_data
+            self._cache_feed(feed_name, next_feed)
 
         for name, update in provider_updates.items():
             if not isinstance(update, Mapping):
@@ -249,8 +364,8 @@ class FastLaneSnapshotProcessor:
 
         if isinstance(workspace_update, Mapping):
             existing = self._feeds.get("oracle") or {"data": {}}
-            oracle_data = deepcopy(existing.get("data") or {})
-            oracle_data["live_workspace"] = deepcopy(workspace_update.get("value"))
+            oracle_data = dict(existing.get("data") or {})
+            oracle_data["live_workspace"] = workspace_update.get("value")
             self._cache_feed(
                 "oracle",
                 wrap_provider_feed(
@@ -266,10 +381,13 @@ class FastLaneSnapshotProcessor:
         trace_id = "oracle-fast-" + hashlib.sha256(revision_seed.encode()).hexdigest()[:20]
         source_revisions_dict = dict(source_revisions)
         full_revision = int(payload.get("build_revision") or (self._full_builds + 1))
+        runtime_instance_id = str(payload.get("runtime_instance_id") or "UNPROVEN")
         event_id = f"oracle-fast-snapshot-{full_revision}"
 
+        value_tree_done_ns = time.perf_counter_ns()
         assembly_ms = (perf_counter() - build_started) * 1000.0
         serialization_started = perf_counter()
+        serialization_started_ns = time.perf_counter_ns()
         feed_fragment = self._encoded_feed_fragment()
         polling = {
             "recommended_interval_ms": 30_000,
@@ -281,6 +399,9 @@ class FastLaneSnapshotProcessor:
             "snapshot_status": "FRESH",
             "oracle_turbo_mode": True,
             "assembly_ms": round(assembly_ms, 3),
+            "fastlane_build_start_ns": build_started_ns,
+            "fastlane_value_tree_done_ns": value_tree_done_ns,
+            "fastlane_serialization_start_ns": serialization_started_ns,
             "serialization_ms": (
                 round(self._previous_serialization_ms, 3)
                 if self._previous_serialization_ms is not None
@@ -292,6 +413,7 @@ class FastLaneSnapshotProcessor:
             trace_id=trace_id,
             generated_at=generated_at,
             revision=full_revision,
+            runtime_instance_id=runtime_instance_id,
             source_revisions=source_revisions_dict,
             polling=polling,
         )
@@ -306,6 +428,7 @@ class FastLaneSnapshotProcessor:
             + b',"generated_at":' + _json(generated_at)
             + b',"symbol":"NIFTY"'
             + b',"global_revision":' + _json(full_revision)
+            + b',"runtime_instance_id":' + _json(runtime_instance_id)
             + b',"source_revisions":' + _json(source_revisions_dict)
             + b',"changed_sections":' + _json(patch_names)
         )
@@ -319,6 +442,7 @@ class FastLaneSnapshotProcessor:
             + common_event
             + b',"feeds":{' + feed_fragment + b'},"full":true}'
         )
+        serialization_completed_ns = time.perf_counter_ns()
         serialization_ms = (perf_counter() - serialization_started) * 1000.0
         self._previous_serialization_ms = serialization_ms
         self._full_builds += 1
@@ -338,6 +462,7 @@ class FastLaneSnapshotProcessor:
             "owner_pid": os.getppid(),
             "event_id": event_id,
             "revision": full_revision,
+            "runtime_instance_id": runtime_instance_id,
             "source_revisions": source_revisions_dict,
             "changed_sections": patch_names,
             "trace_id": trace_id,
@@ -346,6 +471,12 @@ class FastLaneSnapshotProcessor:
             "patch_event": patch_event,
             "resync_event": resync_event,
             "byte_length": len(body),
+            "latency_stages": {
+                "fastlane_build_start_ns": build_started_ns,
+                "fastlane_value_tree_done_ns": value_tree_done_ns,
+                "fastlane_serialization_start_ns": serialization_started_ns,
+                "fastlane_serialized_ns": serialization_completed_ns,
+            },
             "assembly_ms": assembly_ms,
             "serialization_ms": serialization_ms,
             "full_builds": self._full_builds,
@@ -376,6 +507,7 @@ class FastLaneSnapshotProcessor:
         trace_id: str,
         generated_at: str,
         revision: int,
+        runtime_instance_id: str,
         source_revisions: Mapping[str, str],
         polling: Mapping[str, Any],
     ) -> bytes:
@@ -390,6 +522,7 @@ class FastLaneSnapshotProcessor:
             b'"api_version":"2.0-oracle-fast-lane"',
             b'"schema_version":2',
             b'"revision":' + _json(revision),
+            b'"runtime_instance_id":' + _json(runtime_instance_id),
             b'"source_revisions":' + _json(dict(source_revisions)),
             b'"trace_id":' + _json(trace_id),
             b'"generated_at":' + _json(generated_at),

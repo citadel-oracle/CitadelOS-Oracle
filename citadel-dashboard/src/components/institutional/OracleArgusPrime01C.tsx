@@ -740,7 +740,7 @@ export function OracleArgusPrime01C({ tactical, optionsStructure, vob, provider,
         <Panel title="Tactical Summary" eyebrow="One canonical interpretation" tone={isFresh ? toneFor(tacticalSummary.directional_posture) : 'slate'}>
           <div className={styles.verdict}><span>{upper(tacticalSummary.state)}</span><strong>{upper(tacticalSummary.title ?? prime.hero_state)}</strong><p>{text(prime.action)}</p></div>
           <ul className={styles.reasonList}>{summaryReasons.slice(0, 5).map((reason) => <li key={reason}>{reason}</li>)}</ul>
-          <div className={styles.chainSummary}><span>DHAN OPTION CHAIN</span>{chainSummary.slice(0, 5).map((line) => <p key={line}>{line}</p>)}</div>
+          <div className={styles.chainSummary}><span>UPSTOX OPTION CHAIN</span>{chainSummary.slice(0, 5).map((line) => <p key={line}>{line}</p>)}</div>
         </Panel>
         <Panel title="Prime Decision Hub" eyebrow="Raw → smoothed → displayed" className={styles.hubPanel} tone={primeTone}>
           <PrimeHub prime={prime} fixtureScore={fixtureEnabled ? fixtureScore : null} flipToken={flipToken} flipCount={flipCount} fresh={isFresh} tone={primeTone} />

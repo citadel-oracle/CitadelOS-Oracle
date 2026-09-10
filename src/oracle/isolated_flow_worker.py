@@ -8,6 +8,8 @@ already-calculated current state or ordered action events.
 
 from __future__ import annotations
 
+import os
+import json
 import multiprocessing as mp
 import queue
 import threading
@@ -309,18 +311,17 @@ def _isolated_flow_child(
             now_ns = time.perf_counter_ns()
             if now_ns - last_snapshot_ns >= 100_000_000:
                 projection = service.latest_projection()
-                if projection.get("status") != "UNAVAILABLE":
-                    snapshot = {
-                        "projection": projection,
-                        "decision_hud": service.latest_decision_hud(),
-                        "service_telemetry": service.telemetry(),
-                        "published_ns": now_ns,
-                    }
-                    replaced = _replace_latest(snapshot_queue, snapshot)
-                    if replaced:
-                        with snapshot_coalesces.get_lock():
-                            snapshot_coalesces.value += replaced
-                    last_output_ns = now_ns
+                snapshot = {
+                    "projection": projection,
+                    "decision_hud": service.latest_decision_hud(),
+                    "service_telemetry": service.telemetry(),
+                    "published_ns": now_ns,
+                }
+                replaced = _replace_latest(snapshot_queue, snapshot)
+                if replaced:
+                    with snapshot_coalesces.get_lock():
+                        snapshot_coalesces.value += replaced
+                last_output_ns = now_ns
                 last_snapshot_ns = now_ns
 
             if now_ns - last_health_ns >= 250_000_000:
@@ -698,16 +699,48 @@ class IsolatedOrderFlowWorker:
 
         return unsubscribe
 
+    def _load_visual_history(self) -> dict[str, Any]:
+        session_id = datetime.now(timezone.utc).astimezone(ZoneInfo("Asia/Kolkata")).date().isoformat()
+        candidate_roots = [
+            Path(os.environ.get("CITADEL_STATE_ROOT", "/Users/ayushmudgal/Developer/CitadelOS/logs")) / "order_flow" / "evidence",
+            Path("/Users/ayushmudgal/Developer/CitadelOS-Oracle-Post-E9/logs/order_flow/evidence"),
+        ]
+        if self.recorder and hasattr(self.recorder, "root"):
+            candidate_roots.insert(0, Path(self.recorder.root))
+        for root in candidate_roots:
+            cache_path = root / f"flow_map_visual_history_{session_id}.json"
+            if cache_path.exists():
+                try:
+                    with open(cache_path, "r", encoding="utf-8") as f:
+                        return json.load(f)
+                except Exception:
+                    pass
+        return {}
+
     def latest_projection(self) -> dict[str, Any]:
         with self._state_lock:
             if self._projection is None:
+                vis = self._load_visual_history()
+                events = vis.get("visual_events", [])
+                has_history = len(events) > 0
                 return {
-                    "status": "UNAVAILABLE",
-                    "reason": "ORDER_FLOW_PROJECTION_NOT_READY",
+                    "status": "AVAILABLE" if has_history else "UNAVAILABLE",
+                    "reason": "RECORDED_SESSION_HISTORY_HYDRATED" if has_history else "ORDER_FLOW_PROJECTION_NOT_READY",
                     "execution_influence": "ZERO",
                     "authority_20_depth": "DISABLED",
+                    "visual_events": events,
+                    "depth_snapshots": vis.get("depth_snapshots", []),
+                    "cvd_series": vis.get("cvd_series", []),
+                    "cvd": vis.get("cvd", 0),
                 }
             value = dict(self._projection)
+            if not value.get("visual_events"):
+                vis = self._load_visual_history()
+                if vis:
+                    value["visual_events"] = vis.get("visual_events", [])
+                    value["depth_snapshots"] = vis.get("depth_snapshots", [])
+                    value["cvd_series"] = vis.get("cvd_series", [])
+                    value["cvd"] = vis.get("cvd", 0)
         if not self.worker_alive:
             value["projection_state"] = "LAST_GOOD"
             value["action_eligible"] = False

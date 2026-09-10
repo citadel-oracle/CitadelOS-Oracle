@@ -87,6 +87,9 @@ def extract_sol_evidence_snapshot(
     argus_feed = feeds.get("argus") or {}
     argus_data = argus_feed.get("data") or {} if isinstance(argus_feed, Mapping) else {}
 
+    market_info_feed = feeds.get("market_info") or feeds.get("market_info_service") or {}
+    market_info_data = market_info_feed.get("data") or market_info_feed if isinstance(market_info_feed, Mapping) else {}
+
     # Canonical Fast-Lane Identity & Timestamps
     canonical_snapshot_id = str(
         _get_first_present(feeds, "idempotency_key", "canonical_snapshot_id", "snapshot_id", "revision", "record_id")
@@ -102,19 +105,24 @@ def extract_sol_evidence_snapshot(
     )
 
     if raw_ts:
-        now_utc = str(raw_ts)
+        raw_timestamp_text = str(raw_ts)
         try:
-            # Parse IST time string
-            dt_ts = datetime.fromisoformat(now_utc.replace("Z", "+00:00")).astimezone(IST)
+            parsed_timestamp = datetime.fromisoformat(raw_timestamp_text.replace("Z", "+00:00"))
+            if parsed_timestamp.tzinfo is None:
+                raise ValueError("Canonical source timestamp must include a timezone offset")
+            dt_utc = parsed_timestamp.astimezone(timezone.utc)
+            dt_ts = dt_utc.astimezone(IST)
+            now_utc = dt_utc.isoformat()
             now_ist = dt_ts.strftime("%H:%M:%S")
             market_session_date = session_date or dt_ts.strftime("%Y-%m-%d")
             identity_quality = "CANONICAL_AUTHENTIC"
             replay_stable = True
         except Exception:
+            now_utc = raw_timestamp_text
             now_ist = datetime.now(IST).strftime("%H:%M:%S")
             market_session_date = session_date or datetime.now(IST).strftime("%Y-%m-%d")
-            identity_quality = "CANONICAL_AUTHENTIC"
-            replay_stable = True
+            identity_quality = "DEGRADED_INVALID_TIMESTAMP"
+            replay_stable = False
     else:
         now_utc = datetime.now(timezone.utc).isoformat()
         now_ist = datetime.now(IST).strftime("%H:%M:%S")
@@ -123,6 +131,8 @@ def extract_sol_evidence_snapshot(
         replay_stable = False
 
     availability_matrix: Dict[str, str] = {}
+    pcr_oi, pcr_availability = _extract_number(oracle_data.get("pcr_oi"))
+    availability_matrix["pcr_oi"] = pcr_availability.value
 
     # ── 1. Underlying Domain ──
     spot_raw = _get_first_present(oracle_data, "spot_ltp", "spot_price", "spot")
@@ -281,6 +291,19 @@ def extract_sol_evidence_snapshot(
     expected_move_pts, exp_move_avail = _extract_number(exp_move_raw)
     availability_matrix["expected_move_pts"] = exp_move_avail.value
 
+    india_vix_raw = _get_first_present(oracle_data, "india_vix", "vix")
+    if india_vix_raw is None and isinstance(order_flow_data.get("domestic_indices"), Mapping):
+        india_vix_raw = _get_first_present(order_flow_data["domestic_indices"], "INDIA_VIX", "india_vix")
+    if india_vix_raw is None and isinstance(market_info_data, Mapping):
+        india_vix_raw = _get_first_present(market_info_data, "india_vix", "vix")
+    india_vix_val, india_vix_avail = _extract_number(india_vix_raw)
+    availability_matrix["india_vix"] = india_vix_avail.value
+
+    india_vix_context = _get_first_present(oracle_data, "india_vix_context", "vix_context")
+    if india_vix_context is None and isinstance(market_info_data, Mapping):
+        india_vix_context = _get_first_present(market_info_data, "india_vix_context", "vix_context")
+    availability_matrix["india_vix_context"] = "AVAILABLE" if india_vix_context else "UNAVAILABLE"
+
     # ── 7. Positioning & GEX Domain ──
     gex_raw = _get_first_present(oracle_data, "net_gex_inr", "total_gex")
     net_gex_inr, gex_avail = _extract_number(gex_raw)
@@ -294,6 +317,86 @@ def extract_sol_evidence_snapshot(
     zero_gamma_level, zero_gex_avail = _extract_number(zero_gex_raw)
     availability_matrix["zero_gamma_level"] = zero_gex_avail.value
 
+    # ── 8. Phase-0 Extended Order Flow & Response Extraction ──
+    buyer_ab_raw = _get_first_present(order_flow_data, "buyer_absorption")
+    buyer_absorption, buyer_ab_avail = _extract_number(buyer_ab_raw)
+    availability_matrix["buyer_absorption"] = buyer_ab_avail.value
+
+    seller_ab_raw = _get_first_present(order_flow_data, "seller_absorption")
+    seller_absorption, seller_ab_avail = _extract_number(seller_ab_raw)
+    availability_matrix["seller_absorption"] = seller_ab_avail.value
+
+    failed_aggr_raw = _get_first_present(order_flow_data, "failed_aggression")
+    failed_aggression, failed_aggr_avail = _extract_number(failed_aggr_raw)
+    availability_matrix["failed_aggression"] = failed_aggr_avail.value
+
+    price_eff_raw = _get_first_present(order_flow_data, "price_response_efficiency")
+    price_response_efficiency, price_eff_avail = _extract_number(price_eff_raw)
+    availability_matrix["price_response_efficiency"] = price_eff_avail.value
+
+    cont_eff_raw = _get_first_present(order_flow_data, "continuation_efficiency")
+    continuation_efficiency, cont_eff_avail = _extract_number(cont_eff_raw)
+    availability_matrix["continuation_efficiency"] = cont_eff_avail.value
+
+    cvd_raw = _get_first_present(order_flow_data, "cvd")
+    cvd_val, cvd_avail = _extract_number(cvd_raw)
+    cvd = int(cvd_val) if cvd_val is not None else None
+    availability_matrix["cvd"] = cvd_avail.value
+
+    bid_dep_raw = _get_first_present(order_flow_data, "bid_depletion")
+    bid_dep_val, bid_dep_avail = _extract_number(bid_dep_raw)
+    bid_depletion = int(bid_dep_val) if bid_dep_val is not None else None
+    availability_matrix["bid_depletion"] = bid_dep_avail.value
+
+    ask_dep_raw = _get_first_present(order_flow_data, "ask_depletion")
+    ask_dep_val, ask_dep_avail = _extract_number(ask_dep_raw)
+    ask_depletion = int(ask_dep_val) if ask_dep_val is not None else None
+    availability_matrix["ask_depletion"] = ask_dep_avail.value
+
+    bid_ref_raw = _get_first_present(order_flow_data, "bid_refill")
+    bid_ref_val, bid_ref_avail = _extract_number(bid_ref_raw)
+    bid_refill = int(bid_ref_val) if bid_ref_val is not None else None
+    availability_matrix["bid_refill"] = bid_ref_avail.value
+
+    ask_ref_raw = _get_first_present(order_flow_data, "ask_refill")
+    ask_ref_val, ask_ref_avail = _extract_number(ask_ref_raw)
+    ask_refill = int(ask_ref_val) if ask_ref_val is not None else None
+    availability_matrix["ask_refill"] = ask_ref_avail.value
+
+    order_flow_response_state = _get_first_present(order_flow_data, "order_flow_response_state", "response_state")
+    availability_matrix["order_flow_response_state"] = "AVAILABLE" if order_flow_response_state else "UNAVAILABLE"
+
+    # ── 9. Positioning & GEX Extended Extraction ──
+    gex_cr_raw = _get_first_present(oracle_data, "total_net_gex_inr_cr")
+    total_net_gex_inr_cr, gex_cr_avail = _extract_number(gex_cr_raw)
+    availability_matrix["total_net_gex_inr_cr"] = gex_cr_avail.value
+
+    dealer_regime = _get_first_present(oracle_data, "dealer_regime")
+    availability_matrix["dealer_regime"] = "AVAILABLE" if dealer_regime else "UNAVAILABLE"
+
+    straddle_15m_raw = _get_first_present(oracle_data, "straddle_change_15m") or _get_first_present(argus_data, "straddle_change_15m")
+    straddle_change_15m, straddle_15m_avail = _extract_number(straddle_15m_raw)
+    availability_matrix["straddle_change_15m"] = straddle_15m_avail.value
+
+    # ── 10. OSE Domain Extraction ──
+    ose_feed = feeds.get("options_structure") or {}
+    ose_data = ose_feed.get("data") or {} if isinstance(ose_feed, Mapping) else {}
+    ose_ssi_raw = (
+        _get_first_present(oracle_data, "ose_ssi_score")
+        or _get_first_present(ose_data, "ssi_score")
+        or (ose_data.get("ssi", {}).get("score") if isinstance(ose_data.get("ssi"), Mapping) else None)
+    )
+    ose_ssi_val, ose_ssi_avail = _extract_number(ose_ssi_raw)
+    ose_ssi_score = int(ose_ssi_val) if ose_ssi_val is not None else None
+    availability_matrix["ose_ssi_score"] = ose_ssi_avail.value
+
+    ose_decision_window = (
+        _get_first_present(oracle_data, "ose_decision_window")
+        or _get_first_present(ose_data, "decision_window_state")
+        or (ose_data.get("decision_window", {}).get("state") if isinstance(ose_data.get("decision_window"), Mapping) else None)
+    )
+    availability_matrix["ose_decision_window"] = "AVAILABLE" if ose_decision_window else "UNAVAILABLE"
+
     # Upstream latencies & health
     quote_age_ms, _ = _extract_number(_get_first_present(oracle_data, "dhan_quote_age_ms"))
     flow_age_ms, _ = _extract_number(_get_first_present(order_flow_data, "age_ms"))
@@ -306,6 +409,11 @@ def extract_sol_evidence_snapshot(
         "dhan_connected": _extract_bool(oracle_data.get("dhan_connected")),
         "market_session_active": _extract_bool(oracle_data.get("market_open")),
         "producer_sources": {
+            "chart": {
+                "source_id": None,
+                "source_timestamp": oracle_data.get("chart_source_timestamp"),
+                "provenance": "FUTURES_CHART",
+            },
             "market": {
                 "source_id": oracle_data.get("source_id"),
                 "source_timestamp": oracle_data.get("source_timestamp"),
@@ -326,16 +434,23 @@ def extract_sol_evidence_snapshot(
         },
     }
 
-    if upstream_health["dhan_connected"] is False or (spot_val is None and fut_val is None):
-        system_status = SystemStatus.UNAVAILABLE
-    elif upstream_health["market_session_active"] is False:
+    # Session state is independent of transport health. A deliberately closed
+    # market must not turn into a generic feed outage merely because the broker
+    # has no current prices after restart.
+    canonical_data_healthy = (spot_val is not None or fut_val is not None)
+    feed_connected = upstream_health.get("dhan_connected") is True or upstream_health.get("feed_connected") is True
+    if upstream_health["market_session_active"] is False:
         system_status = SystemStatus.OFF_MARKET
+    elif not feed_connected or not canonical_data_healthy:
+        system_status = SystemStatus.UNAVAILABLE
     elif upstream_health["oracle_feed_ok"] is False or upstream_health["order_flow_feed_ok"] is False:
         system_status = SystemStatus.DATA_DEGRADED
-    elif upstream_health["dhan_connected"] is True and spot_val is not None:
+    elif canonical_data_healthy:
         system_status = SystemStatus.HEALTHY
     else:
         system_status = SystemStatus.UNAVAILABLE
+    if not replay_stable and system_status == SystemStatus.HEALTHY:
+        system_status = SystemStatus.DATA_DEGRADED
 
     source_hashes = {
         "oracle_feed_hash": ProvenanceGuard.compute_sha256(oracle_data),
@@ -391,13 +506,32 @@ def extract_sol_evidence_snapshot(
         pe_pricing=pe_pricing,
         atm_straddle_price=atm_straddle_val,
         straddle_change_5m=straddle_change_5m,
+        straddle_change_15m=straddle_change_15m,
         atm_iv=atm_iv_val,
         skew_25d=skew_25d,
         skew_10d=skew_10d,
         expected_move_pts=expected_move_pts,
         net_gex_inr=net_gex_inr,
+        total_net_gex_inr_cr=total_net_gex_inr_cr,
+        dealer_regime=dealer_regime,
         highest_gex_strike=highest_gex_strike,
         zero_gamma_level=zero_gamma_level,
+        buyer_absorption=buyer_absorption,
+        seller_absorption=seller_absorption,
+        failed_aggression=failed_aggression,
+        price_response_efficiency=price_response_efficiency,
+        continuation_efficiency=continuation_efficiency,
+        cvd=cvd,
+        bid_depletion=bid_depletion,
+        ask_depletion=ask_depletion,
+        bid_refill=bid_refill,
+        ask_refill=ask_refill,
+        order_flow_response_state=order_flow_response_state,
+        ose_ssi_score=ose_ssi_score,
+        ose_decision_window=ose_decision_window,
+        pcr_oi=pcr_oi,
+        india_vix=india_vix_val,
+        india_vix_context=str(india_vix_context) if india_vix_context else None,
         domestic_indices=order_flow_data.get("domestic_indices") or {},
         availability_matrix=availability_matrix,
         source_hashes=source_hashes,

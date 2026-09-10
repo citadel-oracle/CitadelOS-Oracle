@@ -1,0 +1,110 @@
+{
+  "comparison_id": "17be2892ed5a2653e0e125a32420285960d5caeefc4372ff4f8ee29d0a370900",
+  "ended_at": "2026-09-06T04:40:41.617918+00:00",
+  "error_class": null,
+  "evidence_ids": 17,
+  "evidence_semantics_error": null,
+  "finish_reason": "stop",
+  "http_status": 200,
+  "input_hash": "55eae7c3f0c720cc50594e127c570e41baa523d24640d48117c6ce25667edb65",
+  "kind": "RESULT",
+  "latency_ms": 4628.2,
+  "ordinal": 7,
+  "output": {
+    "claim": {
+      "claim": "Overall evidence points to a bullish call bias: high call premium, negative skew, futures trading at a premium, positive order\u2011flow imbalance and positive dealer gamma exposure.",
+      "evidence_ids": [
+        "metric:ce_atm_premium",
+        "metric:pe_atm_premium",
+        "metric:skew_10d",
+        "metric:skew_25d",
+        "metric:futures_price",
+        "metric:spot_price",
+        "metric:basis",
+        "metric:mlofi_5l",
+        "metric:total_net_gex_inr_cr",
+        "metric:zero_gamma"
+      ]
+    },
+    "contradiction": [],
+    "internal_tension": [
+      {
+        "claim": "Total net GEX is positive (254.87\u202fcr) while the zero\u2011gamma level (23\u202f992) lies below the current spot (24\u202f073.5); dealers long gamma may hedge against further upside, creating tension with the bullish case.",
+        "evidence_ids": [
+          "metric:total_net_gex_inr_cr",
+          "metric:zero_gamma",
+          "metric:spot_price"
+        ]
+      }
+    ],
+    "missing_confirmation": [
+      {
+        "claim": "Open\u2011interest activity for calls and puts is unavailable, limiting confidence in positioning.",
+        "evidence_ids": [
+          "metric:call_oi_build",
+          "metric:put_oi_build"
+        ]
+      }
+    ],
+    "side": "CALL",
+    "state": "SUPPORTED",
+    "support": [
+      {
+        "claim": "Call premium (119.9\u202fINR) far exceeds put premium (44.2\u202fINR), indicating strong call demand.",
+        "evidence_ids": [
+          "metric:ce_atm_premium",
+          "metric:pe_atm_premium"
+        ]
+      },
+      {
+        "claim": "Negative 10\u2011delta (\u20116.57) and 25\u2011delta (\u20117.45) skews show call IV > put IV, a bullish volatility signal.",
+        "evidence_ids": [
+          "metric:skew_10d",
+          "metric:skew_25d"
+        ]
+      },
+      {
+        "claim": "Futures price (24\u202f260.2) trades above spot (24\u202f073.5) with a 186.7\u2011point basis, reflecting bullish forward pressure.",
+        "evidence_ids": [
+          "metric:futures_price",
+          "metric:spot_price",
+          "metric:basis"
+        ]
+      }
+    ],
+    "temporal_change": []
+  },
+  "payload_bytes": 13746,
+  "provider": "groq",
+  "rate_limits": {
+    "last_429_timestamp": null,
+    "limit_requests": 1000,
+    "limit_tokens": 8000,
+    "remaining_requests": 999,
+    "remaining_tokens": 3245,
+    "reset_requests": "1m26.4s",
+    "reset_tokens": "35.662s",
+    "retry_after_seconds": null,
+    "total_429_count": 0,
+    "total_requests_made": 0,
+    "total_tokens_consumed": 0
+  },
+  "requested_model": "openai/gpt-oss-120b",
+  "response_model": "openai/gpt-oss-120b",
+  "revision": 1333,
+  "role": "side_specialist",
+  "schema_error_keyword": null,
+  "schema_error_path": null,
+  "schema_valid": true,
+  "session_id": "2026-08-31",
+  "side": "CALL",
+  "source_hash": "0484411860dad05f42cf064325ba3b3c20048904703ce4075ed230981d2b10ae",
+  "started_at": "2026-09-06T04:40:36.890231+00:00",
+  "transport_success": true,
+  "usage": {
+    "cached_tokens": 0,
+    "completion_tokens": 1834,
+    "prompt_tokens": 4353,
+    "total_tokens": 6187
+  }
+}

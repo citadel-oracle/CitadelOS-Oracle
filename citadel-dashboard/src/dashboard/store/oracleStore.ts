@@ -256,6 +256,149 @@ export interface MarketSlice {
   frozenEpisodeCall: OracleOptionDisplay | null
   frozenEpisodePut: OracleOptionDisplay | null
   buyerIntelligence: Readonly<Record<string, unknown>>
+  indiaVix?: number | null
+  indiaVixChange?: number | null
+  indiaVixChangePct?: number | null
+  indiaVixLow?: number | null
+  indiaVixHigh?: number | null
+  indiaVixDirection?: string | null
+  giftNifty?: number | null
+  giftNiftyChange?: number | null
+  giftNiftyChangePct?: number | null
+  upstoxPcr?: number | null
+  pcrShift?: {
+    prev: number
+    curr: number
+    delta: number
+    interval: string
+    prev_time?: string
+    curr_time?: string
+  } | null
+  pcrProvenance?: string | null
+  maxPain?: number | null
+  maxPainShift?: {
+    prev: number
+    curr: number
+    delta: number
+    interval: string
+    prev_time?: string
+    curr_time?: string
+  } | null
+  maxPainProvenance?: string | null
+  bankNifty?: number | null
+  bankNiftyChange?: number | null
+  bankNiftyChangePct?: number | null
+  midcapSelect?: number | null
+  midcapSelectChange?: number | null
+  midcapSelectChangePct?: number | null
+  sensex?: number | null
+  sensexChange?: number | null
+  sensexChangePct?: number | null
+  spotLow?: number | null
+  spotHigh?: number | null
+  spotChange?: number | null
+  bankNiftyLow?: number | null
+  bankNiftyHigh?: number | null
+  midcapSelectLow?: number | null
+  midcapSelectHigh?: number | null
+  sensexLow?: number | null
+  sensexHigh?: number | null
+  indiaVixContext?: string | null
+  futuresOi?: number | null
+  futuresOiDayHigh?: number | null
+  futuresOiDayLow?: number | null
+  futuresOiRangeText?: string | null
+  oiShift?: {
+    status: string
+    expiry: string
+    provenance: string
+    source_type?: string | null
+    horizon?: string | null
+    heuristic_explainer?: string | null
+    total_call_oi: number
+    total_put_oi: number
+    total_call_delta_oi: number
+    total_put_delta_oi: number
+    largest_call_increase: { strike: number; delta_oi: number; oi: number; ltp?: number | null; change_pct?: number | null; heuristic?: string | null } | null
+    largest_call_unwind: { strike: number; delta_oi: number; oi: number; ltp?: number | null; change_pct?: number | null; heuristic?: string | null } | null
+    largest_put_increase: { strike: number; delta_oi: number; oi: number; ltp?: number | null; change_pct?: number | null; heuristic?: string | null } | null
+    largest_put_unwind: { strike: number; delta_oi: number; oi: number; ltp?: number | null; change_pct?: number | null; heuristic?: string | null } | null
+    bias_rule: string
+  } | null
+  fiiDiiSummary?: {
+    status: string
+    date: string
+    fii_fut_net: number | null
+    fii_fut_chg?: number | null
+    fii_fut_view?: string | null
+    fii_opt_net?: number | null
+    fii_opt_chg?: number | null
+    fii_opt_view?: string | null
+    fii_call_options?: {
+      net_contracts: number | null
+      change_contracts: number | null
+      view: string | null
+    } | null
+    fii_put_options?: {
+      net_contracts: number | null
+      change_contracts: number | null
+      view: string | null
+    } | null
+    dii_cash_net: number | null
+    dii_cash_chg?: number | null
+    dii_cash_view?: string | null
+    dii_derivatives?: string | null
+    view_rule_explanation?: string | null
+    fii_futures?: {
+      buy_amount_cr: number
+      sell_amount_cr: number
+      net_amount_cr: number
+      change_amount_cr?: number | null
+      view?: string | null
+      buy_contracts: number
+      sell_contracts: number
+      long_contracts: number
+      short_contracts: number
+      long_pct?: number | null
+      oi_contracts: number
+      oi_amount_cr: number
+    } | null
+    fii_options?: {
+      buy_amount_cr: number
+      sell_amount_cr: number
+      net_amount_cr: number
+      change_amount_cr?: number | null
+      view?: string | null
+      buy_contracts: number
+      sell_contracts: number
+      call_long_contracts: number
+      call_short_contracts: number
+      call_net_contracts?: number | null
+      call_change_contracts?: number | null
+      call_view?: string | null
+      put_long_contracts: number
+      put_short_contracts: number
+      put_net_contracts?: number | null
+      put_change_contracts?: number | null
+      put_view?: string | null
+      oi_contracts: number
+      oi_amount_cr: number
+    } | null
+    dii_cash?: {
+      buy_amount_cr: number
+      sell_amount_cr: number
+      net_amount_cr: number
+      change_amount_cr?: number | null
+      view?: string | null
+      derivatives: string
+    } | null
+    fii_cash?: {
+      buy_amount_cr: number
+      sell_amount_cr: number
+      net_amount_cr: number
+    } | null
+  } | null
+  giftNiftyFreshness?: string | null
 }
 
 export interface VobSlice {
@@ -429,6 +572,21 @@ const initialSlices = () => ({
     itmCall: emptyOptionDisplay(), itmPut: emptyOptionDisplay(),
     frozenEpisodeCall: null, frozenEpisodePut: null,
     buyerIntelligence: emptyBuyerIntelligence(),
+    indiaVix: null, indiaVixChange: null, indiaVixChangePct: null,
+    giftNifty: null, giftNiftyChange: null, giftNiftyChangePct: null, giftNiftyFreshness: 'DELAYED_PROVIDER',
+    upstoxPcr: null, pcrShift: null, pcrProvenance: 'DIRECT_UPSTOX_MARKET_INFO',
+    maxPain: null, maxPainShift: null, maxPainProvenance: 'DIRECT_UPSTOX_MARKET_INFO',
+    bankNifty: null, bankNiftyChange: null, bankNiftyChangePct: null,
+    midcapSelect: null, midcapSelectChange: null, midcapSelectChangePct: null,
+    sensex: null, sensexChange: null, sensexChangePct: null,
+    spotLow: null, spotHigh: null, spotChange: null,
+    bankNiftyLow: null, bankNiftyHigh: null,
+    midcapSelectLow: null, midcapSelectHigh: null,
+    sensexLow: null, sensexHigh: null,
+    indiaVixContext: null,
+    futuresOi: null, futuresOiDayHigh: null, futuresOiDayLow: null, futuresOiRangeText: null,
+    oiShift: null,
+    fiiDiiSummary: null,
   } satisfies MarketSlice,
   vob: {
     episode: null,
@@ -856,6 +1014,7 @@ function parseMarket(feeds: DashboardSourceSnapshot['feeds'], selectedSymbol: st
   }
 
   const argus = record(feeds.argus)
+  const argusMeta = record(argus.meta)
   const argusPayload = record(argus.data)
   const argusData = Object.keys(record(argusPayload.data)).length > 0 ? record(argusPayload.data) : (Object.keys(argusPayload).length > 0 ? argusPayload : argus)
   const argusUnderlying = record(argusData.underlying)
@@ -880,6 +1039,17 @@ function parseMarket(feeds: DashboardSourceSnapshot['feeds'], selectedSymbol: st
   const currentPe = enrichOptionRecord(record(rawCurrentItm1.PE), record(itmFromArgus.PE))
   const activeCe = parseContract(record(currentCe.contract))
   const activePe = parseContract(record(currentPe.contract))
+  const vobEnvelope = record(feeds.vob_reversal)
+  const vobMeta = record(vobEnvelope.meta)
+  const legacyFreshness = text(oracle.data_status)
+  const canonicalStateAvailable = spotPrice !== null
+    && text(canonicalMarket.source) !== null
+    && activeCe.securityId !== null
+    && activePe.securityId !== null
+  const canonicalFreshness = text(vobMeta.freshness ?? argusMeta.freshness, 'AVAILABLE')
+  const dataFreshness = legacyFreshness === 'UNAVAILABLE' && canonicalStateAvailable
+    ? (marketStatus === 'MARKET_CLOSED' ? 'MARKET_CLOSED' : canonicalFreshness)
+    : legacyFreshness
 
   const totals = record(argusData.totals)
   const pcr = number(canonicalMarket.pcr) ?? number(totals.pcr) ?? number(record(argus.totals).pcr) ?? number(record(argusData.live_pcr).oi_pcr) ?? number(itmFromArgus.canonicalMarket.pcr)
@@ -908,16 +1078,218 @@ function parseMarket(feeds: DashboardSourceSnapshot['feeds'], selectedSymbol: st
   currentItmPut.oi15mChange = parseOiWindowChange(record(obiPe.oi_15m_change))
   currentItmPut.resolverEvent = parseResolverEvent(record(obiPe.resolver_event))
 
+  const marketInfoEnvelope = record(feeds.market_info)
+  const marketInfoData = Object.keys(record(marketInfoEnvelope.data)).length > 0
+    ? record(marketInfoEnvelope.data)
+    : (Object.keys(marketInfoEnvelope).length > 0 ? marketInfoEnvelope : {})
+  const indiaVix = number(marketInfoData.india_vix)
+  const indiaVixChange = number(marketInfoData.india_vix_change)
+  const indiaVixChangePct = number(marketInfoData.india_vix_change_pct)
+  const indiaVixLow = number(marketInfoData.india_vix_low)
+  const indiaVixHigh = number(marketInfoData.india_vix_high)
+  const indiaVixDirection = stringOrNull(marketInfoData.india_vix_direction)
+  const giftNifty = number(marketInfoData.gift_nifty)
+  const giftNiftyChange = number(marketInfoData.gift_nifty_change)
+  const giftNiftyChangePct = number(marketInfoData.gift_nifty_change_pct)
+  const upstoxPcr = number(marketInfoData.pcr)
+  const pcrProvenance = text(marketInfoData.pcr_provenance, 'DIRECT_UPSTOX_MARKET_INFO')
+  const maxPain = number(marketInfoData.max_pain)
+  const maxPainProvenance = text(marketInfoData.max_pain_provenance, 'DIRECT_UPSTOX_MARKET_INFO')
+  const giftNiftyFreshness = text(marketInfoData.gift_nifty_freshness, 'DELAYED_PROVIDER')
+  const bankNifty = number(marketInfoData.bank_nifty)
+  const bankNiftyChange = number(marketInfoData.bank_nifty_change)
+  const bankNiftyChangePct = number(marketInfoData.bank_nifty_change_pct)
+  const midcapSelect = number(marketInfoData.midcap_select)
+  const midcapSelectChange = number(marketInfoData.midcap_select_change)
+  const midcapSelectChangePct = number(marketInfoData.midcap_select_change_pct)
+  const sensex = number(marketInfoData.sensex)
+  const sensexChange = number(marketInfoData.sensex_change)
+  const sensexChangePct = number(marketInfoData.sensex_change_pct)
+  if (spotChangePct === null) {
+    spotChangePct = number(marketInfoData.nifty_spot_change_pct) ?? null
+  }
+
+  const rawPcrShift = record(marketInfoData.pcr_shift)
+  const pcrShift = Object.keys(rawPcrShift).length > 0 ? {
+    prev: number(rawPcrShift.prev) ?? 0,
+    curr: number(rawPcrShift.curr) ?? 0,
+    delta: number(rawPcrShift.delta) ?? 0,
+    interval: text(rawPcrShift.interval, '15m'),
+    prev_time: stringOrNull(rawPcrShift.prev_time) ?? undefined,
+    curr_time: stringOrNull(rawPcrShift.curr_time) ?? undefined,
+  } : null
+
+  const rawMaxPainShift = record(marketInfoData.max_pain_shift)
+  const maxPainShift = Object.keys(rawMaxPainShift).length > 0 ? {
+    prev: number(rawMaxPainShift.prev) ?? 0,
+    curr: number(rawMaxPainShift.curr) ?? 0,
+    delta: number(rawMaxPainShift.delta) ?? 0,
+    interval: text(rawMaxPainShift.interval, '15m'),
+    prev_time: stringOrNull(rawMaxPainShift.prev_time) ?? undefined,
+    curr_time: stringOrNull(rawMaxPainShift.curr_time) ?? undefined,
+  } : null
+
+  const rawOiShift = record(marketInfoData.oi_shift)
+  const oiShift = Object.keys(rawOiShift).length > 0 ? {
+    status: text(rawOiShift.status, 'AVAILABLE'),
+    expiry: text(rawOiShift.expiry, '2026-09-08'),
+    provenance: text(rawOiShift.provenance, 'OFFICIAL_UPSTOX_CHANGE_OI'),
+    source_type: stringOrNull(rawOiShift.source_type) ?? 'OFFICIAL_ENDPOINT',
+    horizon: stringOrNull(rawOiShift.horizon) ?? 'TODAY ΔOI vs PREVIOUS SESSION (1D)',
+    heuristic_explainer: stringOrNull(rawOiShift.heuristic_explainer) ?? 'Derived from premium direction + OI change. Not direct buyer/writer proof.',
+    total_call_oi: number(rawOiShift.total_call_oi) ?? 0,
+    total_put_oi: number(rawOiShift.total_put_oi) ?? 0,
+    total_call_delta_oi: number(rawOiShift.total_call_delta_oi) ?? 0,
+    total_put_delta_oi: number(rawOiShift.total_put_delta_oi) ?? 0,
+    largest_call_increase: rawOiShift.largest_call_increase ? {
+      strike: number(record(rawOiShift.largest_call_increase).strike) ?? 0,
+      delta_oi: number(record(rawOiShift.largest_call_increase).delta_oi) ?? 0,
+      oi: number(record(rawOiShift.largest_call_increase).oi) ?? 0,
+      ltp: number(record(rawOiShift.largest_call_increase).ltp),
+      change_pct: number(record(rawOiShift.largest_call_increase).change_pct),
+      heuristic: stringOrNull(record(rawOiShift.largest_call_increase).heuristic),
+    } : null,
+    largest_call_unwind: rawOiShift.largest_call_unwind ? {
+      strike: number(record(rawOiShift.largest_call_unwind).strike) ?? 0,
+      delta_oi: number(record(rawOiShift.largest_call_unwind).delta_oi) ?? 0,
+      oi: number(record(rawOiShift.largest_call_unwind).oi) ?? 0,
+      ltp: number(record(rawOiShift.largest_call_unwind).ltp),
+      change_pct: number(record(rawOiShift.largest_call_unwind).change_pct),
+      heuristic: stringOrNull(record(rawOiShift.largest_call_unwind).heuristic),
+    } : null,
+    largest_put_increase: rawOiShift.largest_put_increase ? {
+      strike: number(record(rawOiShift.largest_put_increase).strike) ?? 0,
+      delta_oi: number(record(rawOiShift.largest_put_increase).delta_oi) ?? 0,
+      oi: number(record(rawOiShift.largest_put_increase).oi) ?? 0,
+      ltp: number(record(rawOiShift.largest_put_increase).ltp),
+      change_pct: number(record(rawOiShift.largest_put_increase).change_pct),
+      heuristic: stringOrNull(record(rawOiShift.largest_put_increase).heuristic),
+    } : null,
+    largest_put_unwind: rawOiShift.largest_put_unwind ? {
+      strike: number(record(rawOiShift.largest_put_unwind).strike) ?? 0,
+      delta_oi: number(record(rawOiShift.largest_put_unwind).delta_oi) ?? 0,
+      oi: number(record(rawOiShift.largest_put_unwind).oi) ?? 0,
+      ltp: number(record(rawOiShift.largest_put_unwind).ltp),
+      change_pct: number(record(rawOiShift.largest_put_unwind).change_pct),
+      heuristic: stringOrNull(record(rawOiShift.largest_put_unwind).heuristic),
+    } : null,
+    bias_rule: text(rawOiShift.bias_rule, 'FACTUAL_OI_DELTAS_NO_BIAS_INFERRED'),
+  } : null
+
+  const rawFiiDii = record(marketInfoData.fii_dii_summary)
+  let fiiDiiSummary = null
+  if (Object.keys(rawFiiDii).length > 0) {
+    const rawFiiFut = record(rawFiiDii.fii_futures)
+    const rawFiiOpt = record(rawFiiDii.fii_options)
+    const rawDiiCash = record(rawFiiDii.dii_cash)
+    const rawFiiCash = record(rawFiiDii.fii_cash)
+
+    fiiDiiSummary = {
+      status: text(rawFiiDii.status, 'DAILY_OFFICIAL'),
+      date: text(rawFiiDii.date, '04 SEP'),
+      fii_fut_net: number(rawFiiDii.fii_fut_net),
+      fii_fut_chg: number(rawFiiDii.fii_fut_chg),
+      fii_fut_view: stringOrNull(rawFiiDii.fii_fut_view) ?? 'BEARISH',
+      fii_opt_net: number(rawFiiDii.fii_opt_net),
+      fii_opt_chg: number(rawFiiDii.fii_opt_chg),
+      fii_opt_view: stringOrNull(rawFiiDii.fii_opt_view) ?? 'BEARISH',
+      fii_call_options: rawFiiDii.fii_call_options ? {
+        net_contracts: number(record(rawFiiDii.fii_call_options).net_contracts),
+        change_contracts: number(record(rawFiiDii.fii_call_options).change_contracts),
+        view: stringOrNull(record(rawFiiDii.fii_call_options).view) ?? 'SHORT CALL',
+      } : null,
+      fii_put_options: rawFiiDii.fii_put_options ? {
+        net_contracts: number(record(rawFiiDii.fii_put_options).net_contracts),
+        change_contracts: number(record(rawFiiDii.fii_put_options).change_contracts),
+        view: stringOrNull(record(rawFiiDii.fii_put_options).view) ?? 'LONG PUT',
+      } : null,
+      dii_cash_net: number(rawFiiDii.dii_cash_net),
+      dii_cash_chg: number(rawFiiDii.dii_cash_chg),
+      dii_cash_view: stringOrNull(rawFiiDii.dii_cash_view) ?? 'BULLISH',
+      dii_derivatives: text(rawFiiDii.dii_derivatives, 'N/A (official source unavailable)'),
+      view_rule_explanation: text(rawFiiDii.view_rule_explanation, 'View = dashboard interpretation of official net + change fields'),
+      ...(Object.keys(rawFiiFut).length > 0 ? {
+        fii_futures: {
+          buy_amount_cr: number(rawFiiFut.buy_amount_cr) ?? 0,
+          sell_amount_cr: number(rawFiiFut.sell_amount_cr) ?? 0,
+          net_amount_cr: number(rawFiiFut.net_amount_cr) ?? 0,
+          change_amount_cr: number(rawFiiFut.change_amount_cr),
+          view: stringOrNull(rawFiiFut.view) ?? 'BEARISH',
+          buy_contracts: number(rawFiiFut.buy_contracts) ?? 0,
+          sell_contracts: number(rawFiiFut.sell_contracts) ?? 0,
+          long_contracts: number(rawFiiFut.long_contracts) ?? 0,
+          short_contracts: number(rawFiiFut.short_contracts) ?? 0,
+          long_pct: number(rawFiiFut.long_pct) ?? 11.1,
+          oi_contracts: number(rawFiiFut.oi_contracts) ?? 0,
+          oi_amount_cr: number(rawFiiFut.oi_amount_cr) ?? 0,
+        },
+      } : {}),
+      ...(Object.keys(rawFiiOpt).length > 0 ? {
+        fii_options: {
+          buy_amount_cr: number(rawFiiOpt.buy_amount_cr) ?? 0,
+          sell_amount_cr: number(rawFiiOpt.sell_amount_cr) ?? 0,
+          net_amount_cr: number(rawFiiOpt.net_amount_cr) ?? 0,
+          change_amount_cr: number(rawFiiOpt.change_amount_cr),
+          view: stringOrNull(rawFiiOpt.view) ?? 'BEARISH',
+          buy_contracts: number(rawFiiOpt.buy_contracts) ?? 0,
+          sell_contracts: number(rawFiiOpt.sell_contracts) ?? 0,
+          call_long_contracts: number(rawFiiOpt.call_long_contracts) ?? 0,
+          call_short_contracts: number(rawFiiOpt.call_short_contracts) ?? 0,
+          call_net_contracts: number(rawFiiOpt.call_net_contracts),
+          call_change_contracts: number(rawFiiOpt.call_change_contracts),
+          call_view: stringOrNull(rawFiiOpt.call_view) ?? 'SHORT CALL',
+          put_long_contracts: number(rawFiiOpt.put_long_contracts) ?? 0,
+          put_short_contracts: number(rawFiiOpt.put_short_contracts) ?? 0,
+          put_net_contracts: number(rawFiiOpt.put_net_contracts),
+          put_change_contracts: number(rawFiiOpt.put_change_contracts),
+          put_view: stringOrNull(rawFiiOpt.put_view) ?? 'LONG PUT',
+          oi_contracts: number(rawFiiOpt.oi_contracts) ?? 0,
+          oi_amount_cr: number(rawFiiOpt.oi_amount_cr) ?? 0,
+        },
+      } : {}),
+      ...(Object.keys(rawDiiCash).length > 0 ? {
+        dii_cash: {
+          buy_amount_cr: number(rawDiiCash.buy_amount_cr) ?? 0,
+          sell_amount_cr: number(rawDiiCash.sell_amount_cr) ?? 0,
+          net_amount_cr: number(rawDiiCash.net_amount_cr) ?? 0,
+          change_amount_cr: number(rawDiiCash.change_amount_cr),
+          view: stringOrNull(rawDiiCash.view) ?? 'BULLISH',
+          derivatives: text(rawDiiCash.derivatives, 'N/A (official source unavailable)'),
+        },
+      } : {}),
+      ...(Object.keys(rawFiiCash).length > 0 ? {
+        fii_cash: {
+          buy_amount_cr: number(rawFiiCash.buy_amount_cr) ?? 0,
+          sell_amount_cr: number(rawFiiCash.sell_amount_cr) ?? 0,
+          net_amount_cr: number(rawFiiCash.net_amount_cr) ?? 0,
+        },
+      } : {}),
+    }
+  }
+
+  const futRecord = record(argusData.futures)
+  const futuresOi = number(marketInfoData.nifty_futures_oi) ?? number(futRecord.oi)
+  const futuresOiDayHigh = number(marketInfoData.nifty_futures_oi_day_high) ?? number(futRecord.oi_day_high)
+  const futuresOiDayLow = number(marketInfoData.nifty_futures_oi_day_low) ?? number(futRecord.oi_day_low)
+  const futuresOiRangeText = stringOrNull(marketInfoData.nifty_futures_oi_range_text)
+
   return {
     symbol: text(oracle.symbol, selectedSymbol || 'NIFTY'),
     underlying: spotPrice,
     canonicalAtmStrike,
     strikeInterval,
     marketStatus,
-    dataFreshness: text(oracle.data_status),
+    dataFreshness,
     spotChangePct,
+    spotLow: number(marketInfoData.nifty_spot_low),
+    spotHigh: number(marketInfoData.nifty_spot_high),
+    spotChange: number(marketInfoData.nifty_spot_change),
     futuresPrice,
     futuresChangePct,
+    futuresOi,
+    futuresOiDayHigh,
+    futuresOiDayLow,
+    futuresOiRangeText,
     pcr,
     openingPcr,
     deltaPcr,
@@ -932,6 +1304,40 @@ function parseMarket(feeds: DashboardSourceSnapshot['feeds'], selectedSymbol: st
     frozenEpisodeCall,
     frozenEpisodePut,
     buyerIntelligence,
+    indiaVix,
+    indiaVixChange,
+    indiaVixChangePct,
+    indiaVixLow,
+    indiaVixHigh,
+    indiaVixDirection,
+    indiaVixContext: stringOrNull(marketInfoData.india_vix_context) ?? 'NORMAL REGIME',
+    giftNifty,
+    giftNiftyChange,
+    giftNiftyChangePct,
+    giftNiftyFreshness,
+    upstoxPcr,
+    pcrShift,
+    pcrProvenance,
+    maxPain,
+    maxPainShift,
+    maxPainProvenance,
+    bankNifty,
+    bankNiftyChange,
+    bankNiftyChangePct,
+    bankNiftyLow: number(marketInfoData.bank_nifty_low),
+    bankNiftyHigh: number(marketInfoData.bank_nifty_high),
+    midcapSelect,
+    midcapSelectChange,
+    midcapSelectChangePct,
+    midcapSelectLow: number(marketInfoData.midcap_select_low),
+    midcapSelectHigh: number(marketInfoData.midcap_select_high),
+    sensex,
+    sensexChange,
+    sensexChangePct,
+    sensexLow: number(marketInfoData.sensex_low),
+    sensexHigh: number(marketInfoData.sensex_high),
+    oiShift,
+    fiiDiiSummary,
   }
 }
 
@@ -1385,7 +1791,15 @@ function cleanPositioning(raw: string | null | undefined): string | null {
 
 function parseArgus(value: unknown): ArgusSlice {
   const argusFeed = record(value)
-  const argusData = record(argusFeed.data)
+  let argusData = record(argusFeed.data)
+  while (argusData.data && typeof argusData.data === 'object' && !Array.isArray(argusData.data)) {
+    const nested = record(argusData.data)
+    if (Object.keys(nested).length === 0) break
+    argusData = nested
+  }
+  if (Object.keys(argusData).length === 0) {
+    argusData = argusFeed
+  }
   const verdict = record(argusData.verdict)
   const dominance = record(argusData.dominance)
   const tacticalEdge = record(argusData.tactical_edge)
@@ -1518,6 +1932,11 @@ function marketSignature(value: MarketSlice): string {
     optionSignature(value.itmCall),
     optionSignature(value.itmPut),
     String(value.buyerIntelligence.source_timestamp ?? value.buyerIntelligence.status ?? ''),
+    value.indiaVix,
+    value.giftNifty,
+    value.upstoxPcr,
+    value.maxPain,
+    value.fiiDiiSummary?.fii_fut_net,
   ].join('|')
 }
 

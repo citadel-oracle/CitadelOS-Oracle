@@ -207,4 +207,6 @@ export interface DashboardState {
   selectedSymbol: string
   isRefreshing: boolean
   revision: number
+  sourceRevision?: number
+  runtimeInstanceId?: string
 }

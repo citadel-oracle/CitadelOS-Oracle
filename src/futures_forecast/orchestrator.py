@@ -9,7 +9,7 @@ import threading
 import time
 from collections import deque
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from statistics import median
 from typing import Any, Callable, Mapping
@@ -20,7 +20,7 @@ from .math import ForecastValidationError, validate_ohlc_path, validate_quantile
 from .history import context_hash
 from .session_time import ForecastTimeError, NSEForecastTimeMapper
 from .tirex_state import TiRexStateClassifier
-from .workers import LatestWinsQueue, PersistentJsonWorker
+from .workers import LatestWinsQueue, PersistentJsonWorker, function_worker
 
 
 _ROOT = Path(__file__).resolve().parents[2]
@@ -68,31 +68,52 @@ class FuturesForecastOrchestrator:
         self.kronos_sample_count = int(kronos_sample_count)
         self.tirex_cadence = tirex_cadence
         self.queue = LatestWinsQueue()
-        self._kronos = kronos_worker or PersistentJsonWorker(
-            [
-                str(_KRONOS_PYTHON), "-m", "src.kronos_alpha.runner", "--stdio", "--device", "mps",
-                "--source-root", "/Users/ayushmudgal/Developer/models/kronos-alpha/source/Kronos",
-                "--model-path", "/Users/ayushmudgal/Developer/models/kronos-alpha/huggingface/models--NeoQuasar--Kronos-small/snapshots/901c26c1332695a2a8f243eb2f37243a37bea320",
-                "--tokenizer-path", "/Users/ayushmudgal/Developer/models/kronos-alpha/huggingface/models--NeoQuasar--Kronos-Tokenizer-base/snapshots/0e0117387f39004a9016484a186a908917e22426",
-            ],
-            cwd=_ROOT, environment={"HF_HUB_OFFLINE": "1"}, timeout_seconds=90,
-        )
-        self._chronos = chronos_worker or PersistentJsonWorker(
-            [
-                str(_CHRONOS_PYTHON), "-m", "src.chronos_2.runner", "--stdio", "--device", "mps",
-                "--model-path", "/Users/ayushmudgal/Developer/models/chronos-2",
-            ],
-            cwd=_ROOT, environment={"HF_HUB_OFFLINE": "1"}, timeout_seconds=45,
-        )
-        self._tirex = tirex_worker or PersistentJsonWorker(
-            [str(_TIREX_PYTHON), "-m", "src.futures_forecast.tirex_runner", "--stdio", "--device", "cpu"],
-            cwd=_ROOT,
-            environment={
-                "HF_HUB_OFFLINE": "1",
-                "HF_HOME": "/Users/ayushmudgal/Developer/models/tirex-2/huggingface",
-            },
-            timeout_seconds=55,
-        )
+        kronos_enabled = os.environ.get("CITADEL_KRONOS_ALPHA_ENABLED", "0") == "1"
+        chronos_enabled = os.environ.get("CITADEL_CHRONOS_2_ENABLED", "0") == "1"
+        tirex_enabled = os.environ.get("CITADEL_TIREX_ENABLED", "0") == "1"
+
+        if kronos_worker is not None:
+            self._kronos = kronos_worker
+        elif not kronos_enabled:
+            self._kronos = function_worker(lambda _: {"status": "UNAVAILABLE", "reason": "DISABLED_BY_CONFIGURATION", "representative_path": [], "ghost_ohlc": []})
+        else:
+            self._kronos = PersistentJsonWorker(
+                [
+                    str(_KRONOS_PYTHON), "-m", "src.kronos_alpha.runner", "--stdio", "--device", "mps",
+                    "--source-root", "/Users/ayushmudgal/Developer/models/kronos-alpha/source/Kronos",
+                    "--model-path", "/Users/ayushmudgal/Developer/models/kronos-alpha/huggingface/models--NeoQuasar--Kronos-small/snapshots/901c26c1332695a2a8f243eb2f37243a37bea320",
+                    "--tokenizer-path", "/Users/ayushmudgal/Developer/models/kronos-alpha/huggingface/models--NeoQuasar--Kronos-Tokenizer-base/snapshots/0e0117387f39004a9016484a186a908917e22426",
+                ],
+                cwd=_ROOT, environment={"HF_HUB_OFFLINE": "1"}, timeout_seconds=90,
+            )
+
+        if chronos_worker is not None:
+            self._chronos = chronos_worker
+        elif not chronos_enabled:
+            self._chronos = function_worker(lambda _: {"status": "UNAVAILABLE", "reason": "DISABLED_BY_CONFIGURATION", "forecast_rows": []})
+        else:
+            self._chronos = PersistentJsonWorker(
+                [
+                    str(_CHRONOS_PYTHON), "-m", "src.chronos_2.runner", "--stdio", "--device", "mps",
+                    "--model-path", "/Users/ayushmudgal/Developer/models/chronos-2",
+                ],
+                cwd=_ROOT, environment={"HF_HUB_OFFLINE": "1"}, timeout_seconds=45,
+            )
+
+        if tirex_worker is not None:
+            self._tirex = tirex_worker
+        elif not tirex_enabled:
+            self._tirex = function_worker(lambda _: {"status": "UNAVAILABLE", "reason": "DISABLED_BY_CONFIGURATION"})
+        else:
+            self._tirex = PersistentJsonWorker(
+                [str(_TIREX_PYTHON), "-m", "src.futures_forecast.tirex_runner", "--stdio", "--device", "cpu"],
+                cwd=_ROOT,
+                environment={
+                    "HF_HUB_OFFLINE": "1",
+                    "HF_HOME": "/Users/ayushmudgal/Developer/models/tirex-2/huggingface",
+                },
+                timeout_seconds=55,
+            )
         self._classifier = TiRexStateClassifier()
         self._lock = threading.RLock()
         self._stop = threading.Event()
@@ -329,8 +350,6 @@ class FuturesForecastOrchestrator:
     def _request_from_projection(self, projection: Mapping[str, Any], *, require_live: bool) -> dict[str, Any]:
         if projection.get("status") != "AVAILABLE" or projection.get("timeframe") != self.TIMEFRAME:
             raise ForecastOrchestratorError("FUTURES_5M_PROJECTION_UNAVAILABLE")
-        if require_live and projection.get("market_status") != "OPEN":
-            raise ForecastOrchestratorError("MARKET_NOT_OPEN")
         if projection.get("is_synthetic") is True:
             raise ForecastOrchestratorError("SYNTHETIC_CANDLES_REJECTED")
         contract = str(projection.get("contract") or "")
@@ -339,6 +358,12 @@ class FuturesForecastOrchestrator:
         source = str(projection.get("source_timestamp") or "")
         if not contract or not security_id or not expiry or not source:
             raise ForecastOrchestratorError("FUTURES_IDENTITY_INCOMPLETE")
+        if (
+            require_live
+            and projection.get("market_status") != "OPEN"
+            and not self._is_same_session_finalized_close(source)
+        ):
+            raise ForecastOrchestratorError("MARKET_NOT_OPEN")
         candles = []
         for item in projection.get("candles") or []:
             if not isinstance(item, Mapping) or item.get("forecast") or item.get("predicted"):
@@ -395,6 +420,28 @@ class FuturesForecastOrchestrator:
             ]),
         }
 
+    def _is_same_session_finalized_close(self, source_timestamp: str) -> bool:
+        """Permit the just-finalized last bar without weakening session causality."""
+        now = self.clock().astimezone(self.time_mapper.calendar.TIMEZONE)
+        session = self.time_mapper.calendar.status(now)
+        scheduled_close = session.get("scheduled_close")
+        if not scheduled_close or session.get("session_state") != "CLOSED":
+            return False
+        try:
+            source = datetime.fromisoformat(source_timestamp.replace("Z", "+00:00")).astimezone(
+                self.time_mapper.calendar.TIMEZONE
+            )
+            close = datetime.fromisoformat(str(scheduled_close)).astimezone(
+                self.time_mapper.calendar.TIMEZONE
+            )
+        except ValueError:
+            return False
+        return (
+            source.date().isoformat() == session.get("session_date")
+            and source + timedelta(minutes=5) == close
+            and close <= now
+        )
+
     def _base_snapshot(self, request: dict[str, Any], mode: str) -> dict[str, Any]:
         previous = self.projection()
         compatible = (previous.get("instrument") == request["instrument"] and previous.get("timeframe") == self.TIMEFRAME)
@@ -443,6 +490,13 @@ class FuturesForecastOrchestrator:
         }
 
     def _normalize_result(self, name: str, result: Mapping[str, Any], request: dict[str, Any]) -> dict[str, Any]:
+        if result.get("status") in ("UNAVAILABLE", "DISABLED", "ERROR"):
+            return {
+                "status": "UNAVAILABLE",
+                "reason": str(result.get("reason") or "DISABLED_BY_CONFIGURATION"),
+                "source_bar_timestamp": request["source_bar_timestamp"],
+                "execution_influence": "ZERO",
+            }
         generated = self.clock().astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
         if name == "kronos":
             path = validate_ohlc_path(result.get("representative_path") or [], self.HORIZON)

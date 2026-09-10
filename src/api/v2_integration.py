@@ -1011,8 +1011,7 @@ class V2DashboardIntegration:
                 "last_updated":datetime.now(timezone.utc).isoformat(),"source_last_updated":source_last_updated,
                 "fail_closed":True,"authoritative":authoritative, **lineage}
 
-    @staticmethod
-    def _lineage(name, data):
+    def _lineage(self, name, data):
         value = data if isinstance(data, dict) else {}
         input_metadata = value.get("input_metadata") if isinstance(value.get("input_metadata"), dict) else {}
         runtime = value.get("runtime") if isinstance(value.get("runtime"), dict) else {}
@@ -1135,7 +1134,7 @@ class V2DashboardIntegration:
             backend_online=True,
             session_calendar_status=value.get("session") if isinstance(value, dict) else None,
             safety_status=value.get("risk") if isinstance(value, dict) else None,
-            deployments_status=value.get("strategy_lab", {}).get("strategies") if isinstance(value.get("strategy_lab"), dict) else None,
+            deployments_status=self._strategy_lab_cache.get("strategies") if isinstance(self._strategy_lab_cache, dict) else None,
             intelligence_modules=value if isinstance(value, dict) else None,
         )
         return {

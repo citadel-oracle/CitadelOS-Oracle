@@ -1,4 +1,98 @@
-import type { OracleOptionDisplay } from '@/dashboard/store/oracleStore'
+import type { OracleHorsepowerEvent, OracleOptionDisplay } from '@/dashboard/store/oracleStore'
+
+type JsonRecord = Record<string, unknown>
+
+const asRecord = (value: unknown): JsonRecord => value !== null && typeof value === 'object' && !Array.isArray(value)
+  ? value as JsonRecord
+  : {}
+const asNumber = (value: unknown): number | null => typeof value === 'number' && Number.isFinite(value) ? value : null
+
+const distanceToZone = (spot: number | null, low: number, high: number): number | null => {
+  if (spot === null) return null
+  if (spot < low) return Number((low - spot).toFixed(2))
+  if (spot > high) return Number((spot - high).toFixed(2))
+  return 0
+}
+
+const displayZone = (raw: JsonRecord, spot: number | null): JsonRecord | null => {
+  const low = asNumber(raw.zone_low)
+  const high = asNumber(raw.zone_high)
+  if (low === null || high === null) return null
+  const state = String(raw.state ?? raw.event ?? 'ACTIVE').toUpperCase()
+  const broken = state === 'SUPPORT_BROKEN' || state === 'RESISTANCE_BROKEN'
+    || state === 'SUPPORT_GONE' || state === 'RESISTANCE_OUT'
+  return {
+    zone_id: raw.zone_id,
+    timeframe: String(raw.timeframe ?? '').toLowerCase(),
+    role: raw.role ?? raw.zone_role,
+    zone_low: Math.min(low, high),
+    zone_high: Math.max(low, high),
+    status: broken ? 'BROKEN' : 'ACTIVE',
+    distance_points: distanceToZone(spot, Math.min(low, high), Math.max(low, high)),
+    source_candle_timestamp: raw.resolved_at ?? raw.broken_at ?? raw.confirmed_candle ?? raw.formed_at,
+    freshness: 'AVAILABLE',
+  }
+}
+
+const closestZone = (rows: JsonRecord[], role: 'SUPPORT' | 'RESISTANCE', spot: number | null): JsonRecord | null => {
+  const candidates = rows
+    .filter((row) => String(row.role ?? row.zone_role).toUpperCase() === role)
+    .map((row) => displayZone(row, spot))
+    .filter((row): row is JsonRecord => row !== null)
+  const active = candidates.filter((row) => row.status !== 'BROKEN')
+  const eligible = active.length ? active : candidates
+  return eligible.sort((left, right) => (asNumber(left.distance_points) ?? Number.MAX_VALUE) - (asNumber(right.distance_points) ?? Number.MAX_VALUE))[0] ?? null
+}
+
+/** Adapts canonical Fast Lane NIFTY Horsepower geometry for the legacy VOB view. */
+export function canonicalNiftyVobPresentation(value: unknown, legacyValue?: unknown): JsonRecord {
+  const projection = asRecord(value)
+  const horsepower = asRecord(projection.nifty_horsepower)
+  if (Object.keys(horsepower).length === 0 || horsepower.status === 'UNAVAILABLE') return asRecord(legacyValue)
+
+  const canonicalMarket = asRecord(projection.canonical_market)
+  const spot = asNumber(canonicalMarket.reference_price)
+  const structureZones = Array.isArray(horsepower.structure_zones)
+    ? horsepower.structure_zones.map(asRecord)
+    : Array.isArray(horsepower.session_ledger) ? horsepower.session_ledger.map(asRecord) : []
+  const events = Array.isArray(horsepower.events) ? horsepower.events.map(asRecord) : []
+  const timeframes: JsonRecord = {}
+
+  for (const timeframe of ['1m', '3m', '5m']) {
+    const laneZones = structureZones.filter((row) => String(row.timeframe).toLowerCase() === timeframe)
+    const laneEvents = [...events].reverse().filter((row) => String(row.timeframe).toLowerCase() === timeframe)
+    const support = closestZone(laneZones, 'SUPPORT', spot) ?? closestZone(laneEvents, 'SUPPORT', spot)
+    const resistance = closestZone(laneZones, 'RESISTANCE', spot) ?? closestZone(laneEvents, 'RESISTANCE', spot)
+    const sourceLane = asRecord(asRecord(horsepower.timeframes)[timeframe])
+    timeframes[timeframe] = {
+      ...sourceLane,
+      current_nifty_price: spot,
+      nearest_bullish_support: support,
+      nearest_bearish_resistance: resistance,
+    }
+  }
+
+  const five = asRecord(timeframes['5m'])
+  const three = asRecord(timeframes['3m'])
+  const one = asRecord(timeframes['1m'])
+  const recentEvents = [...events].reverse().slice(0, 8).map((row) => ({
+    role: row.zone_role,
+    status: row.event,
+    broken_at: row.confirmed_candle,
+  }))
+  return {
+    status: 'AVAILABLE',
+    market_input_state: 'AVAILABLE',
+    symbol: horsepower.instrument ?? 'NIFTY',
+    current_nifty_spot: spot,
+    nearest_support: five.nearest_bullish_support ?? three.nearest_bullish_support ?? one.nearest_bullish_support,
+    nearest_resistance: five.nearest_bearish_resistance ?? three.nearest_bearish_resistance ?? one.nearest_bearish_resistance,
+    source_1m_sync: { runtime_status: 'AVAILABLE' },
+    timeframes,
+    recently_broken: recentEvents,
+    horsepower,
+  }
+}
 
 export type PnlTone = 'positive' | 'negative' | 'neutral'
 export type AuraTone = 'watching' | 'building' | 'ready' | 'positive' | 'negative' | 'neutral' | 'target' | 'failed'
@@ -119,6 +213,19 @@ export function trackATradeAlert(previous: TrackATradeFrame | null, current: Tra
     return { kind: 'EXIT', key: `${current.tradeId}|EXIT|${current.exitTime}`, title: 'EXIT TRIGGER', detail, reason, tone: 'negative' }
   }
   return null
+}
+
+export function horsepowerAlert(event: OracleHorsepowerEvent): SemanticAlert {
+  const positive = event.event === 'RESISTANCE_OUT' || event.event === 'SUPPORT_BACK'
+  const title = `${event.instrument} ${event.timeframe} · ${event.event.replaceAll('_', ' ')}`
+  return {
+    kind: positive ? 'READY' : 'BROKEN',
+    key: event.eventId,
+    title,
+    detail: `ZONE ${event.zoneId} · CLOSE ${event.close ?? '—'}`,
+    reason: `CONFIRMED CANDLE ${event.confirmedCandle}`,
+    tone: positive ? 'positive' : 'negative',
+  }
 }
 
 export function acceptSemanticEvent(seen: Set<string>, event: SemanticAlert | null): boolean {

@@ -1,0 +1,670 @@
+/* ==========================================================================
+   CITADEL LIVE ISLAND — PRODUCTION STYLESHEET
+   100% Authentic CITADEL / Oracle Visual DNA
+   90% Neutral Obsidian Substrate + 10% Controlled Master Spine Bias
+   Separated Visual Channels: numericTrend vs eventBias vs spineBias
+   Authoritative Baseline: citadel_live_island_final_refinement/final-island.css
+   ========================================================================== */
+
+:root {
+  /* Master Spike Spine Theme Variables (90% Neutral Black Substrate + 10% Controlled Bias) */
+  --live-island-line-bear: #4a1b25;
+  --live-island-line-bear-soft: #2a0c15;
+  --live-island-line-bull: #1c3826;
+  --live-island-line-bull-soft: #0e2217;
+
+  --live-island-red: #ff1447;
+  --live-island-red-hi: #ff5c82;
+  --live-island-red-dim: #7b1530;
+  --live-island-green: #4ade80;
+  --live-island-green-hi: #86efac;
+  --live-island-green-dim: #245c3d;
+  --live-island-amber: #f59e0b;
+  --live-island-cyan: #00f0ff;
+
+  --live-island-ivory: #f3f1ee;
+  --live-island-text-mid: #b8b3b6;
+  --live-island-text-lo: #7a7376;
+
+  --spine-keyline: rgba(255, 20, 71, 0.32);
+  --spine-keyline-soft: rgba(255, 20, 71, 0.14);
+  --spine-specular: rgba(255, 92, 130, 0.36);
+  --spine-glow: rgba(255, 20, 71, 0.05);
+  --spine-bias-pip: #ff1447;
+
+  --island-substrate: rgba(10, 5, 7, 0.96);
+  --island-substrate-hi: rgba(15, 7, 10, 0.98);
+  --island-shadow: 0 8px 28px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.5);
+
+  --spring-fluid: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring-snappy: cubic-bezier(0.2, 1, 0.25, 1);
+  --spring-elastic: cubic-bezier(0.34, 1.25, 0.64, 1);
+
+  --rate-energy-duration: 1400ms;
+  --rate-energy-direction: normal;
+}
+
+[data-spine="bull"], .spine-bull {
+  --spine-keyline: rgba(74, 222, 128, 0.32);
+  --spine-keyline-soft: rgba(74, 222, 128, 0.14);
+  --spine-specular: rgba(134, 239, 172, 0.36);
+  --spine-glow: rgba(74, 222, 128, 0.05);
+  --spine-bias-pip: #4ade80;
+  --island-substrate: rgba(5, 10, 7, 0.96);
+  --island-substrate-hi: rgba(7, 16, 10, 0.98);
+}
+
+[data-spine="bear"], .spine-bear {
+  --spine-keyline: rgba(255, 20, 71, 0.32);
+  --spine-keyline-soft: rgba(255, 20, 71, 0.14);
+  --spine-specular: rgba(255, 92, 130, 0.36);
+  --spine-glow: rgba(255, 20, 71, 0.05);
+  --spine-bias-pip: #ff1447;
+  --island-substrate: rgba(10, 5, 7, 0.96);
+  --island-substrate-hi: rgba(15, 7, 10, 0.98);
+}
+
+/* ==========================================================================
+   Island Anchor Stage
+   ========================================================================== */
+.island-stage {
+  position: relative;
+  width: 100%;
+  padding: 0 0 6px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.island-interactive-zone {
+  pointer-events: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.island-cluster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  position: relative;
+  transition: all 420ms var(--spring-fluid);
+}
+
+.island-cluster.spine-transitioning .oracle-island-pill {
+  animation: spineMaterialMorph 460ms var(--spring-fluid);
+}
+
+@keyframes spineMaterialMorph {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.2) saturate(0.3); border-color: rgba(243, 241, 238, 0.4); }
+  100% { filter: brightness(1); }
+}
+
+/* ==========================================================================
+   DYNAMIC ISLAND SILHOUETTE & BASE PILL
+   Hero: 26px capsule radius. Companions: 18px capsule radius.
+   ========================================================================== */
+.oracle-island-pill {
+  position: relative;
+  background: var(--island-substrate);
+  border: 1px solid var(--spine-keyline);
+  box-shadow: var(--island-shadow), 0 0 20px var(--spine-glow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  cursor: default;
+  transition: 
+    width 440ms var(--spring-fluid),
+    height 440ms var(--spring-fluid),
+    transform 440ms var(--spring-fluid),
+    border-color 340ms ease,
+    background 340ms ease,
+    box-shadow 340ms ease,
+    opacity 300ms ease;
+  overflow: hidden;
+  will-change: transform, width, height;
+}
+
+/* Hero Living Capsule */
+.oracle-island-hero {
+  height: 60px;
+  min-width: 440px;
+  border-radius: 26px;
+  padding: 0 20px;
+  background: var(--island-substrate-hi);
+  z-index: 20;
+}
+
+/* Restrained Specular Chamfer */
+.oracle-island-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    var(--spine-specular) 40%, 
+    var(--spine-keyline) 70%, 
+    transparent 100%);
+  pointer-events: none;
+  transition: background 340ms ease;
+}
+
+/* Master Spike Spine Status Pip */
+.spine-bias-pip {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--spine-bias-pip);
+  box-shadow: 0 0 8px var(--spine-bias-pip);
+  flex-shrink: 0;
+}
+
+/* Burst Coalescing Counter */
+.burst-counter-badge {
+  font-family: var(--font-oracle-data, monospace);
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: rgba(243, 241, 238, 0.12);
+  border: 1px solid rgba(243, 241, 238, 0.25);
+  color: var(--live-island-ivory);
+  margin-left: 6px;
+  animation: burstFadeIn 1000ms var(--spring-snappy) forwards;
+}
+
+@keyframes burstFadeIn {
+  0% { opacity: 0; transform: scale(0.8); }
+  25% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Contradiction Without Heavy Badges */
+.split-bias-notch {
+  display: inline-flex;
+  width: 4px;
+  height: 12px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--live-island-green) 0%, var(--live-island-green) 50%, var(--live-island-red) 50%, var(--live-island-red) 100%);
+  margin-left: 6px;
+  box-shadow: 0 0 6px rgba(255, 20, 71, 0.5);
+  vertical-align: middle;
+  position: relative;
+  cursor: help;
+}
+
+.split-bias-notch::after {
+  content: 'Opposes current Spike Spine bias';
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 5, 7, 0.95);
+  border: 1px solid var(--live-island-red);
+  color: var(--live-island-red-hi);
+  font-family: var(--font-oracle-data, monospace);
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+  z-index: 50;
+}
+
+.split-bias-notch:hover::after {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   EVENT BIAS SEMANTIC COLOR CHANNELS
+   ========================================================================== */
+.bias-bearish { color: var(--live-island-red); }
+.bias-bearish.with-shadow { text-shadow: 0 0 10px rgba(255, 20, 71, 0.45); }
+
+.bias-bullish { color: var(--live-island-green); }
+.bias-bullish.with-shadow { text-shadow: 0 0 10px rgba(74, 222, 128, 0.45); }
+
+.bias-neutral { color: var(--live-island-ivory); }
+.bias-neutral.with-shadow { text-shadow: 0 0 8px rgba(243, 241, 238, 0.35); }
+
+.bias-risk { color: var(--live-island-amber); }
+.bias-risk.with-shadow { text-shadow: 0 0 10px rgba(245, 158, 11, 0.45); }
+
+/* Status Orbs strictly mapped to eventBias */
+.event-bias-orb {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.event-bias-orb.orb-bearish { background: var(--live-island-red); box-shadow: 0 0 6px var(--live-island-red); }
+.event-bias-orb.orb-bullish { background: var(--live-island-green); box-shadow: 0 0 6px var(--live-island-green); }
+.event-bias-orb.orb-neutral { background: var(--live-island-cyan); box-shadow: 0 0 6px rgba(0, 240, 255, 0.8); }
+.event-bias-orb.orb-risk { background: var(--live-island-amber); box-shadow: 0 0 6px var(--live-island-amber); }
+
+/* ==========================================================================
+   HERO ARCHETYPES (<1s Parse)
+   ========================================================================== */
+.hero-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
+}
+
+.hero-left-cluster {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.hero-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.hero-headline-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-main-title {
+  font-family: var(--font-oracle-display, sans-serif);
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--live-island-ivory);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.hero-state-short {
+  font-family: var(--font-oracle-body, sans-serif);
+  font-size: 11px;
+  color: var(--live-island-text-mid);
+  white-space: nowrap;
+}
+
+/* RATE Kinetic Energy Keyword */
+.semantic-rate-kw {
+  font-weight: 600;
+  background: linear-gradient(90deg, var(--live-island-text-mid) 0%, var(--live-island-ivory) 25%, var(--live-island-red-hi) 50%, var(--live-island-red) 75%, var(--live-island-text-mid) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rateSweep var(--rate-energy-duration, 1400ms) linear infinite var(--rate-energy-direction, normal);
+}
+
+@keyframes rateSweep {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ARCHETYPE A: SCALAR SHOCK (VIX, PCR, etc.) */
+.scalar-stage {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-oracle-data, monospace);
+}
+
+.scalar-old-val {
+  font-size: 13px;
+  color: var(--live-island-text-lo);
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.scalar-arrow {
+  color: var(--live-island-text-mid);
+  font-size: 11px;
+}
+
+.scalar-new-val {
+  font-size: 17.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.scalar-rate-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(243, 241, 238, 0.08);
+  margin-left: 4px;
+}
+
+/* ARCHETYPE B: POLARITY FLIP (GEX + -> 0 -> -) */
+.polarity-stage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-oracle-data, monospace);
+}
+
+.polarity-pole {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pole-label {
+  font-size: 9px;
+  color: var(--live-island-text-lo);
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.pole-val {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.polarity-pole.pole-prev {
+  opacity: 0.45;
+  transform: scale(0.92);
+}
+
+.polarity-crossing-track {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  width: 48px;
+}
+
+.polarity-track-line {
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, var(--live-island-green-dim) 0%, var(--live-island-text-lo) 50%, var(--live-island-red-dim) 100%);
+  border-radius: 1px;
+}
+
+.polarity-zero-pip {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--live-island-ivory);
+  box-shadow: 0 0 8px rgba(243, 241, 238, 0.8);
+  font-size: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  font-weight: 900;
+}
+
+.polarity-pole.pole-curr {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+/* ARCHETYPE C: DUAL-SIDED SHIFT (Option OI Shift) */
+.dual-sided-stage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-oracle-data, monospace);
+}
+
+.dual-side-box {
+  display: flex;
+  flex-direction: column;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(16, 7, 11, 0.6);
+  border: 1px solid var(--live-island-line-bear-soft);
+  transition: all 340ms var(--spring-fluid);
+}
+
+.dual-side-box.is-dominant {
+  background: rgba(255, 20, 71, 0.12);
+  border-color: var(--live-island-red);
+  box-shadow: 0 0 10px rgba(255, 20, 71, 0.25);
+  transform: scale(1.04);
+}
+
+.dual-flow-bridge {
+  display: flex;
+  align-items: center;
+  color: var(--live-island-red-hi);
+  font-size: 13px;
+  animation: bridgeFlowPulse 700ms ease-in-out infinite alternate;
+}
+
+@keyframes bridgeFlowPulse {
+  0% { transform: translateX(0); opacity: 0.5; }
+  100% { transform: translateX(4px); opacity: 1; text-shadow: 0 0 8px var(--live-island-red); }
+}
+
+/* ARCHETYPE D: LEVEL MIGRATION (Max Pain) */
+.level-stage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-oracle-data, monospace);
+}
+
+.level-old-strike {
+  font-size: 13px;
+  color: var(--live-island-text-lo);
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.level-pin-icon {
+  color: var(--live-island-cyan);
+  font-size: 11px;
+}
+
+.level-new-strike {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--live-island-ivory);
+}
+
+/* ARCHETYPE E: ONE-SHOT IMPULSE (Gamma Blast) */
+.impulse-stage {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-oracle-data, monospace);
+}
+
+.oracle-island-hero.is-impulse-active {
+  animation: oneShotBlast 320ms var(--spring-snappy) forwards;
+}
+
+@keyframes oneShotBlast {
+  0% { transform: scale(0.96); }
+  50% { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+
+/* ==========================================================================
+   SATELLITE COMPANIONS
+   ========================================================================== */
+.island-satellites-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: gap 300ms var(--spring-fluid);
+}
+
+.oracle-island-companion {
+  height: 36px;
+  border-radius: 18px;
+  padding: 0 14px;
+  background: var(--island-substrate);
+  border: 1px solid var(--spine-keyline-soft);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: auto;
+  min-width: 0;
+  cursor: pointer;
+  transition: all 360ms var(--spring-fluid);
+  animation: satelliteSpawn 400ms var(--spring-elastic) forwards;
+}
+
+@keyframes satelliteSpawn {
+  0% { opacity: 0; transform: translateY(-8px) scale(0.92); }
+  60% { transform: translateY(2px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.satellite-title {
+  font-family: var(--font-oracle-display, sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--live-island-text-mid);
+  white-space: nowrap;
+}
+
+.satellite-val {
+  font-family: var(--font-oracle-data, monospace);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.oracle-island-companion.phase-hot {
+  border-color: var(--spine-keyline);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.75);
+}
+
+.oracle-island-companion.phase-settled {
+  border-color: var(--spine-keyline-soft);
+}
+
+/* ==========================================================================
+   MEMORY PLANE (Temporal Footprints)
+   ========================================================================== */
+.island-memory-plane {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 2px;
+  transition: all 360ms var(--spring-fluid);
+}
+
+.temporal-memory-footprint {
+  height: 22px;
+  border-radius: 11px;
+  padding: 0 9px;
+  background: rgba(10, 5, 7, 0.35);
+  border: 1px solid rgba(243, 241, 238, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  opacity: 0.42;
+  filter: blur(0.2px);
+  transform: scale(0.96);
+  cursor: pointer;
+  transition: all 360ms ease;
+  animation: memoryEchoEnter 420ms var(--spring-fluid) forwards;
+}
+
+@keyframes memoryEchoEnter {
+  0% { opacity: 0; transform: translateY(-4px) scale(0.9); }
+  100% { opacity: 0.42; transform: translateY(0) scale(0.96); }
+}
+
+.footprint-title {
+  font-family: var(--font-oracle-display, sans-serif);
+  font-size: 9.5px;
+  color: var(--live-island-text-lo);
+}
+
+.footprint-val {
+  font-family: var(--font-oracle-data, monospace);
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--live-island-text-mid);
+}
+
+/* Hover Inspection Mode */
+.island-interactive-zone:hover .island-satellites-cluster {
+  gap: 11px;
+}
+
+.island-interactive-zone:hover .temporal-memory-footprint {
+  opacity: 0.65;
+  filter: blur(0px);
+  transform: scale(1);
+}
+
+/* ==========================================================================
+   Island Alert Toggle & Heuristic Participant Badge
+   ========================================================================== */
+.island-alert-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-family: var(--font-oracle-display, sans-serif);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--live-island-text-mid);
+  cursor: pointer;
+  transition: all 200ms ease;
+  user-select: none;
+}
+
+.island-alert-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.island-alert-toggle.alert-active {
+  background: rgba(0, 240, 255, 0.12);
+  border-color: rgba(0, 240, 255, 0.4);
+  color: var(--live-island-cyan);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+}
+
+.island-alert-icon {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.heuristic-participant-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: var(--live-island-amber);
+}

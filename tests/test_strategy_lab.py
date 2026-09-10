@@ -215,6 +215,28 @@ def test_empty_dashboard_does_not_fabricate_strategies_or_results(tmp_path):
     assert dashboard["summary"]["completed_paper_trades"] == 0
 
 
+@pytest.mark.unit
+def test_live_publication_uses_prepared_options_and_skips_nifty_rebuild(tmp_path):
+    service = StrategyLabService(str(tmp_path / "live-publication"))
+    prepared_options = {
+        "status": "LIVE",
+        "revision": 17,
+        "contracts": {"CE": {"security_id": "101"}},
+    }
+
+    dashboard = service.dashboard(
+        live_publication=True,
+        prepared_options_structure=prepared_options,
+    )
+
+    execution = dashboard["execution"]
+    assert execution["options_structure"] == prepared_options
+    assert execution["nifty_vob"]["status"] == "UNAVAILABLE"
+    assert execution["nifty_vob"]["reason"] == "PREPARED_NIFTY_VOB_NOT_PUBLISHED"
+    assert execution["paper_only"] is True
+    assert execution["broker_submission"] is False
+
+
 def test_dashboard_builds_one_request_scoped_strategy_and_paper_snapshot(tmp_path, monkeypatch):
     service = StrategyLabService(str(tmp_path / "lab"))
     service.deploy(request("single-snapshot"))

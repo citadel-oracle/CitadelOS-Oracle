@@ -441,3 +441,25 @@ def test_dhan_history_error_payload_never_reports_success(monkeypatch):
     assert result["success"] is False
     assert result["candles"] == []
     assert result["error"] == "DH-901:credentials rejected"
+
+
+def test_dhan_intraday_history_projects_requested_open_interest(monkeypatch):
+    client = DhanClient(access_token="test", client_id="test")
+    captured = {}
+
+    def fake_post(_endpoint, payload):
+        captured.update(payload)
+        return {
+            "open": [10.0], "high": [11.0], "low": [9.0], "close": [10.5],
+            "volume": [100.0], "timestamp": [1_787_802_300.0], "open_interest": [12_345.0],
+        }
+
+    monkeypatch.setattr(client, "_post", fake_post)
+    result = client.get_intraday_candles(
+        "NSE_FNO", "46993", instrument="OPTIDX", include_oi=True,
+        from_date="2026-08-27", to_date="2026-08-27",
+    )
+
+    assert captured["oi"] is True
+    assert result["success"] is True
+    assert result["candles"][0]["open_interest"] == 12_345.0

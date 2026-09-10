@@ -354,17 +354,24 @@ class OptionsStructureEngine:
                 self._number(contract.get("premium")) or completed_premium
             )
             trend = self._trend(five)
+            # The exact-contract view must retain its own identity.  All three
+            # public lanes are derived from this one canonical 1m history;
+            # 3m/5m are completed, session-aligned resamples above.
             engine = NiftyVOBEngine(
                 persistence_path=self.state_root
-                / f"prime_vob_{side}_{security_id}_3m.json"
+                / f"prime_vob_{side}_{security_id}.json"
             )
-            raw_vob = engine.analyze_timeframe(
-                timeframe="3m",
-                candles=three,
-                current_nifty_price=completed_premium,
-                now=observed,
-            )
-            structure = self._classify_structure(raw_vob, three, normalized)
+            rows_by_timeframe = {"1m": one_minute, "3m": three, "5m": five}
+            structures: dict[str, dict[str, Any]] = {}
+            for timeframe, rows in rows_by_timeframe.items():
+                raw_vob = engine.analyze_timeframe(
+                    timeframe=timeframe,
+                    candles=rows,
+                    current_nifty_price=float(rows[-1]["close"]),
+                    now=observed,
+                )
+                structures[timeframe] = self._classify_structure(raw_vob, rows, normalized)
+            structure = structures["3m"]
             demand = structure.get("demand")
             supply = structure.get("supply")
             latest = five[-1]
@@ -436,6 +443,7 @@ class OptionsStructureEngine:
                     ),
                     "evaluated_through": structure.get("evaluated_through"),
                 },
+                "vob_timeframes": deepcopy(structures),
                 "pullback_state": pullback_state,
                 "active_levels": active_levels,
                 "completed_5m_timestamp": latest.get("timestamp"),
@@ -843,6 +851,7 @@ class OptionsStructureEngine:
     ) -> dict[str, Any]:
         support = self._zone(raw.get("nearest_bullish_support"), contract)
         resistance = self._zone(raw.get("nearest_bearish_resistance"), contract)
+        ladder = [self._zone(zone, contract) for zone in raw.get("zone_ladder") or []]
         broken = [self._zone(zone, contract) for zone in raw.get("recently_broken") or []]
         supply_break = next((zone for zone in broken if zone and zone.get("role") == "RESISTANCE"), None)
         demand_break = next((zone for zone in broken if zone and zone.get("role") == "SUPPORT"), None)
@@ -866,6 +875,20 @@ class OptionsStructureEngine:
             # All V2 intelligence modules identify a completed 5-minute
             # decision boundary by its exchange bucket-open timestamp.
             evaluated_through = candles[-1].get("timestamp")
+        session_date = str(candles[-1].get("timestamp") or "")[:10] if candles else ""
+        session_bars = [
+            {
+                "timestamp": row.get("timestamp") or row.get("time"),
+                "candle_closed_at": row.get("candle_closed_at") or row.get("timestamp") or row.get("time"),
+                "close": float(row["close"]),
+                "finalized": bool(row.get("closed", row.get("is_closed", True))),
+            }
+            for row in candles
+            if (
+                str(row.get("timestamp") or row.get("time") or "")[:10] == session_date
+                and "09:15" <= str(row.get("timestamp") or row.get("time") or "")[11:16] <= "15:29"
+            )
+        ]
         return {
             "timeframe": raw.get("timeframe"), "state": state, "reason": reason,
             "premium": premium, "demand": support, "supply": resistance,
@@ -874,6 +897,11 @@ class OptionsStructureEngine:
             "bullish_retest": bullish_retest, "bearish_retest": bearish_retest,
             "evaluated_through": evaluated_through,
             "completed_bucket": bool(candles),
+            "latest_finalized_bar": deepcopy(raw.get("latest_finalized_bar")),
+            # Additive observer input only. The VOB reversal projection strips
+            # this bounded session history before Fast Lane publication.
+            "session_finalized_bars": session_bars,
+            "zone_ladder": [zone for zone in ladder if zone],
         }
 
     def _vob_wheel(self, structures: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:

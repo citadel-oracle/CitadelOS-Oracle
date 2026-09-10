@@ -1699,7 +1699,7 @@ function DevelopmentPaperPanel({ data }: { data: DevelopmentDashboard }) {
             <span>Why Not Trade</span>
             {whyNotTrade.length ? <ul>{whyNotTrade.map((reason) => <li key={reason}>{humanize(reason)}</li>)}</ul> : <p>No rejection reasons recorded.</p>}
           </div>
-          <div className="development-veto-row"><span>Hard vetoes</span><strong>{decision?.hard_vetoes.length ? decision.hard_vetoes.map(humanize).join(', ') : 'None'}</strong></div>
+          <div className="development-veto-row"><span>Hard vetoes</span><strong>{decision?.hard_vetoes?.length ? decision.hard_vetoes.map(humanize).join(', ') : 'None'}</strong></div>
         </section>
 
         <section className="development-panel-group" aria-label="Development paper state and evidence">
@@ -2103,8 +2103,8 @@ function TradingWorkspace(props: {
       }
     }),
   ].sort((left, right) => left.priority - right.priority || right.occurredAt.localeCompare(left.occurredAt)).slice(0, 6)
-  const completedTimelineTrades = execution?.closed_trades.length ?? 0
-  const timelineNet = execution?.closed_trades.reduce((sum, trade) => sum + (trade.realized_pnl ?? trade.pnl ?? 0), 0) ?? 0
+  const completedTimelineTrades = execution?.closed_trades?.length ?? 0
+  const timelineNet = execution?.closed_trades?.reduce((sum, trade) => sum + (trade.realized_pnl ?? trade.pnl ?? 0), 0) ?? 0
   const timelineDate = lifecycleCards[0]?.occurredAt
     ? new Date(lifecycleCards[0].occurredAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()
     : 'CURRENT SESSION'
@@ -2507,8 +2507,8 @@ function TradingWorkspace(props: {
       <details className={`panel workspace-diagnostics ${workspaceStyles.diagnostics}`}>
         <summary><span>Advanced Diagnostics</span><small>Engineering and debug information</small></summary>
         <div className="workspace-diagnostics-grid">
-          <article><span>Evidence</span><strong>{formatInteger(review?.evidence.length ?? 0)}</strong></article>
-          <article><span>Replay</span><strong>{formatInteger(review?.replay.length ?? 0)}</strong></article>
+          <article><span>Evidence</span><strong>{formatInteger(review?.evidence?.length ?? 0)}</strong></article>
+          <article><span>Replay</span><strong>{formatInteger(review?.replay?.length ?? 0)}</strong></article>
           <article><span>OMS Diagnostics</span><strong>{formatInteger(execution?.order_count ?? 0)} orders · {formatInteger(execution?.fill_count ?? 0)} fills</strong></article>
           <article><span>Runtime IDs</span><strong>{deployments.map((strategy) => strategy.strategy_id).join(' · ')}</strong></article>
           <article><span>Latency</span><strong>{deployments.some((strategy) => typeof strategy.latency_ms === 'number') ? `${formatNumber(deployments.reduce((sum, strategy) => sum + (strategy.latency_ms ?? 0), 0) / deployments.filter((strategy) => typeof strategy.latency_ms === 'number').length)} ms average` : 'Not reported'}</strong></article>

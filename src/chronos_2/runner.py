@@ -9,15 +9,13 @@ import os
 import time
 from pathlib import Path
 
-import pandas as pd
-from chronos import Chronos2Pipeline
-
-
 QUANTILE_COLUMNS = (("0.1", "p10"), ("0.25", "p25"), ("0.5", "p50"), ("0.75", "p75"), ("0.9", "p90"))
 
 
 class PersistentChronosModel:
     def __init__(self, model_path, device):
+        from chronos import Chronos2Pipeline
+
         started = time.perf_counter()
         self.pipeline = Chronos2Pipeline.from_pretrained(str(model_path), device_map=device, local_files_only=True)
         self.load_duration_ms = (time.perf_counter() - started) * 1000
@@ -96,6 +94,8 @@ def main():
     parser.add_argument("--device", default="cpu", choices=("cpu", "mps"))
     parser.add_argument("--stdio", action="store_true")
     args = parser.parse_args()
+    if os.environ.get("CITADEL_CHRONOS_2_ENABLED", "0") != "1":
+        raise SystemExit("CHRONOS_2_DISABLED_BY_CONFIGURATION")
     if args.stdio:
         serve(Path(args.model_path), args.device)
         return

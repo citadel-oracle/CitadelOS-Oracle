@@ -1,7 +1,7 @@
 """ARGUS option-chain intelligence backed by live Dhan data."""
 
 from dataclasses import asdict, dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 from typing import Any, Optional
 from zoneinfo import ZoneInfo
 
@@ -150,6 +150,8 @@ class OptionChainSnapshot:
     atm_window: list[OptionStrikeSnapshot] = field(default_factory=list)
     strikes: list[OptionStrikeSnapshot] = field(default_factory=list)
     missing_fields: list[str] = field(default_factory=list)
+    source: str = "DHAN"
+    provider: str = "DHAN"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -157,10 +159,15 @@ class OptionChainSnapshot:
 
 class OptionChainEngine:
     EXCHANGE_TIMEZONE = ZoneInfo("Asia/Kolkata")
+    # NIFTY weekly contracts stop being the canonical "current" expiry once
+    # the regular NSE cash session has finished.  Dhan may continue to return
+    # the same calendar-date expiry after the close, but it must not keep
+    # feeding the CURRENT ITM projection into the next session.
+    REGULAR_SESSION_CLOSE = time(15, 30)
     MIN_PRICE_CHANGE = 0.05
     MIN_OI_CHANGE = 1
 
-    def __init__(self, dhan=None, baseline_store=None, now_provider=None):
+    def __init__(self, dhan=None, baseline_store=None, now_provider=None, upstox=None):
         self.dhan = dhan if dhan is not None else DhanClient()
         self.now_provider = now_provider or (
             lambda: datetime.now(self.EXCHANGE_TIMEZONE)
@@ -168,6 +175,14 @@ class OptionChainEngine:
         self.baseline_store = baseline_store or ArgusBaselineStore(
             now_provider=self.now_provider
         )
+        if upstox is not None:
+            self.upstox = upstox
+        else:
+            try:
+                from src.broker.upstox_client import UpstoxClient
+                self.upstox = UpstoxClient()
+            except Exception:
+                self.upstox = None
 
     def fetch_current_snapshot(
         self,
@@ -176,11 +191,10 @@ class OptionChainEngine:
         security_id,
         expiry=None,
     ):
-        selected_expiry = self._select_expiry(segment, security_id, expiry)
-        response = self.dhan.get_option_chain(
+        selected_expiry, response, source = self.fetch_raw_option_chain(
             segment=segment,
             security_id=security_id,
-            expiry=selected_expiry,
+            expiry=expiry,
         )
         return self.build_snapshot(
             symbol=symbol,
@@ -188,42 +202,216 @@ class OptionChainEngine:
             security_id=security_id,
             expiry=selected_expiry,
             response=response,
+            source=source,
         )
+
+    def fetch_raw_option_chain(self, segment, security_id, expiry=None):
+        """Attempts to fetch raw option chain from Dhan, falling back to Upstox on failure."""
+        dhan_error = None
+        if self.dhan:
+            try:
+                selected_expiry = self._select_expiry(segment, security_id, expiry)
+                response = self.dhan.get_option_chain(
+                    segment=segment,
+                    security_id=security_id,
+                    expiry=selected_expiry,
+                )
+                self._raise_for_dhan_error(response, "option chain")
+                return selected_expiry, response, "DHAN"
+            except Exception as err:
+                dhan_error = err
+
+        if self.upstox:
+            try:
+                from src.order_flow.instrument_mapping import CANONICAL_INDICES
+                underlying_key = CANONICAL_INDICES.get("NIFTY_SPOT", {}).get("upstox_key", "NSE_INDEX|Nifty 50")
+                selected_expiry = self._select_expiry_upstox(underlying_key, expiry)
+                raw_chain = self.upstox.get_option_chain(underlying_key, selected_expiry)
+                if not raw_chain:
+                    raise OptionChainDataError(
+                        f"Upstox returned empty option chain for {underlying_key} {selected_expiry}"
+                    )
+                response = self._convert_upstox_chain_to_dhan_format(raw_chain)
+                return selected_expiry, response, "UPSTOX"
+            except Exception as upstox_err:
+                if dhan_error:
+                    raise OptionChainDataError(
+                        f"Option chain fetch failed on both providers. Dhan: {dhan_error}; Upstox: {upstox_err}"
+                    ) from upstox_err
+                raise upstox_err
+
+        if dhan_error:
+            raise dhan_error
+        raise OptionChainDataError("No market data provider configured for option chain")
 
     def active_expiries(self, segment, security_id):
-        response = self.dhan.get_option_expiries(
-            segment=segment,
-            security_id=security_id,
-        )
-        self._raise_for_dhan_error(response, "expiry list")
-        expiries = response.get("data")
-        if not isinstance(expiries, list):
-            raise OptionChainDataError("Dhan expiry list returned no dates")
-
-        today = self._now().date()
-        active = []
-        for value in expiries:
+        dhan_error = None
+        if self.dhan:
             try:
-                parsed = date.fromisoformat(str(value))
-            except ValueError:
-                continue
-            if parsed >= today:
-                active.append(parsed.isoformat())
+                response = self.dhan.get_option_expiries(
+                    segment=segment,
+                    security_id=security_id,
+                )
+                self._raise_for_dhan_error(response, "expiry list")
+                expiries = response.get("data")
+                if not isinstance(expiries, list):
+                    raise OptionChainDataError("Dhan expiry list returned no dates")
+
+                first_active_date = self._first_active_expiry_date()
+                active = []
+                for value in expiries:
+                    try:
+                        parsed = date.fromisoformat(str(value))
+                    except ValueError:
+                        continue
+                    if parsed >= first_active_date:
+                        active.append(parsed.isoformat())
+                if not active:
+                    raise OptionChainDataError("Dhan returned no current or future expiry")
+                return sorted(set(active))
+            except Exception as err:
+                dhan_error = err
+
+        # Fallback to Upstox if Dhan failed or is unavailable
+        if self.upstox:
+            try:
+                from src.order_flow.instrument_mapping import CANONICAL_INDICES
+                underlying_key = CANONICAL_INDICES.get("NIFTY_SPOT", {}).get("upstox_key", "NSE_INDEX|Nifty 50")
+                return self._active_expiries_upstox(underlying_key)
+            except Exception as upstox_err:
+                if dhan_error:
+                    raise OptionChainDataError(
+                        f"Active expiries failed on both providers. Dhan: {dhan_error}; Upstox: {upstox_err}"
+                    ) from upstox_err
+                raise upstox_err
+
+        if dhan_error:
+            raise dhan_error
+        raise OptionChainDataError("No market data provider configured for option expiries")
+
+    def _active_expiries_upstox(self, underlying_key: str = "NSE_INDEX|Nifty 50") -> list[str]:
+        if not self.upstox:
+            raise OptionChainDataError("Upstox client not available for expiries")
+        contracts = self.upstox.get_option_contracts(underlying_key)
+        if not contracts:
+            raise OptionChainDataError(f"Upstox returned no contracts for {underlying_key}")
+        first_active_date = self._first_active_expiry_date()
+        active = []
+        for item in contracts:
+            exp = item.get("expiry")
+            if exp:
+                try:
+                    p = date.fromisoformat(str(exp))
+                    if p >= first_active_date:
+                        active.append(p.isoformat())
+                except ValueError:
+                    pass
         if not active:
-            raise OptionChainDataError("Dhan returned no current or future expiry")
+            raise OptionChainDataError("Upstox returned no current or future expiry")
         return sorted(set(active))
 
-    def build_snapshot(self, symbol, segment, security_id, expiry, response):
-        self._raise_for_dhan_error(response, "option chain")
+    def _select_expiry_upstox(self, underlying_key: str, requested: Optional[str]) -> str:
+        expiries = self._active_expiries_upstox(underlying_key)
+        if requested is None:
+            return expiries[0]
+        requested_value = str(requested)
+        if requested_value not in expiries:
+            raise InvalidOptionExpiryError(
+                f"Expiry {requested_value} is not active for underlying {underlying_key}"
+            )
+        return requested_value
+
+    @staticmethod
+    def _convert_upstox_chain_to_dhan_format(raw_chain: list[dict[str, Any]]) -> dict[str, Any]:
+        oc = {}
+        underlying_ltp = None
+        for item in raw_chain:
+            strike = item.get("strike_price")
+            if strike is None:
+                continue
+            if underlying_ltp is None and item.get("underlying_spot_price") is not None:
+                try:
+                    underlying_ltp = float(item["underlying_spot_price"])
+                except (ValueError, TypeError):
+                    pass
+
+            legs = {}
+            for side, key in (("ce", "call_options"), ("pe", "put_options")):
+                opt = item.get(key) or {}
+                md = opt.get("market_data") or {}
+                greeks = opt.get("option_greeks") or {}
+                sec_id = None
+                inst_key = opt.get("instrument_key", "")
+                if "|" in inst_key:
+                    try:
+                        sec_id = int(inst_key.split("|")[1])
+                    except (ValueError, IndexError):
+                        pass
+
+                iv_val = greeks.get("iv")
+                try:
+                    iv_val = float(iv_val) if iv_val is not None else 0.0
+                except (ValueError, TypeError):
+                    iv_val = 0.0
+
+                legs[side] = {
+                    "security_id": sec_id,
+                    "last_price": md.get("ltp"),
+                    "previous_close_price": md.get("close_price"),
+                    "oi": int(md.get("oi") or 0) if md.get("oi") is not None else 0,
+                    "previous_oi": int(md.get("prev_oi") or 0) if md.get("prev_oi") is not None else 0,
+                    "volume": int(md.get("volume") or 0) if md.get("volume") is not None else 0,
+                    "previous_volume": None,
+                    "average_price": None,
+                    "implied_volatility": iv_val,
+                    "greeks": {
+                        "delta": greeks.get("delta"),
+                        "gamma": greeks.get("gamma"),
+                        "theta": greeks.get("theta"),
+                        "vega": greeks.get("vega"),
+                    },
+                    "top_ask_price": md.get("ask_price"),
+                    "top_ask_quantity": int(md.get("ask_qty")) if md.get("ask_qty") is not None else None,
+                    "top_bid_price": md.get("bid_price"),
+                    "top_bid_quantity": int(md.get("bid_qty")) if md.get("bid_qty") is not None else None,
+                }
+            oc[str(strike)] = legs
+
+        return {
+            "status": "success",
+            "data": {
+                "last_price": underlying_ltp,
+                "oc": oc,
+            },
+        }
+
+    def is_active_expiry(self, expiry) -> bool:
+        """Whether an expiry may still back the CURRENT option-chain lane."""
+
+        try:
+            parsed = date.fromisoformat(str(expiry))
+        except (TypeError, ValueError):
+            return False
+        return parsed >= self._first_active_expiry_date()
+
+    def _first_active_expiry_date(self) -> date:
+        now = self._now()
+        if now.time() >= self.REGULAR_SESSION_CLOSE:
+            return now.date() + timedelta(days=1)
+        return now.date()
+
+    def build_snapshot(self, symbol, segment, security_id, expiry, response, source: str = "DHAN"):
+        if source == "DHAN":
+            self._raise_for_dhan_error(response, "option chain")
         data = response.get("data")
         if not isinstance(data, dict):
-            raise OptionChainDataError("Dhan option chain returned no data object")
+            raise OptionChainDataError(f"{source} option chain returned no data object")
 
         underlying_ltp = self._number(data.get("last_price"))
         raw_chain = data.get("oc")
         if underlying_ltp is None or not isinstance(raw_chain, dict) or not raw_chain:
             raise OptionChainDataError(
-                "Dhan option chain is missing underlying LTP or strike data"
+                f"{source} option chain is missing underlying LTP or strike data"
             )
 
         raw_strikes = []
@@ -340,20 +528,23 @@ class OptionChainEngine:
             atm_window=atm_window,
             strikes=strikes,
             missing_fields=sorted(missing_fields),
+            source=source,
+            provider=source,
         )
 
-    def prepare_snapshot_input(self, symbol, segment, security_id, expiry, response):
+    def prepare_snapshot_input(self, symbol, segment, security_id, expiry, response, source: str = "DHAN"):
         """Capture immutable provider/baseline input before CPU-only projection work."""
 
-        self._raise_for_dhan_error(response, "option chain")
+        if source == "DHAN":
+            self._raise_for_dhan_error(response, "option chain")
         data = response.get("data")
         if not isinstance(data, dict):
-            raise OptionChainDataError("Dhan option chain returned no data object")
+            raise OptionChainDataError(f"{source} option chain returned no data object")
         underlying_ltp = self._number(data.get("last_price"))
         raw_chain = data.get("oc")
         if underlying_ltp is None or not isinstance(raw_chain, dict) or not raw_chain:
             raise OptionChainDataError(
-                "Dhan option chain is missing underlying LTP or strike data"
+                f"{source} option chain is missing underlying LTP or strike data"
             )
 
         raw_strikes = []
@@ -370,7 +561,7 @@ class OptionChainEngine:
                 observations.append({"strike": strike, "side": side, "oi": values["oi"], "ltp": values["ltp"]})
             raw_strikes.append((strike, parsed_legs))
         if not raw_strikes:
-            raise OptionChainDataError("Dhan option chain contains no valid strikes")
+            raise OptionChainDataError(f"{source} option chain contains no valid strikes")
 
         raw_strikes.sort(key=lambda item: item[0])
         strike_values = [item[0] for item in raw_strikes]
@@ -384,6 +575,8 @@ class OptionChainEngine:
             "expiry": str(expiry), "underlying_ltp": underlying_ltp,
             "raw_strikes": raw_strikes, "missing_fields": sorted(missing_fields),
             "atm_strike": atm_strike, "fetched_at": fetched_at.isoformat(),
+            "source": source,
+            "provider": source,
             "baseline": {
                 "records": baseline.records,
                 "baseline_timestamp": baseline.baseline_timestamp,
@@ -437,6 +630,8 @@ class OptionChainEngine:
             pe_itm_strikes=strike_windows["pe_itm"], pe_otm_strikes=strike_windows["pe_otm"],
             totals=totals, walls=walls, dominance=dominance, verdict=verdict,
             atm_window=atm_window, strikes=strikes, missing_fields=prepared["missing_fields"],
+            source=prepared.get("source", "DHAN"),
+            provider=prepared.get("provider", prepared.get("source", "DHAN")),
         )
 
     def _select_expiry(self, segment, security_id, requested):
@@ -878,11 +1073,19 @@ class OptionChainEngine:
     def _raise_for_dhan_error(response, label):
         if not isinstance(response, dict):
             raise OptionChainDataError(f"Dhan {label} returned an invalid response")
+        if str(response.get("status", "")).lower() in ("failed", "failure", "error"):
+            error_details = response.get("data") or response.get("errorMessage") or response.get("error") or "status failure"
+            raise OptionChainDataError(f"Dhan {label} failed: {error_details}")
         data = response.get("data")
         if isinstance(data, dict):
             for k, v in data.items():
-                if isinstance(v, str) and ("too many requests" in v.lower() or "blocked" in v.lower()):
-                    raise OptionChainDataError(f"Dhan {label} rate limited: {v}")
+                if isinstance(v, str) and (
+                    "too many requests" in v.lower()
+                    or "blocked" in v.lower()
+                    or "authentication failed" in v.lower()
+                    or "invalid" in v.lower()
+                ):
+                    raise OptionChainDataError(f"Dhan {label} error: {v}")
         error = (
             response.get("errorMessage")
             or response.get("error")

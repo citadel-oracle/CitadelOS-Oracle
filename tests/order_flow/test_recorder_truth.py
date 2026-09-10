@@ -1,8 +1,10 @@
 import json
+import hashlib
 import time
 from threading import Event, Thread
 
 from src.order_flow.recorder import OrderFlowEvidenceRecorder
+from src.strategy_lab.storage import ImmutableStream
 
 
 def test_recorder_persists_explicit_accounting_and_true_queue_age(tmp_path):
@@ -70,3 +72,52 @@ def test_recorder_worker_failure_is_explicitly_visible(tmp_path):
     health = recorder.health()
     assert health["RECORDER_ALIVE"] is False
     assert health["RECORDER_LAST_ERROR"].startswith("RuntimeError:")
+
+
+def test_raw_hash_branch_rolls_to_preserved_segment_and_retries_batch(tmp_path):
+    raw_path = tmp_path / "raw_full_packets" / "2026-09-02.jsonl"
+    stream = ImmutableStream(raw_path)
+    first = stream.append("RAW_FULL_PACKET", {"session_id": "2026-09-02"}, idempotency_key="one")
+    stream.append("RAW_FULL_PACKET", {"session_id": "2026-09-02"}, idempotency_key="two")
+    branch_body = {
+        "event_type": "RAW_FULL_PACKET",
+        "recorded_at": "2026-09-02T08:00:00+00:00",
+        "payload": {"session_id": "2026-09-02"},
+        "idempotency_key": "branch",
+        "previous_hash": first["record_hash"],
+    }
+    canonical = json.dumps(branch_body, sort_keys=True, separators=(",", ":"), default=str)
+    branch_hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    with raw_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps({
+            "record_id": f"lab_{branch_hash[:24]}",
+            **branch_body,
+            "record_hash": branch_hash,
+        }, sort_keys=True, separators=(",", ":")) + "\n")
+    original = raw_path.read_bytes()
+
+    recorder = OrderFlowEvidenceRecorder(tmp_path, queue_size=8, batch_size=1, coalesce_ms=1)
+    recorder.start()
+    assert recorder._submit(
+        "RAW_FULL_PACKET",
+        {"session_id": "2026-09-02", "packet_receive_ns": time.perf_counter_ns()},
+        "after-rollover",
+        raw=True,
+    )
+    deadline = time.monotonic() + 5
+    while recorder.health()["write_count"] < 1 and time.monotonic() < deadline:
+        time.sleep(0.01)
+    recorder.stop()
+
+    health = recorder.health()
+    assert health["write_count"] == 1
+    assert health["RECORDER_LAST_ERROR"] is None
+    assert len(health["integrity_rollovers"]) == 1
+    quarantined = list(raw_path.parent.glob("2026-09-02.jsonl.quarantined-*"))
+    assert len(quarantined) == 1
+    assert quarantined[0].read_bytes() == original
+    active = ImmutableStream(raw_path)
+    assert active.verify() == {"valid": True, "records": 1, "failure_index": None}
+    assert active.read()[0]["idempotency_key"] == "after-rollover"
+    gap_types = [row["event_type"] for row in recorder.gaps.read()]
+    assert "ORDER_FLOW_RAW_STREAM_INTEGRITY_ROLLOVER" in gap_types

@@ -89,7 +89,7 @@ export const PhotonicResolverStrip = memo(function PhotonicResolverStrip({
         <div className={styles.resolverDividerCell}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
             <span className={styles.monoLabel}>CANONICAL ATM</span>
-            <span className={`${styles.pill} ${styles.pillMint}`} style={{ fontSize: '8px', padding: '2px 6px' }}>DHAN CHAIN</span>
+            <span className={`${styles.pill} ${styles.pillMint}`} style={{ fontSize: '8px', padding: '2px 6px' }}>UPSTOX CHAIN</span>
           </div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '20px', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>
             {formatNumber(atmStrike)}

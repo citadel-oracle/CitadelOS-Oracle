@@ -319,7 +319,8 @@ class OracleDevService:
         vob_engine,
         *,
         state_root: str | Path = "logs/oracle_dev",
-        clock=None
+        clock=None,
+        upstox=None,
     ):
         self.dhan = dhan
         self.argus_api = argus_api
@@ -327,6 +328,15 @@ class OracleDevService:
         self.vob_engine = vob_engine
         self.state_root = Path(state_root)
         self.clock = clock or (lambda: datetime.now(timezone.utc))
+
+        if upstox is None:
+            try:
+                from src.broker.upstox_client import UpstoxClient
+                self.upstox = UpstoxClient()
+            except Exception:
+                self.upstox = None
+        else:
+            self.upstox = upstox
 
         self.is_replay = None
         self.is_synthetic = None
@@ -347,10 +357,29 @@ class OracleDevService:
         self._producer_thread: Optional[threading.Thread] = None
         self._producer_stop = threading.Event()
         self._producer_refresh_requested = threading.Event()
+        self._producer_state_lock = threading.Lock()
+        self._producer_expected_completed_at: Optional[int] = None
+        self._producer_retry_deadline_monotonic: Optional[float] = None
+        self._producer_retry_due_monotonic: Optional[float] = None
+        self._producer_request_monotonic: Optional[float] = None
+        self._producer_request_count = 0
+        self._producer_retry_count = 0
+        self._producer_source_not_ready_count = 0
+        self._producer_request_to_wake_ms = deque(maxlen=4096)
+        self._producer_refresh_duration_ms = deque(maxlen=4096)
+        self._producer_last_request_at: Optional[str] = None
+        self._producer_last_wake_at: Optional[str] = None
+        self._producer_last_refresh_started_at: Optional[str] = None
+        self._producer_last_refresh_finished_at: Optional[str] = None
+        self._producer_last_completed_boundary: Optional[int] = None
         self._last_refresh_success: Optional[datetime] = None
         self._last_refresh_error: Optional[str] = None
         # Refresh interval (seconds) — 30s during market hours keeps data fresh
         self._producer_interval: float = 30.0
+        # A rollover fetch can precede Dhan's completed-candle availability.
+        # Retry only that pending finalized boundary at the existing 2.5s
+        # refresh TTL; the ordinary producer cadence remains unchanged.
+        self._producer_retry_interval: float = 2.5
 
         self._raw_spot_1m = []
         self._raw_fut_1m = []
@@ -449,9 +478,24 @@ class OracleDevService:
         self._price_action_submitter = submitter
         self._price_action_status_provider = status_provider
 
-    def request_chart_refresh(self) -> None:
+    def request_chart_refresh(self, expected_completed_at: Optional[int] = None) -> None:
         """Wake the existing producer; callers never fetch or analyze inline."""
 
+        now_monotonic = time.monotonic()
+        with self._producer_state_lock:
+            self._producer_request_count += 1
+            self._producer_request_monotonic = now_monotonic
+            self._producer_last_request_at = datetime.now(timezone.utc).isoformat()
+            if expected_completed_at is not None:
+                expected = int(expected_completed_at)
+                current = self._producer_expected_completed_at
+                self._producer_expected_completed_at = (
+                    expected if current is None else max(current, expected)
+                )
+                self._producer_retry_deadline_monotonic = (
+                    now_monotonic + self._producer_interval
+                )
+                self._producer_retry_due_monotonic = None
         self._producer_refresh_requested.set()
 
     def chart_data_snapshot(self, timeframe: str = "3m") -> ChartDataSnapshot:
@@ -484,6 +528,36 @@ class OracleDevService:
                 "snapshots": snapshots,
                 "last_error": self._price_action_last_error,
             }
+        with self._producer_state_lock:
+            expected = self._producer_expected_completed_at
+            producer = {
+                "interval_seconds": self._producer_interval,
+                "finalized_retry_interval_seconds": self._producer_retry_interval,
+                "refresh_requests": self._producer_request_count,
+                "finalized_retries": self._producer_retry_count,
+                "source_not_ready_count": self._producer_source_not_ready_count,
+                "expected_completed_at": (
+                    datetime.fromtimestamp(expected, tz=timezone.utc).isoformat()
+                    if expected is not None else None
+                ),
+                "last_completed_boundary": (
+                    datetime.fromtimestamp(
+                        self._producer_last_completed_boundary, tz=timezone.utc
+                    ).isoformat()
+                    if self._producer_last_completed_boundary is not None else None
+                ),
+                "last_request_at": self._producer_last_request_at,
+                "last_wake_at": self._producer_last_wake_at,
+                "last_refresh_started_at": self._producer_last_refresh_started_at,
+                "last_refresh_finished_at": self._producer_last_refresh_finished_at,
+                "request_to_wake_ms": self._percentiles(
+                    self._producer_request_to_wake_ms
+                ),
+                "refresh_duration_ms": self._percentiles(
+                    self._producer_refresh_duration_ms
+                ),
+            }
+        value["producer"] = producer
         if callable(self._price_action_status_provider):
             value["worker"] = self._price_action_status_provider()
         return value
@@ -800,10 +874,17 @@ class OracleDevService:
             or not normalized_ltt.event_session_accepted
         ):
             return
+        finalized_minute_boundary: Optional[int] = None
         with self._futures_chart_lock:
             previous = self._live_futures_tick
             if previous is not None and int(previous.get("ltt") or 0) > event_timestamp:
                 return
+            if previous is not None:
+                previous_timestamp = int(previous.get("ltt") or 0)
+                previous_bucket = previous_timestamp - (previous_timestamp % 60)
+                current_bucket = event_timestamp - (event_timestamp % 60)
+                if previous_bucket < current_bucket:
+                    finalized_minute_boundary = current_bucket
             self._live_futures_tick = {
                 "security_id": security_id,
                 "ltp": ltp,
@@ -811,13 +892,26 @@ class OracleDevService:
                 "cumulative_volume": tick.get("cumulative_volume"),
                 "receive_wall_utc": tick.get("receive_wall_utc"),
                 "feed_generation": tick.get("feed_generation"),
-                "source": "DHAN_V2_FULL_WEBSOCKET",
+                "source": tick.get("source") or f"{tick.get('provider', 'UPSTOX')}_V3_FULL_WEBSOCKET",
             }
+            provider = tick.get("provider")
+            if not provider:
+                provider = "DHAN" if hasattr(self, "dhan") and self.dhan and not getattr(self, "_dhan_dormant", False) else "UPSTOX"
+            display_source = (
+                "DHAN_V2_FULL_WEBSOCKET_DISPLAY_ONLY" if provider == "DHAN"
+                else "UPSTOX_V3_FULL_WEBSOCKET_DISPLAY_ONLY"
+            )
             for lane in _FUTURES_CHART_TIMEFRAMES:
                 interval = int(lane.removesuffix("m"))
                 bucket = event_timestamp - (event_timestamp % (interval * 60))
                 forming = self._forming_futures_cache.get(lane)
                 if forming is None or int(forming.get("time") or 0) != bucket:
+                    if (
+                        lane == "1m"
+                        and forming is not None
+                        and int(forming.get("time") or 0) < bucket
+                    ):
+                        finalized_minute_boundary = bucket
                     # The producer refresh rebuilds genuine minute/OHLCV
                     # context. A new bucket starts from the genuine Full-packet
                     # price without scanning all candle history on this lane.
@@ -837,7 +931,7 @@ class OracleDevService:
                         "source_timestamp": datetime.fromtimestamp(
                             event_timestamp, tz=timezone.utc
                         ).isoformat(),
-                        "source": "DHAN_V2_FULL_WEBSOCKET_DISPLAY_ONLY",
+                        "source": display_source,
                     }
                     continue
                 updated = dict(forming)
@@ -849,10 +943,48 @@ class OracleDevService:
                         "source_timestamp": datetime.fromtimestamp(
                             event_timestamp, tz=timezone.utc
                         ).isoformat(),
-                        "source": "DHAN_V2_FULL_WEBSOCKET_DISPLAY_ONLY",
+                        "source": display_source,
                     }
                 )
                 self._forming_futures_cache[lane] = updated
+        if finalized_minute_boundary is not None:
+            self.request_chart_refresh(
+                expected_completed_at=finalized_minute_boundary
+            )
+
+    def _latest_futures_completed_boundary(self) -> Optional[int]:
+        rows = self._historical_futures_candles.get("1m") or []
+        if not rows:
+            return None
+        try:
+            return int(rows[-1].get("time") or rows[-1].get("timestamp") or 0) + 60
+        except (AttributeError, TypeError, ValueError):
+            return None
+
+    def _update_finalized_refresh_retry(self, now_monotonic: float) -> None:
+        latest_boundary = self._latest_futures_completed_boundary()
+        with self._producer_state_lock:
+            self._producer_last_completed_boundary = latest_boundary
+            expected = self._producer_expected_completed_at
+            deadline = self._producer_retry_deadline_monotonic
+            if expected is None:
+                self._producer_retry_due_monotonic = None
+                return
+            if latest_boundary is not None and latest_boundary >= expected:
+                self._producer_expected_completed_at = None
+                self._producer_retry_deadline_monotonic = None
+                self._producer_retry_due_monotonic = None
+                return
+            if deadline is not None and now_monotonic < deadline:
+                self._producer_source_not_ready_count += 1
+                self._producer_retry_count += 1
+                self._producer_retry_due_monotonic = (
+                    now_monotonic + self._producer_retry_interval
+                )
+                return
+            self._producer_expected_completed_at = None
+            self._producer_retry_deadline_monotonic = None
+            self._producer_retry_due_monotonic = None
 
     def _producer_loop(self) -> None:
         """Background loop: refresh market data every _producer_interval seconds."""
@@ -865,16 +997,43 @@ class OracleDevService:
             self._last_refresh_error = str(exc)
 
         while not self._producer_stop.is_set():
-            self._producer_refresh_requested.wait(self._producer_interval)
+            with self._producer_state_lock:
+                retry_due = self._producer_retry_due_monotonic
+            timeout = self._producer_interval
+            if retry_due is not None:
+                timeout = min(timeout, max(0.0, retry_due - time.monotonic()))
+            self._producer_refresh_requested.wait(timeout)
             self._producer_refresh_requested.clear()
             if self._producer_stop.is_set():
                 break
+            wake_monotonic = time.monotonic()
+            wake_at = datetime.now(timezone.utc).isoformat()
+            with self._producer_state_lock:
+                requested = self._producer_request_monotonic
+                self._producer_last_wake_at = wake_at
+                self._producer_last_refresh_started_at = wake_at
+                if requested is not None:
+                    self._producer_request_to_wake_ms.append(
+                        max(0.0, (wake_monotonic - requested) * 1000.0)
+                    )
+                    self._producer_request_monotonic = None
+            refresh_started = time.perf_counter()
             try:
                 self.refresh_market_data_if_due(force=True)
                 self._last_refresh_success = self.clock()
                 self._last_refresh_error = None
             except Exception as exc:
                 self._last_refresh_error = str(exc)
+            finally:
+                refresh_finished = time.monotonic()
+                with self._producer_state_lock:
+                    self._producer_refresh_duration_ms.append(
+                        (time.perf_counter() - refresh_started) * 1000.0
+                    )
+                    self._producer_last_refresh_finished_at = (
+                        datetime.now(timezone.utc).isoformat()
+                    )
+                self._update_finalized_refresh_retry(refresh_finished)
 
     def _load_vob_state(self) -> Dict[str, Any]:
         path = self.state_root / "vob_dev_state.json"
@@ -1035,37 +1194,80 @@ class OracleDevService:
             from_date = past_dates[-1]
             to_date = today_str
 
-            try:
-                res = self.dhan.get_intraday_candles(
-                    segment, security_id, instrument=instrument,
-                    from_date=from_date, to_date=to_date
-                )
-                if isinstance(res, dict) and not res.get("success", True):
-                    error_msg = res.get("message") or str(res.get("errorCode")) or "Unknown Dhan Error"
-                    raise ValueError(error_msg)
-                
-                fresh = res.get("candles") or []
-            except Exception as e:
-                fresh = []
-                current_error = str(e)
+            fresh = []
+            if not getattr(self, "_dhan_dormant", False) and hasattr(self, "dhan") and hasattr(self.dhan, "has_token") and self.dhan.has_token():
+                try:
+                    res = self.dhan.get_intraday_candles(
+                        segment, security_id, instrument=instrument,
+                        from_date=from_date, to_date=to_date
+                    )
+                    if isinstance(res, dict) and not res.get("success", True):
+                        raise ValueError(res.get("message") or "Dhan Error")
+                    fresh = res.get("candles") or []
+                except Exception as e:
+                    current_error = str(e)
+
+            # Upstox fallback / active primary
+            if not fresh and self.upstox and getattr(self.upstox, "has_token", False):
+                try:
+                    if segment == "IDX_I" or symbol == "NIFTY Spot":
+                        upstox_key = "NSE_INDEX|Nifty 50"
+                    elif segment == "NSE_FNO" and instrument == "FUTIDX":
+                        upstox_key = f"NSE_FO|{security_id}"
+                    else:
+                        upstox_key = f"NSE_FO|{security_id}"
+                    hist_candles = self.upstox.get_historical_candles(
+                        upstox_key, interval="1", to_date=to_date, from_date=from_date
+                    ) or []
+                    intra_candles = self.upstox.get_intraday_candles(
+                        upstox_key, interval="1"
+                    ) or []
+                    fresh = self._merge_candles(hist_candles, intra_candles)
+                    if fresh:
+                        current_error = None
+                        meta["warmup_source"] = "Upstox Historical+Intraday API V3"
+                except Exception as e:
+                    current_error = str(e)
 
             merged = self._merge_candles(stored, fresh)
         else:
             # Only query today's completed candles
-            try:
-                res = self.dhan.get_intraday_candles(
-                    segment, security_id, instrument=instrument,
-                    from_date=today_str, to_date=today_str
-                )
-                if isinstance(res, dict) and not res.get("success", True):
-                    error_msg = res.get("message") or str(res.get("errorCode")) or "Unknown Dhan Error"
-                    raise ValueError(error_msg)
-                fresh = res.get("candles") or []
-            except Exception as e:
-                fresh = []
-                current_error = str(e)
+            fresh = []
+            if not getattr(self, "_dhan_dormant", False) and hasattr(self, "dhan") and hasattr(self.dhan, "has_token") and self.dhan.has_token():
+                try:
+                    res = self.dhan.get_intraday_candles(
+                        segment, security_id, instrument=instrument,
+                        from_date=today_str, to_date=today_str
+                    )
+                    if isinstance(res, dict) and not res.get("success", True):
+                        raise ValueError(res.get("message") or "Dhan Error")
+                    fresh = res.get("candles") or []
+                except Exception as e:
+                    current_error = str(e)
+
+            if not fresh and self.upstox and getattr(self.upstox, "has_token", False):
+                try:
+                    if segment == "IDX_I" or symbol == "NIFTY Spot":
+                        upstox_key = "NSE_INDEX|Nifty 50"
+                    elif segment == "NSE_FNO" and instrument == "FUTIDX":
+                        upstox_key = f"NSE_FO|{security_id}"
+                    else:
+                        upstox_key = f"NSE_FO|{security_id}"
+                    fresh = self.upstox.get_intraday_candles(upstox_key, interval="1")
+                    if fresh:
+                        current_error = None
+                        meta["warmup_source"] = "Upstox Intraday API V3"
+                except Exception as e:
+                    current_error = str(e)
 
             merged = self._merge_candles(stored, fresh)
+
+        # Seam guard: exclude incomplete / currently forming candle from completed store
+        now_epoch = int(now_ist.timestamp())
+        merged = [
+            c for c in merged
+            if int(c.get("time") or c.get("timestamp") or 0) + 60 <= now_epoch
+        ]
 
         missing_after: tuple[int, ...] = ()
         backfilled_count = 0
@@ -1178,8 +1380,27 @@ class OracleDevService:
                 self.is_synthetic = is_test_run
 
             # 1. Resolve Spot Price
-            spot_quote = self.dhan.get_quote("IDX_I", "13")
-            spot_price = spot_quote.get("ltp") or 24000.0
+            spot_price = None
+            if not getattr(self, "_dhan_dormant", False) and hasattr(self, "dhan") and hasattr(self.dhan, "has_token") and self.dhan.has_token():
+                try:
+                    spot_quote = self.dhan.get_quote("IDX_I", "13")
+                    spot_price = spot_quote.get("ltp")
+                except Exception:
+                    pass
+
+            if not spot_price and self.upstox and getattr(self.upstox, "has_token", False):
+                try:
+                    uq = self.upstox.get_quotes(["NSE_INDEX|Nifty 50"])
+                    n_data = uq.get("NSE_INDEX:Nifty 50") or uq.get("NSE_INDEX|Nifty 50") or {}
+                    spot_price = n_data.get("last_price")
+                except Exception:
+                    pass
+
+            if not spot_price and getattr(self, "_raw_spot_1m", None):
+                spot_price = self._raw_spot_1m[-1].get("close")
+
+            if not spot_price:
+                spot_price = 24000.0
 
             # 2. Resolve instruments
             fut_info = self.resolver.resolve_futures("NIFTY")
@@ -1231,17 +1452,31 @@ class OracleDevService:
                 option_1m: Dict[str, List[Dict[str, Any]]] = {}
                 fetched_any = False
                 for key, opt in options_info.items():
-                    try:
-                        opt_res = self.dhan.get_intraday_candles(
-                            "NSE_FNO", opt["security_id"], instrument="OPTIDX"
-                        )
-                        opt_candles = opt_res.get("candles") or []
-                        if opt_candles:
-                            option_1m[key] = opt_candles
-                            fetched_any = True
-                        else:
-                            option_1m[key] = []
-                    except Exception:
+                    opt_candles = []
+                    sec_id = opt.get("security_id")
+                    if not getattr(self, "_dhan_dormant", False) and hasattr(self, "dhan") and hasattr(self.dhan, "has_token") and self.dhan.has_token():
+                        try:
+                            opt_res = self.dhan.get_intraday_candles(
+                                "NSE_FNO", sec_id, instrument="OPTIDX"
+                            )
+                            opt_candles = opt_res.get("candles") or []
+                        except Exception:
+                            opt_candles = []
+                    if not opt_candles and self.upstox and getattr(self.upstox, "has_token", False):
+                        try:
+                            opt_key = f"NSE_FO|{sec_id}"
+                            opt_candles = self.upstox.get_intraday_candles(opt_key, interval="1")
+                            if not opt_candles:
+                                today_str = now_ist.strftime("%Y-%m-%d")
+                                opt_candles = self.upstox.get_historical_candles(
+                                    opt_key, interval="1", to_date=today_str, from_date=today_str
+                                )
+                        except Exception:
+                            opt_candles = []
+                    if opt_candles:
+                        option_1m[key] = opt_candles
+                        fetched_any = True
+                    else:
                         option_1m[key] = []
 
                 options_store_path = self.state_root / "options_store_1m.json"
@@ -1318,6 +1553,18 @@ class OracleDevService:
                     if lane == "5m"
                     else self.resampler.resample(fut_1m, interval, now_dt)
                 )
+            # Ingest completed 1m spot candles into vob_engine so canonical VOB state is fresh
+            now_epoch = int(now_dt.timestamp())
+            current_minute_start = (now_epoch // 60) * 60
+            completed_spot_1m = [c for c in spot_1m if int(c.get("time") or c.get("timestamp") or 0) < current_minute_start]
+            if completed_spot_1m and hasattr(self, "vob_engine") and self.vob_engine:
+                last_ts = int(completed_spot_1m[-1].get("time") or completed_spot_1m[-1].get("timestamp") or 0)
+                if not hasattr(self, "_last_vob_processed_timestamp") or self._last_vob_processed_timestamp != last_ts:
+                    try:
+                        self.vob_engine.ingest_1m_candles(completed_spot_1m, spot_price)
+                        self._last_vob_processed_timestamp = last_ts
+                    except Exception:
+                        pass
 
             self._refresh_futures_chart_cache(now_dt)
 
@@ -1471,6 +1718,14 @@ class OracleDevService:
             observed_prices.append(live_price)
         opening_price = float(rows[0]["open"]) if rows else live_price
         closing_price = live_price if live_price is not None else float(rows[-1]["close"])
+        provider = (live_tick or {}).get("provider") if live_tick else None
+        if not provider:
+            provider = "DHAN" if hasattr(self, "dhan") and self.dhan and not getattr(self, "_dhan_dormant", False) else "UPSTOX"
+        if live_tick is not None:
+            source_tag = "DHAN_V2_FULL_WEBSOCKET_DISPLAY_ONLY" if provider == "DHAN" else "UPSTOX_V3_FULL_WEBSOCKET_DISPLAY_ONLY"
+        else:
+            source_tag = "DHAN_FUTIDX_COMPLETED_1M_FORMING_VIEW" if provider == "DHAN" else "UPSTOX_FUTIDX_COMPLETED_1M_FORMING_VIEW"
+
         return {
             "time": bucket,
             "open": opening_price,
@@ -1486,11 +1741,7 @@ class OracleDevService:
                 datetime.fromtimestamp(event_epoch, tz=timezone.utc).isoformat()
                 if live_tick is not None else None
             ),
-            "source": (
-                "DHAN_V2_FULL_WEBSOCKET_DISPLAY_ONLY"
-                if live_tick is not None
-                else "DHAN_FUTIDX_COMPLETED_1M_FORMING_VIEW"
-            ),
+            "source": source_tag,
         }
 
     def _refresh_futures_chart_cache(self, now: datetime) -> None:
@@ -1955,7 +2206,10 @@ class OracleDevService:
                 ratio_desc = "Stale Data"
                 displacement_desc = "Stale Data"
             else:
-                vob_tf = lane if lane in ("3m", "5m") else "3m"
+                # Use the requested canonical lane.  The VOB engine receives
+                # genuine 1m candles and derives 3m/5m session buckets; a 1m
+                # request must not be silently downgraded to 3m.
+                vob_tf = lane if lane in ("1m", "3m", "5m") else "3m"
                 nearest_zone = None
                 
                 try:

@@ -1,0 +1,241 @@
+{
+  "capture": {
+    "source": "GET /v1/oracle/fast-lane",
+    "captured_at_utc": "2026-08-31T06:24:52.018970+00:00",
+    "revision": 1333,
+    "classification": "RECORDED_CANONICAL_PRODUCTION_FRAME_SUBSET"
+  },
+  "argus_projection": {
+    "status": "available",
+    "freshness": "fresh",
+    "data": {
+      "underlying": {
+        "atm_strike": 24050.0,
+        "expiry": "2026-09-01",
+        "fetched_at": "2026-08-31T11:54:47.818009+05:30",
+        "ltp": 24073.5,
+        "market_state": "OPEN",
+        "receipt_timestamp": "2026-08-31T11:54:47.946092+05:30",
+        "security_id": 13,
+        "segment": "IDX_I",
+        "source_event_time": "2026-08-31T11:54:47+05:30",
+        "trading_date": "2026-08-31"
+      },
+      "futures": {
+        "basis": 186.70000000000073,
+        "expiry": "2026-09-29",
+        "ltp": 24260.2,
+        "security_id": 68407,
+        "source_age_seconds": 0.946,
+        "source_timestamp": "2026-08-31T11:54:47+05:30",
+        "spot": 24073.5,
+        "status": "AVAILABLE"
+      },
+      "atm_window": [
+        {
+          "strike": 24000.0,
+          "ce_moneyness": "ITM",
+          "ce": {
+            "security_id": 46985,
+            "ltp": 154.85,
+            "intraday_change_oi": -4023565,
+            "positioning": "SHORT_COVERING",
+            "iv": 18.764141580960743,
+            "top_bid_price": 154.95,
+            "top_ask_price": 155.45
+          },
+          "pe": {
+            "security_id": 46986,
+            "ltp": 30.6,
+            "intraday_change_oi": 3425435,
+            "positioning": "SHORT_BUILDUP",
+            "iv": 10.552741786562045,
+            "top_bid_price": 30.55,
+            "top_ask_price": 30.6
+          }
+        },
+        {
+          "strike": 24050.0,
+          "ce_moneyness": "ATM",
+          "ce": {
+            "security_id": 46987,
+            "ltp": 119.9,
+            "intraday_change_oi": -2906020,
+            "positioning": "SHORT_COVERING",
+            "iv": 17.575653492894894,
+            "top_bid_price": 119.75,
+            "top_ask_price": 120.0
+          },
+          "pe": {
+            "security_id": 46988,
+            "ltp": 44.2,
+            "intraday_change_oi": 2258750,
+            "positioning": "SHORT_BUILDUP",
+            "iv": 9.841853665885438,
+            "top_bid_price": 44.2,
+            "top_ask_price": 44.3
+          }
+        },
+        {
+          "strike": 24100.0,
+          "ce_moneyness": "OTM",
+          "ce": {
+            "security_id": 46989,
+            "ltp": 88.15,
+            "intraday_change_oi": -2734940,
+            "positioning": "SHORT_COVERING",
+            "iv": 16.479763002308413,
+            "top_bid_price": 88.05,
+            "top_ask_price": 88.3
+          },
+          "pe": {
+            "security_id": 46990,
+            "ltp": 63.3,
+            "intraday_change_oi": 1871025,
+            "positioning": "SHORT_BUILDUP",
+            "iv": 8.959930399882657,
+            "top_bid_price": 63.3,
+            "top_ask_price": 63.5
+          }
+        }
+      ]
+    }
+  },
+  "order_flow_projection": {
+    "revision": 20100,
+    "snapshot_id": "flow_18678d04ccff361d6e4a8bc4",
+    "generated_at": "2026-08-31T06:24:51.268703+00:00",
+    "session_id": "2026-08-31",
+    "snapshot_age_seconds": 1.2014,
+    "family_values": {
+      "BOOK_PRESSURE": {
+        "mlofi": 0.5428571428571428,
+        "status": "AVAILABLE"
+      }
+    },
+    "flow_pulse": {
+      "revision": 2545,
+      "source_timestamp": "2026-08-31T06:24:50.859475+00:00",
+      "delta": {
+        "authority": "SUPPORTING_ONLY",
+        "coverage": 0.211947,
+        "provenance": "CONSERVATIVE_SIGNED_SUBSET; UNKNOWN_PRESERVED"
+      }
+    }
+  },
+  "futures_chart_projection": {
+    "status": "AVAILABLE",
+    "current_price": 24262.7,
+    "contract": "NIFTY-Sep2026-FUT",
+    "security_id": "68407",
+    "expiry": "2026-09-29",
+    "source_timestamp": "2026-08-31T06:15:00+00:00",
+    "forming_candle": {
+      "source_timestamp": "2026-08-31T06:24:50+00:00",
+      "vwap": 24195.67
+    }
+  },
+  "option_buyer_projection": {
+    "status": "LIVE",
+    "source_timestamp": "2026-08-31T11:54:47.946092+05:30",
+    "provenance": "CANONICAL_ARGUS_DHAN_OPTION_CHAIN + DHAN_FULL_QUOTE + EXISTING_FUTURES",
+    "sudden_oi": {
+      "CALL": {
+        "status": "LIVE",
+        "side": "CE",
+        "window_closed_at": "2026-08-31T11:50:00+05:30",
+        "new_session_extreme": false,
+        "dominant_state": "SHORT COVERING",
+        "strikes": [
+          {
+            "security_id": "46985",
+            "strike": 24000.0,
+            "ltp": 114.35,
+            "oi": 17577105.0,
+            "oi_delta_5m": -499005.0,
+            "state": "SHORT COVERING",
+            "window_closed_at": "11:50"
+          },
+          {
+            "security_id": "46987",
+            "strike": 24050.0,
+            "ltp": 83.25,
+            "oi": 19718790.0,
+            "oi_delta_5m": -180895.0,
+            "state": "SHORT COVERING",
+            "window_closed_at": "11:50"
+          },
+          {
+            "security_id": "46989",
+            "strike": 24100.0,
+            "ltp": 58.55,
+            "oi": 24492585.0,
+            "oi_delta_5m": -377325.0,
+            "state": "SHORT COVERING",
+            "window_closed_at": "11:50"
+          }
+        ]
+      },
+      "PUT": {
+        "status": "LIVE",
+        "side": "PE",
+        "window_closed_at": "2026-08-31T11:50:00+05:30",
+        "new_session_extreme": false,
+        "dominant_state": "SHORT BUILDUP",
+        "strikes": [
+          {
+            "security_id": "46986",
+            "strike": 24000.0,
+            "ltp": 44.2,
+            "oi": 24113830.0,
+            "oi_delta_5m": 639990.0,
+            "state": "SHORT BUILDUP",
+            "window_closed_at": "11:50"
+          },
+          {
+            "security_id": "46988",
+            "strike": 24050.0,
+            "ltp": 63.2,
+            "oi": 12674415.0,
+            "oi_delta_5m": 547040.0,
+            "state": "SHORT BUILDUP",
+            "window_closed_at": "11:50"
+          },
+          {
+            "security_id": "46990",
+            "strike": 24100.0,
+            "ltp": 88.6,
+            "oi": 10953475.0,
+            "oi_delta_5m": 616005.0,
+            "state": "SHORT BUILDUP",
+            "window_closed_at": "11:50"
+          }
+        ]
+      }
+    },
+    "option_intelligence": {
+      "status": "LIVE",
+      "generated_at": "2026-08-31T11:54:47.946092+05:30",
+      "volatility_opportunity": {
+        "atm_iv": 22.54
+      },
+      "iv_skew": {
+        "skew_25d_spread": -7.45,
+        "skew_10d_spread": -6.57
+      },
+      "gex": {
+        "total_net_gex_inr_cr": 254.87,
+        "zero_gamma_strike": 23992.0
+      }
+    }
+  },
+  "transport_health": {
+    "WS_CONNECTED": true,
+    "BASKET_HEALTH": "FULLY_FRESH",
+    "CURRENTLY_RECEIVING_INSTRUMENTS": 11,
+    "FEED_GENERATION": 5,
+    "CONNECTION_ATTEMPTS": 23,
+    "RECONNECT_COUNT": 4,
+    "LAST_ANY_PACKET_TS": "2026-08-31T06:32:15.925707+00:00"
+  }
+}

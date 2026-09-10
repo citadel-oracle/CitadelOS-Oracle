@@ -1,0 +1,155 @@
+{
+  "backend_process_metrics": {
+    "cpu_pct": {
+      "count": 57,
+      "max": 138.6,
+      "p50": 74.0,
+      "p95": 121.24,
+      "p99": 131.32
+    },
+    "rss_mb": {
+      "end": 656.67,
+      "max": 1333.31,
+      "start": 11.86
+    },
+    "samples": 57,
+    "unique_pids": [
+      2015,
+      2066,
+      2068
+    ]
+  },
+  "cognitive_current_status": {
+    "bridge_state": "RUNNING",
+    "decision_agreement": "UNAVAILABLE",
+    "model_tension": "NO CHALLENGER READ: Solitary production cognitive analyst (gpt-5.6-luna)",
+    "status": "COMMITTED"
+  },
+  "market_data_transport": {
+    "basket_health_counts": {
+      "FULLY_FRESH": 615,
+      "UNKNOWN": 2
+    },
+    "max_queue_depth": 5,
+    "provider_samples": {
+      "DYNAMIC_PARALLEL": 2,
+      "UPSTOX": 615
+    },
+    "total_drops": 0,
+    "unique_receipts": 24,
+    "unique_revisions": 58
+  },
+  "schema_version": "citadel-data-completeness-v1",
+  "session_date": "2026-09-10",
+  "sol_readiness_checklist": {
+    "_summary": {
+      "ready_count": 5,
+      "status": "INPUT_HARDENING_REQUIRED",
+      "total_count": 14
+    },
+    "atm_iv": {
+      "collected": true,
+      "ready": true,
+      "value": "9.58%"
+    },
+    "bid_ask": {
+      "collected": false,
+      "ready": false,
+      "reason": "Option top bid/ask spread not in canonical state",
+      "value": "MISSING"
+    },
+    "correct_receipt_revision": {
+      "collected": true,
+      "ready": true,
+      "value": "rev_2464 (fc855e0b7a57...)"
+    },
+    "expiry": {
+      "collected": false,
+      "ready": false,
+      "reason": "Contract expiry date not populated in canonical state",
+      "value": "MISSING"
+    },
+    "fair_value_if_required": {
+      "collected": false,
+      "ready": false,
+      "reason": "Option theoretical fair value not computed",
+      "value": "MISSING"
+    },
+    "iv_baseline_reference": {
+      "collected": false,
+      "ready": false,
+      "reason": "IV historical baseline/percentile not established",
+      "value": "MISSING"
+    },
+    "option_contract_strike": {
+      "collected": true,
+      "ready": true,
+      "value": "ATM 23450.0 (CE:47295, PE:47296)"
+    },
+    "premium": {
+      "collected": true,
+      "ready": true,
+      "value": "CE: 138.2, PE: 85.7"
+    },
+    "required_flow_evidence": {
+      "collected": false,
+      "ready": false,
+      "reason": "Directional flow net delta unavailable",
+      "value": "UNAVAILABLE (null)"
+    },
+    "same_option_premium_change_history": {
+      "collected": false,
+      "ready": false,
+      "reason": "Multi-window same-strike premium history not tracked",
+      "value": "MISSING"
+    },
+    "straddle_change": {
+      "collected": false,
+      "ready": false,
+      "reason": "15-minute straddle change unavailable",
+      "value": "UNAVAILABLE (null)"
+    },
+    "theta_if_required": {
+      "collected": false,
+      "ready": false,
+      "reason": "Option theta not computed",
+      "value": "MISSING"
+    },
+    "time_to_expiry": {
+      "collected": false,
+      "ready": false,
+      "reason": "Time remaining to expiry not computed",
+      "value": "MISSING"
+    },
+    "underlying_futures_basis": {
+      "collected": true,
+      "ready": true,
+      "value": "Spot: 23460.4, Fut: 23558.0, Basis: 97.60"
+    }
+  },
+  "strike_spine": {
+    "completeness_pct": {
+      "count": 617,
+      "max": 100.0,
+      "p50": 100.0,
+      "p95": 100.0,
+      "p99": 100.0
+    }
+  },
+  "vob": {
+    "latency_ms": {
+      "count": 616,
+      "max": 0.03,
+      "p50": 0.02,
+      "p95": 0.03,
+      "p99": 0.03
+    },
+    "zone_counts": {
+      "count": 617,
+      "max": 0,
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+    }
+  }
+}

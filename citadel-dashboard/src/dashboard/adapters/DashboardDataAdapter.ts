@@ -297,7 +297,12 @@ export class DashboardDataAdapter {
         kronosAlpha: { traceId: snapshot.traceId, publishedAt: snapshot.generatedAt, observedAt: snapshot.generatedAt, sourceLastUpdated: snapshot.feedMeta.kronos_alpha.source_last_updated },
         chronos2: { traceId: snapshot.traceId, publishedAt: snapshot.generatedAt, observedAt: snapshot.generatedAt, sourceLastUpdated: snapshot.feedMeta.chronos2.source_last_updated },
       },
-      sections, selectedSymbol: snapshot.selectedSymbol, isRefreshing: false, revision: (previous?.revision ?? 0) + 1,
+      sections,
+      selectedSymbol: snapshot.selectedSymbol,
+      isRefreshing: false,
+      revision: (previous?.revision ?? 0) + 1,
+      sourceRevision: snapshot.sourceRevision ?? previous?.sourceRevision,
+      runtimeInstanceId: snapshot.runtimeInstanceId ?? previous?.runtimeInstanceId,
     }
   }
 }

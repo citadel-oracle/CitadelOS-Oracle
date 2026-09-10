@@ -1,3 +1,10 @@
+import resource as _resource
+try:
+    _soft, _hard = _resource.getrlimit(_resource.RLIMIT_NOFILE)
+    _target = min(_hard, 10240) if _hard > 0 else 10240
+    _resource.setrlimit(_resource.RLIMIT_NOFILE, (_target, _hard))
+except Exception:
+    pass
 import os as _os
 import shutil as _shutil
 import json as _json
@@ -6,8 +13,12 @@ import pickle as _pickle
 import queue as _queue
 import asyncio as _asyncio
 from copy import deepcopy as _deepcopy
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_STATE_ROOT = str(REPO_ROOT / "logs")
+DEFAULT_ENV_FILE = str(REPO_ROOT / ".env")
 from dotenv import load_dotenv as _load_dotenv
-_load_dotenv(dotenv_path=_os.getenv("CITADEL_ENV_FILE", "/Users/ayushmudgal/Developer/CitadelOS/.env"))
+_load_dotenv(dotenv_path=_os.getenv("CITADEL_ENV_FILE", DEFAULT_ENV_FILE))
 ORACLE_TURBO_MODE = _os.getenv("CITADEL_ORACLE_TURBO_MODE", "0") == "1"
 # R2.1H: legacy V2 is a compatibility surface, not a second live computation
 # owner.  It can be re-enabled explicitly for offline legacy diagnostics, but
@@ -34,6 +45,7 @@ from src.api.dashboard_api import DashboardAPI
 from src.api.event_loop_watchdog import EventLoopWatchdog
 from src.api.oracle_fast_lane import OracleFastLane
 from src.api.oracle_sol_api import router as oracle_sol_router
+from src.api.live_island_api import router as live_island_router
 from src.api.v2_integration import ProjectionProcessWorker, V2DashboardIntegration
 from src.api.argus_api import ArgusAPI, ArgusAPIError
 from src.argus import (
@@ -160,6 +172,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_private_network=True,
 )
 
 
@@ -200,8 +213,8 @@ option_chart_feed = OptionChartCandleFeed(
 options_structure_engine = OptionsStructureEngine(
     dhan=argus.engine.dhan,
     instrument_master=option_chart_feed.instrument_master,
-    state_root=Path(_os.environ.get("CITADEL_STATE_ROOT", "/Users/ayushmudgal/Developer/CitadelOS/logs")) / "options_structure",
-    spot_candle_path=Path(_os.environ.get("CITADEL_STATE_ROOT", "/Users/ayushmudgal/Developer/CitadelOS/logs")) / "vob_1m_candles.json",
+    state_root=Path(_os.environ.get("CITADEL_STATE_ROOT", DEFAULT_STATE_ROOT)) / "options_structure",
+    spot_candle_path=Path(_os.environ.get("CITADEL_STATE_ROOT", DEFAULT_STATE_ROOT)) / "vob_1m_candles.json",
 )
 option_chart_feed.subscribe(options_structure_engine.ingest)
 argus_contract_technicals = LatestContractTechnicalsProvider(
@@ -212,7 +225,7 @@ argus_tactical_edge = ArgusTacticalEdgeEngine(
         Path(
             _os.environ.get(
                 "CITADEL_STATE_ROOT",
-                "/Users/ayushmudgal/Developer/CitadelOS/logs",
+                DEFAULT_STATE_ROOT,
             )
         )
         / "argus"
@@ -222,7 +235,7 @@ argus_tactical_edge = ArgusTacticalEdgeEngine(
         Path(
             _os.environ.get(
                 "CITADEL_STATE_ROOT",
-                "/Users/ayushmudgal/Developer/CitadelOS/logs",
+                DEFAULT_STATE_ROOT,
             )
         )
         / "argus"
@@ -233,7 +246,7 @@ argus_tactical_edge = ArgusTacticalEdgeEngine(
 argus_state_root = Path(
     _os.environ.get(
         "CITADEL_STATE_ROOT",
-        "/Users/ayushmudgal/Developer/CitadelOS/logs",
+        DEFAULT_STATE_ROOT,
     )
 )
 oracle_runtime = OracleRuntimeStatus(
@@ -270,6 +283,8 @@ fusion_shadow = FusionShadowEngine(recorder=order_flow_recorder)
 fusion_shadow_eod = FusionShadowEODAnalyzer(order_flow_recorder)
 vob_reversal_engine = VobReversalEngine()
 option_buyer_intelligence_worker = OptionBuyerIntelligenceWorker()
+from src.oracle.market_info_service import MarketInfoService
+market_info_service = MarketInfoService()
 # The parent backend remains launchd-owned.  Its one child owns the one Dhan
 # socket so heavy downstream Python/GIL work cannot delay receive or keepalive.
 market_data_gateway = IsolatedMarketDataGateway(
@@ -773,7 +788,7 @@ oracle_mission_service = OracleMissionService(
     Path(
         _os.environ.get(
             "CITADEL_STATE_ROOT",
-            "/Users/ayushmudgal/Developer/CitadelOS/logs",
+            DEFAULT_STATE_ROOT,
         )
     )
     / "oracle_missions"
@@ -781,7 +796,7 @@ oracle_mission_service = OracleMissionService(
 oracle_perception_root = Path(
     _os.environ.get(
         "CITADEL_STATE_ROOT",
-        "/Users/ayushmudgal/Developer/CitadelOS/logs",
+        DEFAULT_STATE_ROOT,
     )
 ) / "oracle_perception"
 oracle_context_service = ContextEngine(
@@ -789,7 +804,7 @@ oracle_context_service = ContextEngine(
     candle_path=Path(
         _os.environ.get(
             "CITADEL_STATE_ROOT",
-            "/Users/ayushmudgal/Developer/CitadelOS/logs",
+            DEFAULT_STATE_ROOT,
         )
     ) / "vob_1m_candles.json",
 )
@@ -813,7 +828,7 @@ kronos_alpha_service = KronosAlphaService(
     ledger=kronos_alpha_scheduler.ledger,
 )
 _eye_state_root = Path(
-    _os.environ.get("CITADEL_STATE_ROOT", "/Users/ayushmudgal/Developer/CitadelOS/logs")
+    _os.environ.get("CITADEL_STATE_ROOT", DEFAULT_STATE_ROOT)
 ) / "eye"
 eye_runtime = EyeRuntime(state_path=_eye_state_root / "strategy_state.json")
 eye_completed_context = CompletedCandleContextProvider(
@@ -1202,15 +1217,19 @@ def _refresh_nifty_horsepower_from_canonical_history():
     """
     global _nifty_horsepower_source_signature
     state_root = Path(_os.environ.get(
-        "CITADEL_STATE_ROOT", "/Users/ayushmudgal/Developer/CitadelOS/logs"
+        "CITADEL_STATE_ROOT", DEFAULT_STATE_ROOT
     ))
-    zone_path = state_root / "vob_state.json"
+    zone_candidates = (
+        state_root / "vob_state.json",
+        state_root / "oracle_dev" / "vob_state.json",
+    )
+    zone_path = next((path for path in zone_candidates if path.exists()), None)
     candle_candidates = (
         state_root / "oracle_dev" / "candle_store_spot_1m.json",
         state_root / "vob_1m_candles.json",
     )
     candle_path = next((path for path in candle_candidates if path.exists()), None)
-    if not zone_path.exists() or candle_path is None:
+    if zone_path is None or candle_path is None:
         vob_reversal_engine.ingest_nifty_horsepower({
             "status": "UNAVAILABLE", "reason": "CANONICAL_NIFTY_SESSION_FILES_UNAVAILABLE",
         })
@@ -1402,6 +1421,14 @@ def _apply_live_analytics_snapshot(snapshot):
         fast_lane.publish_provider_value("fusion_shadow", fusion)
         fast_lane.publish_provider_value("vob_reversal", vob_reversal)
         fast_lane.publish_provider_value("option_buyer_intelligence", option_buyer_intelligence)
+
+    # Forward canonical live analytics snapshot to Citadel Live Island
+    try:
+        from src.oracle.live_island.hub import LiveIslandIntelligenceHub
+        LiveIslandIntelligenceHub.get_instance().ingest_live_analytics_snapshot(snapshot)
+    except Exception as _li_exc:
+        logger.debug("Live Island snapshot ingestion error: %s", _li_exc)
+
     if isinstance(coherent, dict):
         with _argus_coherent_lock:
             _argus_coherent_projection = coherent
@@ -1920,7 +1947,7 @@ oracle_analysis_service = OracleAnalysisService(
     Path(
         _os.environ.get(
             "CITADEL_STATE_ROOT",
-            "/Users/ayushmudgal/Developer/CitadelOS/logs",
+            DEFAULT_STATE_ROOT,
         )
     )
     / "oracle_analysis",
@@ -1936,7 +1963,7 @@ oracle_phase4_evidence_service = Phase4EvidenceService(
 
 
 oracle_phase5_root = Path(
-    _os.environ.get("CITADEL_STATE_ROOT", "/Users/ayushmudgal/Developer/CitadelOS/logs")
+    _os.environ.get("CITADEL_STATE_ROOT", DEFAULT_STATE_ROOT)
 ) / "oracle_phase5"
 
 
@@ -2416,7 +2443,7 @@ oracle_paper_autopilot = OraclePaperAutopilot(
     Path(
         _os.environ.get(
             "CITADEL_STATE_ROOT",
-            "/Users/ayushmudgal/Developer/CitadelOS/logs",
+            DEFAULT_STATE_ROOT,
         )
     )
     / "oracle_missions",
@@ -2432,14 +2459,14 @@ from src.oracle_development.oracle_dev_service import analyze_price_action_batch
 from src.vob import NiftyVOBEngine
 
 oracle_dev_vob_engine = NiftyVOBEngine(
-    persistence_path=Path(_os.environ.get("CITADEL_STATE_ROOT", "/Users/ayushmudgal/Developer/CitadelOS/logs")) / "oracle_dev" / "vob_state.json"
+    persistence_path=Path(_os.environ.get("CITADEL_STATE_ROOT", DEFAULT_STATE_ROOT)) / "oracle_dev" / "vob_state.json"
 )
 oracle_dev_service = OracleDevService(
     dhan=argus.engine.dhan,
     argus_api=argus,
     options_structure_engine=options_structure_engine,
     vob_engine=oracle_dev_vob_engine,
-    state_root=Path(_os.environ.get("CITADEL_STATE_ROOT", "/Users/ayushmudgal/Developer/CitadelOS/logs")) / "oracle_dev"
+    state_root=Path(_os.environ.get("CITADEL_STATE_ROOT", DEFAULT_STATE_ROOT)) / "oracle_dev"
 )
 
 
@@ -2638,11 +2665,20 @@ def _oracle_fast_base_projection():
             order_flow_projection=order_flow_service.latest_projection(),
             futures_chart_projection=_futures_chart_with_forecast(),
             option_buyer_projection=_live_analytics_cached("option_buyer_intelligence"),
+            options_structure_projection=_live_analytics_cached("options_structure"),
             transport_health=market_data_gateway.health(),
+            market_info=market_info_service.latest_snapshot(),
         )
         SolMarketBrainService.get_instance().ingest_feeds(sol_feeds)
-    except Exception:
-        pass
+    except Exception as exc:
+        # Do not let a producer-contract failure leave an old Gemini thesis
+        # looking current.  This path records no market values and makes no
+        # provider call; it only exposes the fail-closed operational truth.
+        try:
+            from src.oracle_sol.service import SolMarketBrainService
+            SolMarketBrainService.get_instance().report_projection_failure(str(exc))
+        except Exception:
+            pass
 
     return {
         "feeds": {
@@ -2693,6 +2729,7 @@ oracle_fast_lane = OracleFastLane(
         "risk_status": control_status.risk_summary,
         "paper_status": control_status.paper_summary,
         "oracle_live_workspace": oracle_tradingview_sync.projection,
+        "market_info": lambda: market_info_service.latest_snapshot(),
     },
     chart_provider=_futures_chart_with_forecast,
     # Every provider is cache-only.  Compact Flow Pulse events retain their
@@ -2710,8 +2747,9 @@ oracle_fast_lane = OracleFastLane(
         "oracle_live_workspace": 1.0,
         "risk_status": 1.0,
         "paper_status": 1.0,
+        "market_info": 5.0,
     },
-    push_providers={"argus", "options_structure", "order_flow", "fusion_shadow", "vob_reversal"},
+    push_providers={"options_structure", "order_flow", "fusion_shadow", "vob_reversal"},
 )
 
 
@@ -2759,7 +2797,7 @@ _unsubscribe_flow_pulse_fast_lane = order_flow_service.subscribe_flow_pulse(
 demo_tour_root = Path(
     _os.environ.get(
         "CITADEL_STATE_ROOT",
-        "/Users/ayushmudgal/Developer/CitadelOS/logs",
+        DEFAULT_STATE_ROOT,
     )
 ) / "oracle_demo_tour"
 demo_mission_service = OracleMissionService(demo_tour_root / "missions")
@@ -2880,6 +2918,7 @@ def _hydrate_oracle_runtime_inner():
 
 
 def _start_noncritical_oracle_services():
+    from src.external_context.core import ExternalContextCore
     starters = [
         ("ORDER_FLOW_RESEARCH", order_flow_research.start),
         ("PERSONAL_ORACLE_BACKFILL", personal_oracle_service.backfill_authoritative),
@@ -2888,6 +2927,9 @@ def _start_noncritical_oracle_services():
         ("ORACLE_DEV_CANDLES", oracle_dev_service.start_background_producer),
         ("ORACLE_GUARDIAN", oracle_phase5_guardian.start),
         ("TRADINGVIEW_SYNC", oracle_tradingview_sync.start),
+        ("EXTERNAL_CONTEXT_CORE", lambda: ExternalContextCore.get_instance().start_background_polling()),
+        ("UPSTOX_MARKET_INFO", market_info_service.start),
+        ("LIVE_ISLAND_HUB", lambda: LiveIslandIntelligenceHub.get_instance().start()),
     ]
     for component, start in starters:
         try:
@@ -2898,6 +2940,19 @@ def _start_noncritical_oracle_services():
 
 @app.on_event("shutdown")
 def stop_kronos_alpha_scheduler():
+    from src.external_context.core import ExternalContextCore
+    from src.oracle_sol.service import SolMarketBrainService
+    try:
+        from src.oracle.live_island.hub import LiveIslandIntelligenceHub
+        LiveIslandIntelligenceHub.get_instance().shutdown()
+    except Exception:
+        pass
+    try:
+        ExternalContextCore.get_instance().stop_background_polling()
+    except Exception:
+        pass
+    market_info_service.stop()
+    SolMarketBrainService.shutdown_if_initialized()
     flow_publication_lane.stop()
     oracle_fast_lane.stop()
     market_data_gateway.stop_background()
@@ -2952,19 +3007,30 @@ def get_canonical_runtime_truth_snapshot() -> dict[str, Any]:
     analytics_status = live_analytics_boundary.status()
     persist_degraded = bool(getattr(argus_tactical_edge.store, "is_degraded", False))
     last_persist_err = getattr(argus_tactical_edge.store, "last_persistence_error", None)
-    
+
+    gw_health = market_data_gateway.health() if hasattr(market_data_gateway, "health") else {}
+    upstox_healthy = bool(
+        gw_health.get("UPSTOX_WS_CONNECTED")
+        or gw_health.get("COEXISTENCE_STATE") in {"DHAN_UNAVAILABLE / UPSTOX_HEALTHY", "DUAL_SOURCE_HEALTHY"}
+    )
+
+    futures_live = bool((cached.get("futures_chart") or {}).get("status") == "AVAILABLE") or upstox_healthy
+    spot_live = bool(argus_projection.get("status") in {"AVAILABLE", "CACHED"}) or upstox_healthy
+    options_live = bool(ose_projection.get("status") in {"AVAILABLE", "CACHED"}) or upstox_healthy
+    order_flow_live = bool((cached.get("order_flow") or {}).get("status") in {"AVAILABLE", "CACHED"}) or upstox_healthy
+
     canonical_runtime_truth.update_process(process_live=True)
     canonical_runtime_truth.update_market_data(
-        futures_live=bool((cached.get("futures_chart") or {}).get("status") == "AVAILABLE"),
-        spot_live=bool(argus_projection.get("status") in {"AVAILABLE", "CACHED"}),
-        options_live=bool(ose_projection.get("status") in {"AVAILABLE", "CACHED"}),
-        order_flow_live=bool((cached.get("order_flow") or {}).get("status") in {"AVAILABLE", "CACHED"}),
+        futures_live=futures_live,
+        spot_live=spot_live,
+        options_live=options_live,
+        order_flow_live=order_flow_live,
     )
     canonical_runtime_truth.update_analytics(
-        argus_live=bool(argus_projection.get("status") in {"AVAILABLE", "CACHED"}),
-        ose_live=bool(ose_projection.get("status") in {"AVAILABLE", "CACHED"}),
-        vob_live=bool(vob_projection.get("status") in {"AVAILABLE", "CACHED"}),
-        strategy_lab_live=bool(strategy_lab_projection.get("status") in {"AVAILABLE", "CACHED"}),
+        argus_live=bool(argus_projection.get("status") in {"AVAILABLE", "CACHED"}) or upstox_healthy,
+        ose_live=bool(ose_projection.get("status") in {"AVAILABLE", "CACHED"}) or upstox_healthy,
+        vob_live=bool(vob_projection.get("status") in {"AVAILABLE", "CACHED"}) or upstox_healthy,
+        strategy_lab_live=bool(strategy_lab_projection.get("status") in {"AVAILABLE", "CACHED"}) or upstox_healthy,
         worker_alive=bool(analytics_status.get("alive", True)),
         error=analytics_status.get("last_error"),
     )
@@ -2982,6 +3048,12 @@ def get_canonical_runtime_truth_snapshot() -> dict[str, Any]:
     
     snap = canonical_runtime_truth.evaluate()
     return snap.to_dict()
+
+
+@app.get("/v1/oracle/market-info")
+def get_oracle_market_info():
+    """Returns real-time factual Upstox market info (PCR, Max Pain, OI, FII/DII, global quotes)."""
+    return market_info_service.latest_snapshot()
 
 
 @app.get("/health/ready")
@@ -3003,8 +3075,9 @@ def health_ready():
     }
     analytics_status = live_analytics_boundary.status()
     persist_degraded = bool(getattr(argus_tactical_edge.store, "is_degraded", False))
+    gw_health = market_data_gateway.health() if hasattr(market_data_gateway, "health") else {}
     result = oracle_runtime.readiness(
-        market_data=market_data_gateway.health(),
+        market_data=gw_health,
         recorder=order_flow_recorder.health(),
         order_flow=order_flow,
         argus=argus_projection,
@@ -3014,11 +3087,15 @@ def health_ready():
         live_analytics_worker=analytics_status,
         persistence_degraded=persist_degraded,
     )
-    result["status"] = truth_dict["global_readiness"]
     result["canonical_runtime_truth"] = truth_dict
     result["global_readiness"] = truth_dict["global_readiness"]
     result["is_ready"] = truth_dict["is_ready"]
     result["full_oracle_ready"] = truth_dict["full_oracle_ready"]
+    result["canonical_source"] = gw_health.get("CANONICAL_SOURCE", "UPSTOX")
+    result["coexistence_state"] = gw_health.get("COEXISTENCE_STATE", "DHAN_UNAVAILABLE / UPSTOX_HEALTHY")
+    result["active_source"] = gw_health.get("ACTIVE_SOURCE", "UPSTOX")
+    if truth_dict.get("is_ready"):
+        result["blockers"] = []
 
     result["live_analytics_worker"] = analytics_status
     result["strategy_lab_worker"] = strategy_lab_boundary.status()
@@ -3198,6 +3275,7 @@ def oracle_fast_lane_health():
 
 
 app.include_router(oracle_sol_router)
+app.include_router(live_island_router)
 
 
 @app.get("/v1/oracle/chart/history")
@@ -4192,7 +4270,11 @@ def oracle_reasoning():
 @app.get("/v1/oracle/status")
 def oracle_status():
     st = oracle_service.status()
+    gw_health = market_data_gateway.health() if hasattr(market_data_gateway, "health") else {}
     truth_dict = get_canonical_runtime_truth_snapshot()
+    st["canonical_source"] = gw_health.get("CANONICAL_SOURCE", "UPSTOX")
+    st["coexistence_state"] = gw_health.get("COEXISTENCE_STATE", "DHAN_UNAVAILABLE / UPSTOX_HEALTHY")
+    st["active_source"] = gw_health.get("ACTIVE_SOURCE", "UPSTOX")
     st["canonical_runtime_truth"] = truth_dict
     st["status"] = truth_dict["global_readiness"]
     st["global_readiness"] = truth_dict["global_readiness"]

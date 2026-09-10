@@ -279,8 +279,8 @@ def test_ce_pe_vob_state_is_isolated_and_completed_only(tmp_path):
     assert ce["candle_buffer_size"] == pe["candle_buffer_size"]
     assert ce["structures"]["3m"]["completed_bucket"] is True
     assert ce["structures"]["5m"]["completed_bucket"] is True
-    assert set(ce["structures"]) == {"3m", "5m"}
-    assert set(pe["structures"]) == {"3m", "5m"}
+    assert set(ce["structures"]) == {"1m", "3m", "5m"}
+    assert set(pe["structures"]) == {"1m", "3m", "5m"}
     assert (tmp_path / "ose" / f"vob_CE_{ce['contract']['security_id']}_3m.json").exists()
     assert (tmp_path / "ose" / f"vob_PE_{pe['contract']['security_id']}_3m.json").exists()
 
@@ -364,6 +364,10 @@ def test_argus_selected_contract_technicals_reuse_completed_option_candles(tmp_p
     assert result["trend"]["ema_50"] is not None
     assert result["trend"]["supertrend_value"] is not None
     assert result["vob_3m"]["evaluated_through"] == result["completed_3m_timestamp"]
+    assert set(result["vob_timeframes"]) == {"1m", "3m", "5m"}
+    assert result["vob_timeframes"]["1m"]["completed_bucket"] is True
+    assert result["vob_timeframes"]["3m"]["evaluated_through"] == result["completed_3m_timestamp"]
+    assert result["vob_timeframes"]["5m"]["evaluated_through"] == result["completed_5m_timestamp"]
     assert result["forming_candle_excluded"] is True
     assert result["source"] == "DHAN_DATA_API_COMPLETED_OPTION_CANDLES"
     calls = len(ose.dhan.calls)
@@ -375,7 +379,7 @@ def test_argus_selected_contract_technicals_reuse_completed_option_candles(tmp_p
             "expiry": "2026-07-28",
             "premium": 184.25,
         },
-        now.isoformat(),
+        (now + timedelta(minutes=2)).isoformat(),
     )
     assert repeated == result
     assert len(ose.dhan.calls) == calls

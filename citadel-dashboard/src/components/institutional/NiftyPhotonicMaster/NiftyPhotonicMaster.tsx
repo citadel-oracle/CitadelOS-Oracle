@@ -19,6 +19,7 @@ import { PhotonicOracleHeroWheel, type PhotonicOracleHeroWheelProps } from './co
 import { PhotonicPutCard, type PhotonicPutCardProps } from './components/PhotonicPutCard'
 import { PhotonicOptionBuyerIntelligence } from './components/PhotonicOptionBuyerIntelligence'
 import { PhotonicOptionIntelligence } from './components/PhotonicOptionIntelligence'
+import { PhotonicSuddenOiSharedContext, PhotonicSuddenOiSideCard, suddenOiAlertFrames } from './components/PhotonicSuddenOiIntelligence'
 import { PhotonicMarketStoryStrip, type PhotonicMarketStoryStripProps } from './components/PhotonicMarketStoryStrip'
 import { PhotonicRecoveryRail, type PhotonicRecoveryRailProps } from './components/PhotonicRecoveryRail'
 import { PhotonicArgusSupport, type PhotonicArgusSupportProps } from './components/PhotonicArgusSupport'
@@ -89,6 +90,7 @@ export const NiftyPhotonicMaster = memo(function NiftyPhotonicMaster({
     <div className={styles.photonicContainer} id="nifty-photonic-master-suite">
       <PhotonicVobTransitionAlerts />
       <PhotonicHorsepowerTransitionAlerts />
+      <PhotonicSuddenOiAlerts />
       <div className={styles.dashboardGrid}>
         {/* Tile 01: Refractive Photonic Glass Capsule Hero Header */}
         <PhotonicHeroHeader
@@ -103,7 +105,7 @@ export const NiftyPhotonicMaster = memo(function NiftyPhotonicMaster({
         <div className={styles.oracleThreeColumns}>
           <div className={styles.oracleColumn}>
             <PhotonicCallCard key="photonic-call-card" {...(isolated ? callCardProps : { ...canonical.callCard, ...callCardProps })} />
-            <PhotonicOptionBuyerIntelligence key="photonic-call-obi" side="CE" intelligence={isolated ? null : canonical.callCard.intelligence} />
+            <PhotonicSuddenOiSideCard key="photonic-sudden-call" side="CALL" intelligence={isolated ? null : canonical.heroWheel.intelligence} />
           </div>
           <div className={styles.oracleColumn}>
             <PhotonicOracleHeroWheel key="photonic-vob-hero-wheel" {...(isolated ? heroWheelProps : { ...canonical.heroWheel, ...heroWheelProps })} />
@@ -112,17 +114,35 @@ export const NiftyPhotonicMaster = memo(function NiftyPhotonicMaster({
           </div>
           <div className={styles.oracleColumn}>
             <PhotonicPutCard key="photonic-put-card" {...(isolated ? putCardProps : { ...canonical.putCard, ...putCardProps })} />
-            <PhotonicOptionBuyerIntelligence key="photonic-put-obi" side="PE" intelligence={isolated ? null : canonical.putCard.intelligence} />
+            <PhotonicSuddenOiSideCard key="photonic-sudden-put" side="PUT" intelligence={isolated ? null : canonical.heroWheel.intelligence} />
           </div>
         </div>
+
+        <PhotonicSuddenOiSharedContext
+          key="photonic-sudden-oi-context"
+          intelligence={isolated ? null : canonical.heroWheel.intelligence}
+        />
 
         {/* Tile 04: Pure Model-Derived Option Intelligence (GEX, Skew, HAR-RV, Gamma/Theta Quality) */}
         <PhotonicOptionIntelligence
           key="photonic-option-intelligence"
           intelligence={isolated ? null : canonical.heroWheel.intelligence}
         />
+
       </div>
     </div>
+  )
+})
+
+export const PhotonicOptionBuyerIntelligenceBottom = memo(function PhotonicOptionBuyerIntelligenceBottom() {
+  const intelligence = useOracleStore((state) => state.market.buyerIntelligence)
+  return (
+    <section className={styles.photonicContainer} aria-label="Final Option Buyer Intelligence detail section">
+      <div className={styles.optionBuyerBottomGrid}>
+        <PhotonicOptionBuyerIntelligence key="photonic-call-obi" side="CE" intelligence={intelligence} />
+        <PhotonicOptionBuyerIntelligence key="photonic-put-obi" side="PE" intelligence={intelligence} />
+      </div>
+    </section>
   )
 })
 
@@ -203,6 +223,40 @@ const PhotonicHorsepowerTransitionAlerts = memo(function PhotonicHorsepowerTrans
       if (sound && !prefersReducedMotion()) void playTransitionTone(event.kind)
     }
   }, [call, nifty, put])
+
+  return null
+})
+
+const PhotonicSuddenOiAlerts = memo(function PhotonicSuddenOiAlerts() {
+  const intelligence = useOracleStore((state) => state.market.buyerIntelligence)
+  const seen = useRef<Set<string> | null>(null)
+
+  useEffect(() => {
+    const events = suddenOiAlertFrames(intelligence).map((frame) => {
+      const kind: AlertKind = frame.eventType === 'WRITER_SQUEEZE' ? 'ENTRY' : 'READY'
+      return [{
+        kind,
+        key: frame.eventId,
+        title: frame.title,
+        detail: frame.detail,
+        reason: 'Finalized closed-5M OI evidence',
+        tone: frame.side === 'PE' ? 'negative' as const : 'positive' as const,
+      }]
+    }).flat()
+    if (seen.current === null) {
+      seen.current = new Set(events.map((event) => event.key))
+      return
+    }
+    for (const event of events) {
+      if (!acceptSemanticEvent(seen.current, event)) continue
+      const alerts = readPreference(ALERTS_KEY, true)
+      const sound = readPreference(SOUND_KEY, true)
+      if (alerts && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        new Notification(`CITADEL OI · ${event.title}`, { body: event.detail, tag: event.key, silent: true })
+      }
+      if (sound && !prefersReducedMotion()) void playTransitionTone(event.kind)
+    }
+  }, [intelligence])
 
   return null
 })

@@ -12,9 +12,18 @@ const money = (value: unknown, signed = false): string => {
   return `${signed && parsed > 0 ? '+' : ''}₹${parsed.toFixed(2)}`
 }
 const pct = (value: unknown): string => number(value) === null ? '—' : `${number(value)!.toFixed(2)}%`
+const qty = (value: unknown): string => number(value) === null ? '—' : Math.round(number(value)!).toLocaleString('en-IN')
+const level = (value: unknown): string => {
+  const data = asData(value)
+  const price = number(data.price)
+  const quantity = number(data.quantity)
+  if (price === null || quantity === null) return '—'
+  const orders = number(data.orders)
+  return `${money(price)} · ${qty(quantity)}${orders === null ? '' : ` · ${qty(orders)} ${orders === 1 ? 'order' : 'orders'}`}`
+}
 
-function Row({ label, value, tone, primary = false }: { label: string, value: string, tone?: string, primary?: boolean }) {
-  return <div className={`${styles.intelligenceRow} ${primary ? styles.intelligenceRowPrimary : ''}`}><span>{label}</span><strong style={{ color: tone ?? 'var(--text-white)' }}>{value}</strong></div>
+function Row({ label, value, tone, primary = false, fieldId }: { label: string, value: string, tone?: string, primary?: boolean, fieldId?: string }) {
+  return <div className={`${styles.intelligenceRow} ${primary ? styles.intelligenceRowPrimary : ''}`}><span>{label}</span><strong data-citadel-field={fieldId} style={{ color: tone ?? 'var(--text-white)' }}>{value}</strong></div>
 }
 
 function TeslaRail({ left, leftValue, right, rightValue, tone = 'mint' }: { left: string, leftValue: number, right: string, rightValue: number, tone?: 'mint' | 'red' | 'cyan' }) {
@@ -35,55 +44,63 @@ export const PhotonicOptionBuyerIntelligence = memo(function PhotonicOptionBuyer
   const root = asData(intelligence)
   const data = asData(root[side])
   const quality = asData(data.quality)
-  const flow = asData(data.flow)
+  const pressure = asData(data.market_pressure)
   const book = asData(data.book)
   const comparison = data.comparison
   const holding = number(data.premium_holding)
   const fair = number(data.fair_price)
   const ask = number(data.ask)
   const bid = number(data.bid)
+  const spread = number(data.spread)
+  const fairAdvantage = number(data.fair_advantage)
   const expected = number(data.time_loss_expected)
   const actual = number(data.actual_change)
   const timeLost = number(data.time_lost_today)
   const timeLeft = number(data.time_value_left)
-  const edgeAfterCosts = number(data.edge_after_costs)
-  const entryExitCost = number(data.entry_exit_cost)
-  const hasFlow = number(flow.buying_volume) !== null && number(flow.selling_volume) !== null && number(flow.imbalance) !== null
+  const buyShare = number(pressure.book_buy_share_pct)
+  const sellShare = number(pressure.book_sell_share_pct)
+  const hasPressure = [pressure.total_buy_quantity, pressure.total_sell_quantity, pressure.last_trade_quantity, pressure.average_trade_price, buyShare, sellShare].some((value) => number(value) !== null)
+  const hasBook = [book.best_bid, book.best_ask, book.biggest_buy_level, book.biggest_sell_level, book.five_level_buy_quantity, book.five_level_sell_quantity].some((value) => typeof value === 'object' && value !== null || number(value) !== null)
   return <section className={`${styles.card} ${styles.optionBuyerIntelligence}`} aria-label={`${side} option buyer intelligence`}>
     <div className={styles.monoLabel}>OPTION BUYER INTELLIGENCE</div>
     <div className={styles.intelligenceBlock}>
       <div className={styles.intelligenceHeading}>FAIR PRICE <em>MODEL-DERIVED · RESEARCH</em></div>
-      <Row label="FAIR PRICE" value={money(fair)} primary={fair !== null} />
-      {comparison === 'BELOW_FAIR' ? <Row label="BELOW FAIR" value={pct(data.below_fair_pct)} tone="var(--mint)" /> : comparison === 'INFLATED' ? <><Row label="EXTRA PAYING" value={money(data.extra_paying, true)} tone="var(--algory-red)" /><Row label="INFLATED" value={pct(data.inflated_pct)} tone="var(--algory-red)" /></> : <Row label="FAIR STATUS" value="—" />}
-      {fair !== null && ask !== null && <TeslaRail left={`FAIR ${money(fair)}`} leftValue={fair} right={`ASK ${money(ask)}`} rightValue={ask} tone={comparison === 'INFLATED' ? 'red' : 'mint'} />}
+      <Row label="FAIR PRICE" value={money(fair)} primary={fair !== null}  fieldId={`obi.${side.toLowerCase()}.fair_price`} />
+      {comparison === 'BELOW_FAIR' ? <Row label="BELOW FAIR" value={pct(data.below_fair_pct)} tone="var(--mint)"  fieldId={`obi.${side.toLowerCase()}.below_fair_pct`} /> : comparison === 'INFLATED' ? <><Row label="EXTRA PAYING" value={money(data.extra_paying, true)} tone="var(--algory-red)"  fieldId={`obi.${side.toLowerCase()}.extra_paying`} /><Row label="INFLATED" value={pct(data.inflated_pct)} tone="var(--algory-red)"  fieldId={`obi.${side.toLowerCase()}.inflated_pct`} /></> : null}
+      {quality.valid === true && fair !== null && ask !== null && <TeslaRail left={`FAIR ${money(fair)}`} leftValue={fair} right={`ASK ${money(ask)}`} rightValue={ask} tone={comparison === 'INFLATED' ? 'red' : 'mint'} />}
     </div>
     <div className={styles.intelligenceBlock}>
       <div className={styles.intelligenceHeading}>DECAY</div>
-      <Row label="TIME LOST TODAY" value={money(timeLost, true)} />
-      <Row label="TIME VALUE LEFT" value={money(timeLeft)} />
-      {timeLost !== null && timeLeft !== null && <TeslaRail left={`LOST ${money(timeLost, true)}`} leftValue={timeLost} right={`LEFT ${money(timeLeft)}`} rightValue={timeLeft} tone="cyan" />}
-      <Row label="TIME LOSS EXPECTED" value={money(expected, true)} />
-      <Row label="ACTUAL CHANGE" value={money(actual, true)} />
+      <Row label="TIME LOST TODAY" value={money(timeLost, true)}  fieldId={`obi.${side.toLowerCase()}.time_lost_today`} />
+      <Row label="TIME VALUE LEFT" value={money(timeLeft)}  fieldId={`obi.${side.toLowerCase()}.time_value_left`} />
+      {quality.valid === true && timeLost !== null && timeLeft !== null && <TeslaRail left={`LOST ${money(timeLost, true)}`} leftValue={timeLost} right={`LEFT ${money(timeLeft)}`} rightValue={timeLeft} tone="cyan" />}
+      <Row label="TIME LOSS EXPECTED" value={money(expected, true)}  fieldId={`obi.${side.toLowerCase()}.time_loss_expected`} />
+      <Row label="ACTUAL CHANGE" value={money(actual, true)}  fieldId={`obi.${side.toLowerCase()}.actual_change`} />
       <Row label="PREMIUM HOLDING" value={holding === null ? '—' : `${money(Math.abs(holding))} ${holding >= 0 ? 'STRONGER' : 'WEAKER'}`} primary={holding !== null} tone={holding === null ? undefined : holding >= 0 ? 'var(--mint)' : 'var(--algory-red)'} />
-      {expected !== null && actual !== null && holding !== null && <TeslaRail left={`EXPECTED ${money(expected, true)}`} leftValue={expected} right={`ACTUAL ${money(actual, true)}`} rightValue={actual} tone={holding >= 0 ? 'mint' : 'red'} />}
+      {quality.valid === true && expected !== null && actual !== null && holding !== null && <TeslaRail left={`EXPECTED ${money(expected, true)}`} leftValue={expected} right={`ACTUAL ${money(actual, true)}`} rightValue={actual} tone={holding >= 0 ? 'mint' : 'red'} />}
     </div>
-    <div className={styles.intelligenceBlock}>
-      <div className={styles.intelligenceHeading}>FLOW DYNAMICS</div>
-      <Row label="BUYING VOL" value={money(flow.buying_volume)} /><Row label="SELLING VOL" value={money(flow.selling_volume)} />
-      <Row label="NET FLOW" value={money(flow.net_flow, true)} /><Row label="IMBALANCE" value={pct(flow.imbalance)} /><Row label="ACTIVITY × NORMAL" value={String(flow.activity_normal ?? '—')} />
-      {!hasFlow && <div className={styles.intelligenceUnavailable}>FLOW TAPE UNAVAILABLE · —</div>}
-    </div>
+    {hasPressure ? <div className={styles.intelligenceBlock}>
+      <div className={styles.intelligenceHeading}>LIVE MARKET PRESSURE</div>
+      <Row label="TOTAL BUY QTY" value={qty(pressure.total_buy_quantity)}  fieldId={`obi.${side.toLowerCase()}.total_buy_quantity`} />
+      <Row label="TOTAL SELL QTY" value={qty(pressure.total_sell_quantity)}  fieldId={`obi.${side.toLowerCase()}.total_sell_quantity`} />
+      {buyShare !== null && sellShare !== null ? <Row label="5L BOOK SHARE" value={`BUY ${buyShare.toFixed(0)}% · SELL ${sellShare.toFixed(0)}%`}  /> : null}
+      <Row label="LAST TRADE QTY" value={qty(pressure.last_trade_quantity)}  fieldId={`obi.${side.toLowerCase()}.last_trade_quantity`} />
+      <Row label="AVG TRADE PRICE" value={money(pressure.average_trade_price)}  fieldId={`obi.${side.toLowerCase()}.average_trade_price`} />
+    </div> : null}
     <div className={styles.intelligenceBlock}>
       <div className={styles.intelligenceHeading}>ENTRY EDGE</div>
-      <Row label="BUY @ ASK" value={money(ask)} /><Row label="BID" value={money(bid)} />
-      <Row label="SPREAD" value={ask !== null && bid !== null ? money(ask - bid) : '—'} /><Row label="ENTRY + EXIT COST" value={money(entryExitCost)} /><Row label="MY BUY PRICE" value="—" /><Row label="EDGE AFTER COSTS" value={money(edgeAfterCosts, true)} />
-      {fair !== null && ask !== null && bid !== null && entryExitCost !== null && edgeAfterCosts !== null && <TeslaRail left={`ASK ${money(ask)}`} leftValue={ask} right={`FAIR ${money(fair)}`} rightValue={fair} tone={edgeAfterCosts >= 0 ? 'mint' : 'red'} />}
+      <Row label="BUY @ ASK" value={money(ask)}  fieldId={`obi.${side.toLowerCase()}.ask`} /><Row label="BID" value={money(bid)}  fieldId={`obi.${side.toLowerCase()}.bid`} />
+      <Row label="SPREAD" value={money(spread)}  fieldId={`obi.${side.toLowerCase()}.spread`} /><Row label="FAIR ADVANTAGE" value={money(fairAdvantage, true)} tone={fairAdvantage === null ? undefined : fairAdvantage >= 0 ? 'var(--mint)' : 'var(--algory-red)'} />
     </div>
-    <div className={styles.intelligenceBlock}>
-      <div className={styles.intelligenceHeading}>BOOK / VOLUME</div>
-      <Row label="BIGGEST BUY ORDERS" value={String(book.biggest_buy_orders ?? '—')} /><Row label="BIGGEST SELL ORDERS" value={String(book.biggest_sell_orders ?? '—')} />
-      <Row label="MOST TRADED PRICE" value={money(book.most_traded_price)} /><Row label="CURRENT vs MOST TRADED" value={String(book.current_vs_most_traded ?? '—')} /><Row label="MY BUY PRICE" value={money(book.my_buy_price)} />
-    </div>
+    {hasBook ? <div className={styles.intelligenceBlock}>
+      <div className={styles.intelligenceHeading}>BOOK / DEPTH</div>
+      <Row label="BEST BID" value={level(book.best_bid)}  fieldId={`obi.${side.toLowerCase()}.best_bid`} />
+      <Row label="BEST ASK" value={level(book.best_ask)}  fieldId={`obi.${side.toLowerCase()}.best_ask`} />
+      <Row label="BIGGEST BUY LEVEL" value={level(book.biggest_buy_level)}  fieldId={`obi.${side.toLowerCase()}.biggest_buy_level`} />
+      <Row label="BIGGEST SELL LEVEL" value={level(book.biggest_sell_level)}  fieldId={`obi.${side.toLowerCase()}.biggest_sell_level`} />
+      <Row label="5L BUY QTY" value={qty(book.five_level_buy_quantity)}  fieldId={`obi.${side.toLowerCase()}.five_level_buy_quantity`} />
+      <Row label="5L SELL QTY" value={qty(book.five_level_sell_quantity)}  fieldId={`obi.${side.toLowerCase()}.five_level_sell_quantity`} />
+    </div> : null}
     {quality.valid !== true && <div className={styles.intelligenceFoot}>MODEL INPUT INVALID · —</div>}
   </section>
 })

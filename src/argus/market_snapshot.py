@@ -43,6 +43,9 @@ class ArgusMarketSnapshotProvider:
         self.master_loader = master_loader or self._download_master
         self.refresh_ttl_seconds = max(0.0, float(refresh_ttl_seconds))
         self._lock = Lock()
+        self._dhan_dormant: bool = False
+        from src.broker.upstox_client import UpstoxClient
+        self.upstox = UpstoxClient()
 
     def refresh(self, argus_projection: Mapping[str, Any]) -> dict[str, Any]:
         """Fetch one batched full quote and atomically publish its derived evidence."""
@@ -100,12 +103,65 @@ class ArgusMarketSnapshotProvider:
                             "security_id": int(leg["security_id"]),
                         }
 
-            quotes = self.dhan.get_full_quotes(watchlist)
+            source_provider = "UPSTOX"
+            quotes = None
+
+            # 1. Primary Active Path: Upstox
+            if self.upstox.has_token and not self.upstox.is_token_expired:
+                try:
+                    source_provider = "UPSTOX"
+                    upstox_keys = [f"NSE_FO|{contract['security_id']}"]
+                    id_to_watchlist_key = {str(contract["security_id"]): "NIFTY_FUT"}
+                    for w_key, w_val in watchlist.items():
+                        if w_key != "NIFTY_FUT":
+                            sec_id = str(w_val.get("security_id"))
+                            upstox_keys.append(f"NSE_FO|{sec_id}")
+                            id_to_watchlist_key[sec_id] = w_key
+
+                    upstox_quotes = self.upstox.get_quotes(upstox_keys)
+                    quotes = {}
+                    for q_val in upstox_quotes.values():
+                        token = q_val.get("instrument_token") or ""
+                        if "|" in token:
+                            sec_id = token.split("|")[1]
+                            w_key = id_to_watchlist_key.get(sec_id)
+                            if w_key:
+                                raw_copy = dict(q_val)
+                                raw_copy["buy_quantity"] = q_val.get("total_buy_quantity")
+                                raw_copy["sell_quantity"] = q_val.get("total_sell_quantity")
+                                quotes[w_key] = {
+                                    "security_id": int(sec_id),
+                                    "raw": raw_copy,
+                                }
+                except Exception as exc:
+                    logger.warning("Upstox quote fetch in Argus snapshot failed: %s", exc)
+                    quotes = None
+
+            # 2. Dormant / Parallel Path: Dhan (only if Upstox was unavailable and Dhan is not dormant)
+            if quotes is None and not self._dhan_dormant:
+                try:
+                    quotes = self.dhan.get_full_quotes(watchlist)
+                    futures_quote = quotes.get("NIFTY_FUT") or {}
+                    raw = futures_quote.get("raw")
+                    if isinstance(raw, Mapping):
+                        source_provider = "DHAN_V2_MARKETFEED_QUOTE"
+                    else:
+                        quotes = None
+                except Exception as exc:
+                    err_str = str(exc).upper()
+                    if "DH-901" in err_str or "EXPIRED" in err_str or "401" in err_str or "403" in err_str:
+                        self._dhan_dormant = True
+                        logger.warning("Dhan token expired / unauthorized (%s); marked dormant in Argus snapshot.", exc)
+                    quotes = None
+
+            if not quotes:
+                raise RuntimeError("MARKET_SNAPSHOT_QUOTES_UNAVAILABLE")
+
             futures_quote = quotes.get("NIFTY_FUT") or {}
             raw = futures_quote.get("raw")
             if not isinstance(raw, Mapping):
                 raise RuntimeError(
-                    str(futures_quote.get("reason") or "DHAN_FUTURES_QUOTE_UNAVAILABLE")
+                    str(futures_quote.get("reason") or "MARKET_SNAPSHOT_FUTURES_QUOTE_UNAVAILABLE")
                 )
 
             previous_state = self._load()
@@ -118,19 +174,26 @@ class ArgusMarketSnapshotProvider:
                 fetched_at=now,
                 previous=previous.get("futures"),
             )
+            if source_provider == "UPSTOX":
+                futures["source"] = "UPSTOX"
+                futures["quote_source"] = "UPSTOX"
             option_depth = {}
             for key, quote in quotes.items():
                 if key == "NIFTY_FUT" or not isinstance(quote.get("raw"), Mapping):
                     continue
-                option_depth[str(quote["security_id"])] = self._quote_evidence(
+                evidence = self._quote_evidence(
                     quote["raw"], fetched_at=now
                 )
+                if source_provider == "UPSTOX":
+                    evidence["source"] = "UPSTOX"
+                option_depth[str(quote["security_id"])] = evidence
             current = {
                 "schema_version": self.SCHEMA_VERSION,
                 "status": "AVAILABLE",
                 "fetched_at": now.isoformat(),
                 "argus_source_timestamp": underlying.get("fetched_at"),
-                "source": "DHAN_V2_MARKETFEED_QUOTE",
+                "source": source_provider,
+                "provider": "UPSTOX" if source_provider == "UPSTOX" else "DHAN",
                 "futures": futures,
                 "option_market_depth": option_depth,
                 "option_quote_count": len(option_depth),
@@ -424,6 +487,10 @@ class ArgusMarketSnapshotProvider:
 
     def _trade_time(self, value: Any, fallback: datetime) -> str:
         try:
+            val_str = str(value)
+            if val_str.isdigit() and len(val_str) >= 10:
+                epoch_s = float(val_str) / 1000.0 if len(val_str) >= 13 else float(val_str)
+                return datetime.fromtimestamp(epoch_s, tz=self.IST).isoformat()
             return datetime.strptime(str(value), "%d/%m/%Y %H:%M:%S").replace(
                 tzinfo=self.IST
             ).isoformat()

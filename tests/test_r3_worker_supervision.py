@@ -12,6 +12,26 @@ def sample_processor(kind, payload):
     return {"processed_kind": kind, "data": payload, "processed_at": time.time()}
 
 
+def test_local_spawn_context_uses_module_level_child_entrypoint():
+    boundary = IsolatedExecutionBoundary(
+        name="test-spawn-worker",
+        processor=sample_processor,
+        publish_interval_seconds=0.1,
+        context_name="spawn",
+        enable_supervision=False,
+    )
+    try:
+        assert boundary.start() is True
+        assert boundary.submit("normal", {"spawn": True}) is True
+        deadline = time.time() + 5.0
+        while boundary.current() is None and time.time() < deadline:
+            time.sleep(0.05)
+        assert boundary.current()["data"] == {"spawn": True}
+        assert boundary.status()["context"] == "spawn"
+    finally:
+        boundary.stop()
+
+
 def test_t2_t3_t4_t5_worker_supervision_death_detection_and_cache_invalidation():
     """T2-T5: Death detection, listener EOF, cache invalidation, and dead worker not ready."""
     boundary = IsolatedExecutionBoundary(

@@ -148,6 +148,20 @@ describe('oracle VOB command store', () => {
     next.feeds.argus = { data: { data: { underlying: { market_state: 'CLOSED' } } } }
     store.getState().ingestSnapshot(next)
     expect(store.getState().market.marketStatus).toBe('MARKET_CLOSED')
+    expect(store.getState().market.dataFreshness).toBe('MARKET_CLOSED')
+  })
+
+  it('uses canonical Fast Lane freshness when the empty legacy Oracle snapshot is unavailable', () => {
+    const store = createOracleStore()
+    const next = snapshot() as any
+    next.feeds.oracle.data_status = 'UNAVAILABLE'
+    next.feeds.vob_reversal = {
+      ok: true,
+      data: next.feeds.vob_reversal,
+      meta: { freshness: 'FRESH' },
+    }
+    store.getState().ingestSnapshot(next)
+    expect(store.getState().market.dataFreshness).toBe('FRESH')
   })
 
   it('retains truthful timeframe lineage and exact PRIMARY episode source', () => {
@@ -966,6 +980,257 @@ describe('oracle VOB command store', () => {
       expect(confirmed?.tradeId).toBe('EP-5M-20260817-001_CONFIRMED_REVERSAL')
       expect(confirmed?.entryPrice).toBe(136.0)
       expect(confirmed?.entryTime).toBe('2026-08-17T15:25:00Z')
+    })
+
+    it('parses exact option and NIFTY Horsepower without deriving events', () => {
+      const store = createOracleStore()
+      const value = snapshot({ revision: 120 }) as any
+      const projection = value.feeds.vob_reversal
+      const horsepower = {
+        instrument: 'CE:45102', session_id: '2026-08-20',
+        timeframes: {
+          '1m': { status: 'NEUTRAL', event_id: null, support_broken: 0, resistance_broken: 0 },
+          '3m': { status: 'RESISTANCE_OUT', event_id: 'hp-1', support_broken: 0, resistance_broken: 1 },
+          '5m': { status: 'NEUTRAL', event_id: null, support_broken: 0, resistance_broken: 0 },
+        },
+        combined: 'RESISTANCE OUT · 1X POWER', pulse_1m: 'NEUTRAL', continuity: 'CONTINUOUS',
+        events: [{
+          event_id: 'hp-1', instrument: 'CE:45102', timeframe: '3M', event: 'RESISTANCE_OUT',
+          zone_id: 'zone-r', confirmed_candle: '2026-08-20T11:48:00+05:30', close: 217.45,
+          notification_eligible: true,
+        }],
+      }
+      projection.current_itm1_contracts.CE.vob = { security_id: '45102', horsepower }
+      projection.nifty_horsepower = { ...horsepower, instrument: 'NIFTY' }
+      store.getState().ingestSnapshot(value)
+      expect(store.getState().market.currentItmCall.horsepower?.events[0].eventId).toBe('hp-1')
+      expect(store.getState().vob.underlyingHorsepower?.instrument).toBe('NIFTY')
+      expect(store.getState().vob.underlyingHorsepower?.timeframes['3m'].status).toBe('RESISTANCE_OUT')
+    })
+
+    it('parses resolver_event for CE and PE without client-side derivation', () => {
+      const store = createOracleStore()
+      const value = snapshot({ revision: 150 }) as any
+      value.feeds.option_buyer_intelligence = {
+        data: {
+          CE: {
+            resolver_event: {
+              label: 'SUPPORT GONE 3M · FLOW 4.1X',
+              semantic_direction: 'BEARISH',
+              variant: 'red',
+              confluence_state: 'FULL_FRESH',
+              pulse_key: '61647_EV3M_1787300000',
+              source_event_time: '2026-08-21T10:00:00+05:30',
+              held_previous: false,
+            },
+          },
+          PE: {
+            resolver_event: {
+              label: 'RES OUT 5M · OI 3.2X',
+              semantic_direction: 'BULLISH',
+              variant: 'mint',
+              confluence_state: 'FULL_FRESH',
+              pulse_key: '61703_EV5M_1787300000',
+              source_event_time: '2026-08-21T10:05:00+05:30',
+              held_previous: true,
+            },
+          },
+        },
+      }
+      store.getState().ingestSnapshot(value)
+      const ceResolver = store.getState().market.currentItmCall.resolverEvent
+      const peResolver = store.getState().market.currentItmPut.resolverEvent
+
+      expect(ceResolver).toBeDefined()
+      expect(ceResolver?.label).toBe('SUPPORT GONE 3M · FLOW 4.1X')
+      expect(ceResolver?.variant).toBe('red')
+      expect(ceResolver?.semanticDirection).toBe('BEARISH')
+      expect(ceResolver?.confluenceState).toBe('FULL_FRESH')
+      expect(ceResolver?.pulseKey).toBe('61647_EV3M_1787300000')
+      expect(ceResolver?.heldPrevious).toBe(false)
+
+      expect(peResolver).toBeDefined()
+      expect(peResolver?.label).toBe('RES OUT 5M · OI 3.2X')
+      expect(peResolver?.variant).toBe('mint')
+      expect(peResolver?.confluenceState).toBe('FULL_FRESH')
+      expect(peResolver?.heldPrevious).toBe(true)
+    })
+
+    it('hydrates Upstox market_info metrics into market slice', () => {
+      const store = createOracleStore()
+      const base = snapshot({ revision: 50 })
+      const value: DashboardSourceSnapshot = {
+        ...base,
+        feeds: {
+          ...base.feeds,
+          market_info: {
+            status: 'AVAILABLE',
+            provider: 'UPSTOX',
+            india_vix: 11.16,
+            india_vix_change: 0.48,
+            india_vix_change_pct: 4.49,
+            gift_nifty: 23809.5,
+            gift_nifty_change: -17.0,
+            gift_nifty_change_pct: -0.07,
+            pcr: 0.5641,
+            pcr_provenance: 'DIRECT_UPSTOX_MARKET_INFO',
+            max_pain: 23800.0,
+            max_pain_provenance: 'DIRECT_UPSTOX_MARKET_INFO',
+            gift_nifty_freshness: 'DELAYED_PROVIDER',
+            fii_dii_summary: {
+              status: 'DAILY_OFFICIAL',
+              date: '04 SEP',
+              fii_fut_net: -122.86,
+              dii_cash_net: 8930.12,
+            },
+          },
+        },
+      }
+      store.getState().ingestSnapshot(value)
+      const market = store.getState().market
+
+      expect(market.indiaVix).toBe(11.16)
+      expect(market.indiaVixChange).toBe(0.48)
+      expect(market.indiaVixChangePct).toBe(4.49)
+      expect(market.giftNifty).toBe(23809.5)
+      expect(market.giftNiftyChange).toBe(-17.0)
+      expect(market.giftNiftyChangePct).toBe(-0.07)
+      expect(market.giftNiftyFreshness).toBe('DELAYED_PROVIDER')
+      expect(market.upstoxPcr).toBe(0.5641)
+      expect(market.pcrProvenance).toBe('DIRECT_UPSTOX_MARKET_INFO')
+      expect(market.maxPain).toBe(23800.0)
+      expect(market.maxPainProvenance).toBe('DIRECT_UPSTOX_MARKET_INFO')
+      expect(market.fiiDiiSummary).toMatchObject({
+        status: 'DAILY_OFFICIAL',
+        date: '04 SEP',
+        fii_fut_net: -122.86,
+        dii_cash_net: 8930.12,
+      })
+    })
+
+    it('hydrates expanded Upstox market context (indices, shifts, OI shift, FII/DII derivatives) into market slice', () => {
+      const store = createOracleStore()
+      const base = snapshot({ revision: 51 })
+      const value: DashboardSourceSnapshot = {
+        ...base,
+        feeds: {
+          ...base.feeds,
+          market_info: {
+            status: 'AVAILABLE',
+            provider: 'UPSTOX',
+            bank_nifty: 57088.30,
+            bank_nifty_change: -281.35,
+            bank_nifty_change_pct: -0.49,
+            midcap_select: 14650.70,
+            midcap_select_change: -62.95,
+            midcap_select_change_pct: -0.43,
+            sensex: 76132.81,
+            sensex_change: -382.62,
+            sensex_change_pct: -0.50,
+            pcr: 0.5641,
+            pcr_shift: {
+              prev: 0.6521,
+              curr: 0.6100,
+              delta: -0.0421,
+              interval: '15m',
+              prev_time: '15:15',
+              curr_time: '15:30',
+            },
+            max_pain: 23800.0,
+            max_pain_shift: {
+              prev: 23800.0,
+              curr: 23800.0,
+              delta: 0.0,
+              interval: '15m',
+              prev_time: '15:15',
+              curr_time: '15:30',
+            },
+            oi_shift: {
+              status: 'AVAILABLE',
+              expiry: '2026-09-08',
+              provenance: 'DERIVED_UPSTOX_OPTION_CHAIN',
+              total_call_oi: 262194335,
+              total_put_oi: 147901195,
+              total_call_delta_oi: 69788420,
+              total_put_delta_oi: -14552395,
+              largest_call_increase: { strike: 23800.0, delta_oi: 15535650.0, oi: 17532970.0 },
+              largest_call_unwind: { strike: 25500.0, delta_oi: -1827735.0, oi: 3977545.0 },
+              largest_put_increase: { strike: 23750.0, delta_oi: 4150900.0, oi: 8411260.0 },
+              largest_put_unwind: { strike: 23900.0, delta_oi: -7532785.0, oi: 3586050.0 },
+              bias_rule: 'FACTUAL_OI_DELTAS_NO_BIAS_INFERRED',
+            },
+            fii_dii_summary: {
+              status: 'DAILY_OFFICIAL',
+              date: '04 SEP',
+              fii_fut_net: -122.86,
+              dii_cash_net: 8930.12,
+              fii_futures: {
+                buy_amount_cr: 1106.90,
+                sell_amount_cr: 1229.76,
+                net_amount_cr: -122.86,
+                buy_contracts: 6906,
+                sell_contracts: 7642,
+                long_contracts: 33689,
+                short_contracts: 269527,
+                oi_contracts: 303216,
+                oi_amount_cr: 48891.52,
+              },
+              fii_options: {
+                buy_amount_cr: 871378.46,
+                sell_amount_cr: 881281.75,
+                net_amount_cr: -9903.29,
+                buy_contracts: 5566210,
+                sell_contracts: 5626595,
+                call_long_contracts: 561316,
+                call_short_contracts: 864770,
+                put_long_contracts: 1070255,
+                put_short_contracts: 489344,
+                oi_contracts: 2985686,
+                oi_amount_cr: 470956.48,
+              },
+              dii_cash: {
+                buy_amount_cr: 19254.19,
+                sell_amount_cr: 10324.07,
+                net_amount_cr: 8930.12,
+                derivatives: 'N/A',
+              },
+            },
+          },
+        },
+      }
+      store.getState().ingestSnapshot(value)
+      const market = store.getState().market
+
+      // Indices
+      expect(market.bankNifty).toBe(57088.30)
+      expect(market.bankNiftyChange).toBe(-281.35)
+      expect(market.bankNiftyChangePct).toBe(-0.49)
+      expect(market.midcapSelect).toBe(14650.70)
+      expect(market.midcapSelectChange).toBe(-62.95)
+      expect(market.midcapSelectChangePct).toBe(-0.43)
+      expect(market.sensex).toBe(76132.81)
+      expect(market.sensexChange).toBe(-382.62)
+      expect(market.sensexChangePct).toBe(-0.50)
+
+      // Shifts
+      expect(market.pcrShift?.delta).toBe(-0.0421)
+      expect(market.pcrShift?.interval).toBe('15m')
+      expect(market.maxPainShift?.prev).toBe(23800.0)
+      expect(market.maxPainShift?.curr).toBe(23800.0)
+
+      // OI Shift
+      expect(market.oiShift?.total_call_delta_oi).toBe(69788420)
+      expect(market.oiShift?.total_put_delta_oi).toBe(-14552395)
+      expect(market.oiShift?.largest_call_increase?.strike).toBe(23800.0)
+      expect(market.oiShift?.largest_call_unwind?.strike).toBe(25500.0)
+      expect(market.oiShift?.bias_rule).toBe('FACTUAL_OI_DELTAS_NO_BIAS_INFERRED')
+
+      // FII/DII
+      expect(market.fiiDiiSummary?.fii_futures?.buy_contracts).toBe(6906)
+      expect(market.fiiDiiSummary?.fii_futures?.sell_contracts).toBe(7642)
+      expect(market.fiiDiiSummary?.fii_options?.call_long_contracts).toBe(561316)
+      expect(market.fiiDiiSummary?.dii_cash?.net_amount_cr).toBe(8930.12)
+      expect(market.fiiDiiSummary?.dii_cash?.derivatives).toBe('N/A')
     })
   })
 })

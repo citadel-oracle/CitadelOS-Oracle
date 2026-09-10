@@ -99,7 +99,10 @@ class NiftyVOBEngine:
             recently_broken.sort(key=lambda z: z.broken_at or "", reverse=True)
             nearest_bull = self._select_manual_nearest(tf, "BULLISH", current_nifty_price or 0.0)
             nearest_bear = self._select_manual_nearest(tf, "BEARISH", current_nifty_price or 0.0)
-            return self._format_result(tf, nearest_bull, nearest_bear, recently_broken[:2], current_nifty_price or 0.0, now or datetime.now(timezone.utc))
+            result = self._format_result(tf, nearest_bull, nearest_bear, recently_broken[:2], current_nifty_price or 0.0, now or datetime.now(timezone.utc))
+            result["zone_ladder"] = [zone.to_dict() for zone in self._zones[tf].values()]
+            result["latest_finalized_bar"] = None
+            return result
 
         current_price = (
             float(current_nifty_price)
@@ -273,7 +276,18 @@ class NiftyVOBEngine:
         recently_broken = [z for z in all_tf_zones if z.status == "BROKEN"]
         recently_broken.sort(key=lambda z: z.broken_at or "", reverse=True)
 
-        return self._format_result(tf, nearest_bullish, nearest_bearish, recently_broken[:2], current_price, now_dt)
+        result = self._format_result(tf, nearest_bullish, nearest_bearish, recently_broken[:2], current_price, now_dt)
+        # Additive evidence for close-only observers. Existing selected-zone,
+        # mitigation, Pine parity and trading outputs remain untouched.
+        latest = valid_candles[-1]
+        result["zone_ladder"] = [zone.to_dict() for zone in all_tf_zones]
+        result["latest_finalized_bar"] = {
+            "timestamp": self._to_iso(latest.get("timestamp") or latest.get("time")),
+            "candle_closed_at": self._to_iso(latest.get("candle_closed_at") or latest.get("timestamp") or latest.get("time")),
+            "close": float(latest["close"]),
+            "finalized": True,
+        }
+        return result
 
     def _select_manual_nearest(self, tf: str, side: str, current_price: float) -> Optional[VOBZone]:
         all_tf_zones = list(self._zones[tf].values())
@@ -470,7 +484,12 @@ class NiftyVOBEngine:
         if not valid_1m:
             return self.analyze_all({}, current_nifty_price, now)
 
+        # Keep the canonical completed 1-minute source alongside the derived
+        # session-aligned buckets.  The replay engine already supports 1m;
+        # omitting it here made the public multi-timeframe projection silently
+        # report 1m as unavailable even when genuine 1m candles were present.
         candles_dict = {
+            "1m": valid_1m,
             "3m": self._resample_1m(valid_1m, 3),
             "5m": self._resample_1m(valid_1m, 5),
             "15m": self._resample_1m(valid_1m, 15),

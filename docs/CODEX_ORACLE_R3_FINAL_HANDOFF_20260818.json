@@ -5,7 +5,7 @@
     "pre_r3": {"commit": "db0a6e8", "tag": "ACCEPTED_CODEX_R2_R2_1_PRE_R3_BASELINE"},
     "m1": {"commit": "50bb09b", "tag": "R3_MISSION1_PASSED"},
     "m2_final": {"commit": "a523214", "tag": "R3_MISSION2_FINAL_PASSED", "implementation_commit": "e963ba1"},
-    "m3_current": {"commit": "e48f63a9e3108b9834c979623fed4fee7f969225", "tag": "R3_INFRA_FREEZE_VERIFIED"}
+    "m3_current": {"commit": "f556067bf75cf948b62a99dbef6ea1a8d255b87b", "tag": "R3_INFRA_FREEZE_VERIFIED"}
   },
   "worktree": {
     "dirty": true,
@@ -41,7 +41,7 @@
     }
   },
   "final_freeze": {
-    "final_head": "e48f63a9e3108b9834c979623fed4fee7f969225",
+    "final_head": "f556067bf75cf948b62a99dbef6ea1a8d255b87b",
     "final_tag": "R3_INFRA_FREEZE_VERIFIED",
     "oracle_infra_status": "FROZEN",
     "runtime_truth_sole_public_authority": true,

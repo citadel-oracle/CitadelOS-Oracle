@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from threading import Condition, Event, Lock, Thread
 from time import monotonic, perf_counter, perf_counter_ns
 from typing import Any, Callable, Mapping
+import uuid
 
 from src.oracle.fast_lane_publisher import (
     FastLanePublisherBoundary,
@@ -61,10 +62,12 @@ class OracleFastLane:
         self._latest_snapshot_event: dict[str, Any] | None = None
         self._pending_flow_meters: dict[str, Any] | None = None
         self._compact_sequence = 0
+        self._runtime_instance_id = uuid.uuid4().hex
         self._build_revision = 0
         self._active_revision = 0
         self._source_revisions: dict[str, str] = {}
         self._core_feeds: dict[str, Any] = {}
+        self._latest_latency_stages: dict[str, int] = {}
         self._assembly_ms: deque[float] = deque(maxlen=256)
         self._serialization_ms: deque[float] = deque(maxlen=256)
         self._action_serialization_ms: deque[float] = deque(maxlen=2_048)
@@ -304,6 +307,7 @@ class OracleFastLane:
                 "generated_at": published_at,
                 "symbol": "NIFTY",
                 "global_revision": self._active_revision,
+                "runtime_instance_id": self._runtime_instance_id,
                 "changed_sections": ["order_flow"],
                 "source_revisions": dict(self._source_revisions),
                 "flow_pulse": dict(payload),
@@ -401,6 +405,7 @@ class OracleFastLane:
                 else None
             )
         payload = {
+            "runtime_instance_id": self._runtime_instance_id,
             "build_revision": build_revision,
             "changed": sorted(changed),
             "source_revisions": source_revisions,
@@ -432,8 +437,12 @@ class OracleFastLane:
             "trace_id": snapshot.get("trace_id"),
             "generated_at": snapshot.get("generated_at"),
             "global_revision": int(snapshot.get("revision") or 0),
+            "runtime_instance_id": str(
+                snapshot.get("runtime_instance_id") or self._runtime_instance_id
+            ),
             "changed_sections": list(snapshot.get("changed_sections") or ()),
             "source_revisions": dict(snapshot.get("source_revisions") or {}),
+            "latency_stages": dict(snapshot.get("latency_stages") or {}),
             "full": False,
             "_encoded": snapshot.get("patch_event"),
             "_resync_encoded": snapshot.get("resync_event"),
@@ -444,6 +453,11 @@ class OracleFastLane:
             self._active_revision = int(snapshot.get("revision") or 0)
             self._source_revisions = dict(snapshot.get("source_revisions") or {})
             self._core_feeds = dict(snapshot.get("core_feeds") or {})
+            self._latest_latency_stages = {
+                str(key): int(value)
+                for key, value in (snapshot.get("latency_stages") or {}).items()
+                if isinstance(value, int) and not isinstance(value, bool)
+            }
             self._publisher_metrics.update(
                 {
                     key: snapshot.get(key)
@@ -601,8 +615,10 @@ class OracleFastLane:
                 "status": "READY" if self._body is not None else "STARTING",
                 "payload_size": len(self._body or b""),
                 "revision": self._active_revision,
+                "runtime_instance_id": self._runtime_instance_id,
                 "source_revisions": dict(self._source_revisions),
                 "core_feeds": dict(self._core_feeds),
+                "latest_latency_stages": dict(self._latest_latency_stages),
                 "provider_readiness": provider_readiness,
                 "publisher": self._publisher.status(),
                 "provider_ms": dict(self._provider_ms_cached),

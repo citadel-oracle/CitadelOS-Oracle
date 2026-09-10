@@ -1,0 +1,118 @@
+{
+  "invariants": {
+    "ai_execution_influence": 0.0,
+    "ai_vob_influence": 0.0,
+    "broker_submission": false,
+    "gemini_dispatch_enabled": false,
+    "sol_dispatch_enabled": false
+  },
+  "providers": {
+    "gemini": {
+      "classified_from_observed_status": {
+        "stale_before_publication": 165,
+        "useful_confirmation": 6
+      },
+      "current_status_file_status": "NOT_INVOKED",
+      "displayed_counts": {
+        "CURRENT": 6,
+        "OUTDATED": 446,
+        "STALE": 165
+      },
+      "first_observed": "2026-09-10T09:32:08.773142+05:30",
+      "last_observed": "2026-09-10T10:02:06.779968+05:30",
+      "latency_ms": {
+        "count": 0,
+        "max": null,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "note": "Counts are from local telemetry/status only; successful JSON is not treated as useful intelligence.",
+      "pause_state": "PAUSED \u00b7 INPUT/ARCHITECTURE HARDENING",
+      "paused": true,
+      "soak_display_samples": 617,
+      "status_counts": {
+        "CURRENT": 6,
+        "OUTDATED": 446,
+        "STALE": 165
+      },
+      "token_usage_evidence": {},
+      "unique_receipt_count": 3,
+      "unique_revision_count": 58
+    },
+    "luna": {
+      "classified_from_observed_status": {
+        "useful_confirmation": 617
+      },
+      "current_status_file_status": "CURRENT",
+      "displayed_counts": {
+        "WAIT": 617
+      },
+      "first_observed": "2026-09-10T09:32:08.773142+05:30",
+      "last_observed": "2026-09-10T10:02:06.779968+05:30",
+      "latency_ms": {
+        "count": 617,
+        "max": 33698.73,
+        "p50": 15726.47,
+        "p95": 20158.01,
+        "p99": 31920.38
+      },
+      "note": "Counts are from local telemetry/status only; successful JSON is not treated as useful intelligence.",
+      "pause_state": null,
+      "paused": null,
+      "soak_display_samples": 617,
+      "status_counts": {
+        "WAIT": 617
+      },
+      "token_usage_evidence": {},
+      "unique_receipt_count": 0,
+      "unique_revision_count": 58
+    },
+    "sol": {
+      "classified_from_observed_status": {
+        "stale_before_publication": 521,
+        "useful_confirmation": 86
+      },
+      "current_status_file_status": "STALE",
+      "displayed_counts": {
+        "CURRENT": 86,
+        "OUTDATED": 10,
+        "STALE": 521
+      },
+      "first_observed": "2026-09-10T09:32:08.773142+05:30",
+      "last_observed": "2026-09-10T10:02:06.779968+05:30",
+      "latency_ms": {
+        "count": 0,
+        "max": null,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "note": "Counts are from local telemetry/status only; successful JSON is not treated as useful intelligence.",
+      "pause_state": "PAUSED \u00b7 INPUT HARDENING",
+      "paused": true,
+      "soak_display_samples": 617,
+      "status_counts": {
+        "CURRENT": 86,
+        "OUTDATED": 10,
+        "STALE": 521
+      },
+      "token_usage_evidence": {
+        "cost_micro_usd": 0,
+        "credit_delta": 0,
+        "input_tokens": 3204,
+        "output_tokens": 346,
+        "total_tokens": 3550
+      },
+      "unique_receipt_count": 22,
+      "unique_revision_count": 58
+    }
+  },
+  "schema_version": "citadel-ai-request-ledger-v1",
+  "session_date": "2026-09-10",
+  "source_files": [
+    "artifacts/soak_30m_20260910/ai_cycles.jsonl",
+    "data/sol_shadow/live_shadow_status.json",
+    "data/oracle_sol/live_cognitive_status.json"
+  ]
+}

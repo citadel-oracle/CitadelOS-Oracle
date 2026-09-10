@@ -163,6 +163,44 @@ def test_api_cache_respects_ttl_and_closed_market_stays_stale():
         assert dhan.chain_calls == 2
 
 
+def test_finished_same_day_expiry_rolls_current_cache_to_next_dhan_expiry():
+    """A closed-market LAST_GOOD must not retain the finished weekly contract."""
+
+    class RolloverDhan(FakeDhan):
+        def get_option_expiries(self, **kwargs):
+            self.expiry_calls += 1
+            return {"status": "success", "data": ["2026-07-14", "2026-07-21"]}
+
+    with TemporaryDirectory() as directory:
+        now = MutableNow(datetime(2026, 7, 14, 15, 20, tzinfo=IST))
+        clock = MutableClock()
+        api, dhan = make_api(
+            Path(directory) / "baseline.json", now, clock, dhan=RolloverDhan()
+        )
+
+        before_close = api.get_oi("NIFTY")
+        assert before_close["data"]["underlying"]["expiry"] == "2026-07-14"
+
+        now.value = datetime(2026, 7, 14, 15, 31, tzinfo=IST)
+        clock.value = 1.0
+        after_close = api.get_oi("NIFTY")
+
+        assert after_close["cache"]["hit"] is False
+        assert after_close["data"]["underlying"]["expiry"] == "2026-07-21"
+        assert dhan.expiry_calls == 2
+        assert dhan.chain_calls == 2
+
+        # Cache-only readers use the rolled contract while it is available.
+        latest = api.projection("NIFTY")
+        assert latest["data"]["underlying"]["expiry"] == "2026-07-21"
+
+        # They must fail closed rather than resurrect a finished LAST_GOOD.
+        api._cache[("NIFTY", "current")] = {
+            "data": before_close["data"], "cached_at": clock.value + 1.0,
+        }
+        assert api.projection("NIFTY") is None
+
+
 def test_projection_freshness_is_separate_from_three_second_fetch_dedup():
     with TemporaryDirectory() as directory:
         started = datetime(2026, 7, 10, 10, 0, tzinfo=IST)

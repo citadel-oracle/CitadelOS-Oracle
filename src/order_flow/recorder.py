@@ -102,6 +102,7 @@ class OrderFlowEvidenceRecorder:
         self._last_error_at: str | None = None
         self._worker_failed = False
         self._bytes_written = 0
+        self._integrity_rollovers: list[dict[str, Any]] = []
 
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
@@ -295,6 +296,7 @@ class OrderFlowEvidenceRecorder:
         with self._state_lock:
             raw_streams = dict(self._raw_streams)
             paper_sessions = len(self._paper_session_ids)
+            integrity_rollovers = tuple(self._integrity_rollovers)
         derived_queued = self._queue.qsize()
         raw_queued = self._raw_queue.qsize()
         queued = derived_queued + raw_queued
@@ -346,6 +348,7 @@ class OrderFlowEvidenceRecorder:
             "capture_output": str(self.root / "raw_full_packets" / "YYYY-MM-DD.jsonl"),
             "registered_instruments": registered_instruments,
             "paper_sessions": paper_sessions,
+            "integrity_rollovers": integrity_rollovers,
             "producer_rate_per_s": round(producer_rate, 3),
             "writer_rate_per_s": round(writer_rate, 3),
             "batching": {
@@ -507,13 +510,35 @@ class OrderFlowEvidenceRecorder:
                         with self._metrics_lock:
                             self._queue_wait_ms.append(max(0.0, (dequeue_ns - queued_at) / 1_000_000.0))
                     before_bytes = stream.path.stat().st_size if stream.path.exists() else 0
-                    stream.append_batch(
-                        (
-                            (event_type, payload, None, key)
-                            for event_type, payload, key, _ in items
-                        ),
-                        return_rows=False,
-                    )
+                    batch_records = [
+                        (event_type, payload, None, key)
+                        for event_type, payload, key, _ in items
+                    ]
+                    try:
+                        stream.append_batch(batch_records, return_rows=False)
+                    except RuntimeError as error:
+                        if "HASH_CHAIN_INVALID" not in str(error):
+                            raise
+                        rollover_at = datetime.now(timezone.utc)
+                        quarantined = stream.quarantine_corrupted_segment(
+                            suffix=rollover_at.strftime("%Y%m%dT%H%M%S%fZ")
+                        )
+                        rollover = {
+                            "event_type": "STREAM_INTEGRITY_ROLLOVER",
+                            "at_utc": rollover_at.isoformat(),
+                            "active_path": str(stream.path),
+                            "quarantined_path": str(quarantined),
+                            "original_preserved": True,
+                            "reason": "HASH_CHAIN_INVALID",
+                        }
+                        with self._state_lock:
+                            self._integrity_rollovers.append(rollover)
+                        self.gaps.append(
+                            "ORDER_FLOW_STREAM_INTEGRITY_ROLLOVER",
+                            rollover,
+                            idempotency_key=f"rollover:{quarantined.name}",
+                        )
+                        stream.append_batch(batch_records, return_rows=False)
                     after_bytes = stream.path.stat().st_size if stream.path.exists() else before_bytes
                     append_metrics = stream.append_metrics()
                     with self._metrics_lock:

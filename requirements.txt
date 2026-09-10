@@ -4,3 +4,6 @@ python-dotenv>=1,<2
 requests>=2.31,<3
 uvicorn>=0.22,<1
 websockets>=16,<17
+google-genai>=2.20,<3
+duckdb>=1.5,<2
+jsonschema>=4.23,<5

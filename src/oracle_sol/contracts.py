@@ -297,7 +297,28 @@ class SolEvidenceSnapshot:
     source_hashes: Dict[str, str]
     domestic_indices: Dict[str, float]
     vob_free_verified: str = "ZERO_VOB_ALLOWLIST_CONFIRMED"
-    schema_version: str = "3.1.0-sol-p0.3b"
+    schema_version: str = "3.2.0-sol-p0"
+
+    # ── 8. Phase-0 Extended Order Flow, Positioning & OSE Fields ──
+    buyer_absorption: Optional[float] = None
+    seller_absorption: Optional[float] = None
+    failed_aggression: Optional[float] = None
+    price_response_efficiency: Optional[float] = None
+    continuation_efficiency: Optional[float] = None
+    cvd: Optional[int] = None
+    bid_depletion: Optional[int] = None
+    ask_depletion: Optional[int] = None
+    bid_refill: Optional[int] = None
+    ask_refill: Optional[int] = None
+    order_flow_response_state: Optional[str] = None
+    total_net_gex_inr_cr: Optional[float] = None
+    dealer_regime: Optional[str] = None
+    straddle_change_15m: Optional[float] = None
+    ose_ssi_score: Optional[int] = None
+    ose_decision_window: Optional[str] = None
+    pcr_oi: Optional[float] = None
+    india_vix: Optional[float] = None
+    india_vix_context: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -332,13 +353,32 @@ class SolEvidenceSnapshot:
             "pe_pricing": self.pe_pricing,
             "atm_straddle_price": self.atm_straddle_price,
             "straddle_change_5m": self.straddle_change_5m,
+            "straddle_change_15m": self.straddle_change_15m,
             "atm_iv": self.atm_iv,
             "skew_25d": self.skew_25d,
             "skew_10d": self.skew_10d,
             "expected_move_pts": self.expected_move_pts,
             "net_gex_inr": self.net_gex_inr,
+            "total_net_gex_inr_cr": self.total_net_gex_inr_cr,
+            "dealer_regime": self.dealer_regime,
             "highest_gex_strike": self.highest_gex_strike,
             "zero_gamma_level": self.zero_gamma_level,
+            "buyer_absorption": self.buyer_absorption,
+            "seller_absorption": self.seller_absorption,
+            "failed_aggression": self.failed_aggression,
+            "price_response_efficiency": self.price_response_efficiency,
+            "continuation_efficiency": self.continuation_efficiency,
+            "cvd": self.cvd,
+            "bid_depletion": self.bid_depletion,
+            "ask_depletion": self.ask_depletion,
+            "bid_refill": self.bid_refill,
+            "ask_refill": self.ask_refill,
+            "order_flow_response_state": self.order_flow_response_state,
+            "ose_ssi_score": self.ose_ssi_score,
+            "ose_decision_window": self.ose_decision_window,
+            "pcr_oi": self.pcr_oi,
+            "india_vix": self.india_vix,
+            "india_vix_context": self.india_vix_context,
             "availability_matrix": self.availability_matrix,
             "source_hashes": self.source_hashes,
             "vob_free_verified": self.vob_free_verified,
@@ -477,3 +517,125 @@ SOL_STRUCTURED_OUTPUT_JSON_SCHEMA: Dict[str, Any] = {
         "additionalProperties": False,
     },
 }
+
+
+# =============================================================================
+# PHASE-1 THREE-MODEL TOPOLOGY DATA CONTRACTS
+# =============================================================================
+
+# =============================================================================
+# PHASE-1 THREE-MODEL TOPOLOGY DATA CONTRACTS
+# =============================================================================
+
+@dataclass
+class ProviderCallTelemetry:
+    """Explicit lifecycle truth for an individual provider model invocation."""
+    request_attempted: bool = False
+    request_sent: bool = False
+    response_received: bool = False
+    request_id: Optional[str] = None
+    provider_request_id: Optional[str] = None
+    model_id: str = ""
+    http_status: Optional[int] = None  # MUST default to None, NOT 200
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    latency_ms: Optional[float] = None
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    cached_tokens: int = 0
+    schema_status: Optional[str] = None
+    error_category: Optional[str] = None
+    rate_headers: Optional[Dict[str, Any]] = None
+    input_revision: int = 0
+    input_hash: str = ""
+    output_hash: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class QwenObservation:
+    """Fast Market Sentinel structured output (Qwen 3.8 27B)."""
+    observed_at: str
+    input_revision: int
+    market_phase: str
+    continuation_status: str  # CONTINUATION_STRENGTHENING, CONTINUATION_INTACT, CONTINUATION_LOSING_PROGRESS, REVERSAL_WATCH, REVERSAL_DEVELOPING, TRANSITION_UNRESOLVED
+    current_side_pressure: str
+    earliest_contradiction: Dict[str, Any]  # {"summary": str, "evidence_ids": List[str]}
+    aggression_price_response: str
+    call_premium_response: str
+    put_premium_response: str
+    reversal_watch: Dict[str, Any]  # {"status": str, "direction": str, "why": str, "evidence_ids": List[str]}
+    strongest_new_relationship: str
+    unresolved: List[str] = field(default_factory=list)
+    evidence_ids: List[str] = field(default_factory=list)
+    model_name: str = "qwen/qwen3.8-27b"
+    status: str = "CURRENT"  # CURRENT, RATE_LIMITED, UNAVAILABLE, AWAITING_FIRST_ANALYSIS
+    latency_ms: float = 0.0
+    telemetry: Optional[ProviderCallTelemetry] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class GeminiReview:
+    """Independent Senior Reviewer structured output (Gemini 3.7 Flash)."""
+    reviewed_at: str
+    input_revision: int
+    interpretation: str
+    strongest_agreement: str
+    strongest_disagreement: str
+    relationship_primary_may_have_missed: str
+    reversal_risk: str  # LOW, MODERATE, ELEVATED, HIGH, UNKNOWN
+    premium_warning: str
+    late_state_warning: str
+    evidence_ids: List[str] = field(default_factory=list)
+    status: str = "CURRENT"  # CURRENT, QUOTA_BLOCKED, RATE_LIMITED, UNAVAILABLE, AWAITING_FIRST_ANALYSIS
+    model_name: str = "gemini-3.8-flash"
+    latency_ms: float = 0.0
+    telemetry: Optional[ProviderCallTelemetry] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class HypothesisState:
+    """State and grounding for one of the 5 concurrent hypotheses."""
+    name: str
+    status: str  # SUPPORTED, WEAKENING, CONTRADICTED, UNRESOLVED
+    why: str
+    supporting_evidence_ids: List[str] = field(default_factory=list)
+    opposing_evidence_ids: List[str] = field(default_factory=list)
+    premium_confirmation: str = "UNRESOLVED"
+    what_changed_since_previous: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class PrimarySynthesisOutput:
+    """Primary Deep Synthesizer (GPT-OSS 120B) operational output."""
+    current_state: str  # CALL, PUT, CALL_DEVELOPING, PUT_DEVELOPING, REVERSAL_WATCH, NO_TRADE, AWAITING_FIRST_ANALYSIS
+    setup_family: str   # CONTINUATION, REVERSAL, TRANSITION, UNRESOLVED
+    entry_window: str   # READY, APPROACHING, WAIT, INVALID, UNRESOLVED
+    why_now: List[str]  # Maximum 3 concise short bullets
+    reversal_watch: Dict[str, Any]  # {"direction": str, "status": str, "first_contradiction": str, "what_failed": str, "premium_confirmation": str, "what_still_opposes": str, "why_not_confirmed": str, "evidence_ids": List[str]}
+    option_buyer_side: str  # CALL_FAVOURABLE, PUT_FAVOURABLE, BOTH_POOR, UNRESOLVED
+    premium_confirmation: str  # CONFIRMING, PARTIAL, DIVERGING, UNRESOLVED
+    what_would_change_my_mind: List[str]  # Maximum 2 short bullets
+    five_hypotheses: Dict[str, Any]  # call_continuation, put_continuation, put_to_call_reversal, call_to_put_reversal, no_trade_transition
+    evidence_ids: List[str] = field(default_factory=list)
+    model_name: str = "openai/gpt-oss-120b"
+    status: str = "CURRENT"  # CURRENT, RATE_LIMITED, UNAVAILABLE, AWAITING_FIRST_ANALYSIS
+    input_revision: int = 0
+    synthesized_at: str = ""
+    latency_ms: float = 0.0
+    telemetry: Optional[ProviderCallTelemetry] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)

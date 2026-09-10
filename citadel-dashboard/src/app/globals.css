@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../design-system/tokens.css";
+@import "../components/institutional/citadel-live-island.css";
 
 @theme {
   --color-background: hsl(240 16% 2%);

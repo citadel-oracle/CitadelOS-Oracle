@@ -33,6 +33,8 @@ export const feedSelectors = {
   fusionShadow: selectFeed<unknown>('fusion_shadow'),
   optionsStructure: selectFeed<unknown>('options_structure'),
   vobReversal: selectFeed<unknown>('vob_reversal'),
+  optionBuyerIntelligence: selectFeed<unknown>('option_buyer_intelligence'),
+  marketInfo: selectFeed<unknown>('market_info'),
 } as const
 
 
@@ -58,3 +60,4 @@ export const selectFeedMeta = memoized((state: DashboardState) => state.feedMeta
 export const selectForecastProjectionMeta = memoized((state: DashboardState) => state.forecastProjectionMeta)
 export const selectSelectedSymbol = memoized((state: DashboardState) => state.selectedSymbol)
 export const selectIsRefreshing = memoized((state: DashboardState) => state.isRefreshing)
+export const selectFastLaneRevision = memoized((state: DashboardState) => state.sourceRevision)

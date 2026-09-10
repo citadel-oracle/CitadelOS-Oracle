@@ -50,6 +50,16 @@ def normalize_genuine_1m(
             values[field] = float(value)
         if values["volume"] < 0 or values["high"] < max(values["open"], values["close"]) or values["low"] > min(values["open"], values["close"]):
             raise FuturesHistoryError("FUTURES_1M_OHLCV_INVALID")
+        if raw.get("open_interest") is not None:
+            try:
+                values["open_interest"] = float(raw["open_interest"])
+            except (ValueError, TypeError):
+                pass
+        elif raw.get("oi") is not None:
+            try:
+                values["open_interest"] = float(raw["oi"])
+            except (ValueError, TypeError):
+                pass
         unique[stamp] = {"time": stamp, **values}
     return [unique[key] for key in sorted(unique)]
 
@@ -94,7 +104,7 @@ def finalized_five_minute_bars(
             continue
         if datetime.fromtimestamp(start + 300, tz=timezone.utc) > as_of_utc:
             continue
-        result.append({
+        bar = {
             "time": start,
             "open": rows_in_bucket[0]["open"],
             "high": max(row["high"] for row in rows_in_bucket),
@@ -102,9 +112,12 @@ def finalized_five_minute_bars(
             "close": rows_in_bucket[-1]["close"],
             "volume": sum(row["volume"] for row in rows_in_bucket),
             "authoritative": True,
-            "source": "DHAN_FUTIDX_CANONICAL_1M",
+            "source": rows_in_bucket[-1].get("source", "UPSTOX_FUTIDX_CANONICAL_1M"),
             "input_candles_count": 5,
-        })
+        }
+        if "open_interest" in rows_in_bucket[-1]:
+            bar["open_interest"] = rows_in_bucket[-1]["open_interest"]
+        result.append(bar)
     return result
 
 

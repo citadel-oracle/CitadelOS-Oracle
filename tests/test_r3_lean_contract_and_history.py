@@ -99,7 +99,7 @@ def test_fast_lane_lean_payload_reduction_and_structure():
     assert lean_st["data"]["deployments"][0]["name"] == "Pullback Master"
     assert "bulky_config_schema" not in lean_st["data"]["deployments"][0]
 
-    assert len(lean_fc["data"]["candles"]) == 30
+    assert len(lean_fc["data"]["candles"]) == 100
     assert lean_fc["data"]["levels"]["r1"] == 24300
     assert lean_fc["data"]["forecast"]["bias"] == "BULLISH"
 
@@ -108,3 +108,37 @@ def test_fast_lane_lean_payload_reduction_and_structure():
     assert tac["contract_selection"]["directive_contract"] == "NIFTY24AUG24250CE"
     assert "full_evidence" not in tac["argus_prime"]
     assert len(tac["argus_prime"]["strike_spine"]["strikes"]) == 7
+
+
+def test_fast_lane_vob_projection_removes_only_redundant_ladders():
+    lane = {
+        "demand": {"zone_id": "support", "zone_low": 100.0, "zone_high": 101.0},
+        "supply": {"zone_id": "resistance", "zone_low": 110.0, "zone_high": 111.0},
+        "latest_finalized_bar": {"close": 105.0},
+        "zone_ladder": [{"zone_id": f"zone-{index}"} for index in range(100)],
+    }
+    vob = {
+        "security_id": "101",
+        "horsepower": {"combined": "NO CLEAN STRUCTURAL CHANGE"},
+        "timeframes": {"1m": lane, "3m": lane, "5m": lane},
+    }
+    feed = {
+        "ok": True,
+        "data": {
+            "revision": 7,
+            "current_itm_vobs": {"CE": vob},
+            "current_itm1_contracts": {"CE": {"quote": {"bid": 10.0}, "vob": vob}},
+            "option_contracts": {"CE": {"contract_status": "CURRENT_ITM1", "vob": vob}},
+        },
+        "meta": {},
+    }
+
+    lean = _make_lean_live_feed("vob_reversal", feed)
+
+    assert "current_itm_vobs" not in lean["data"]
+    for collection_name in ("current_itm1_contracts", "option_contracts"):
+        published_vob = lean["data"][collection_name]["CE"]["vob"]
+        assert published_vob["horsepower"] == vob["horsepower"]
+        assert published_vob["timeframes"]["3m"]["demand"] == lane["demand"]
+        assert published_vob["timeframes"]["3m"]["latest_finalized_bar"] == lane["latest_finalized_bar"]
+        assert "zone_ladder" not in published_vob["timeframes"]["3m"]

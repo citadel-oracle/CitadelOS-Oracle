@@ -43,15 +43,16 @@ import { CitadelPrimaryNavigation } from './CitadelPrimaryNavigation'
 import { OracleArgusPrime01C } from './OracleArgusPrime01C'
 import { FlowPulsePaperLedger, OracleFlowPulse } from './OracleFlowPulse'
 import { OracleFuturesVwapChart } from './OracleFuturesVwapChart'
+import { GeminiMarketBrainSection } from './GeminiMarketBrainSection'
 import { OracleLiveFlow } from './OracleLiveFlow'
 import { VobPullbackCommand } from './VobPullbackCommand'
-import { NiftyPhotonicMaster } from './NiftyPhotonicMaster'
-import { ingestOracleDashboardSnapshot } from '@/dashboard/store/oracleStore'
+import { NiftyPhotonicMaster, PhotonicOptionBuyerIntelligenceBottom } from './NiftyPhotonicMaster'
 import { buildArgusProviderProjection } from './oracleArgusProjection'
 import {
   deriveCenterDisplayIdentity,
   deriveCenterDecisionDisplay,
 } from './oracleCenterIdentityHelpers'
+import { canonicalNiftyVobPresentation } from './vobPresentation'
 
 import styles from '@/app/oracle/oracle.module.css'
 
@@ -63,7 +64,6 @@ type PresentationState = 'CALL' | 'PUT' | 'MIXED' | 'PENDING' | 'HEALTHY' | 'BLO
 type WorkflowStage = 'IDLE' | 'ANALYSING' | 'EVALUATED' | 'QUALIFIED' | 'PLANNED' | 'SUBMITTING' | 'OPEN' | 'EXITING' | 'CLOSED'
 const oracleNodeIds: readonly NodeId[] = ['thesis', 'argus', 'vob', 'ose', 'risk', 'guardian']
 const subscribeStaticLocation = () => () => undefined
-const FAST_LANE_URL = `${process.env.NEXT_PUBLIC_CITADEL_API_URL ?? 'http://127.0.0.1:8000'}/v1/oracle/fast-lane`
 
 interface AlertPreferences {
   muted: boolean
@@ -162,6 +162,18 @@ export interface OracleWorkspacePanelProps {
   futuresChart: DashboardFeedState<unknown>
   fusionShadow: DashboardFeedState<unknown>
   optionsStructure?: DashboardFeedState<unknown>
+  vobReversal?: DashboardFeedState<unknown>
+  orderFlow: DashboardFeedState<unknown>
+  optionBuyerIntelligence: DashboardFeedState<unknown>
+  marketInfo?: DashboardFeedState<unknown>
+  dashboardRevision?: number
+  sensorFeedMeta: {
+    argus?: DashboardFeedMeta
+    futuresChart?: DashboardFeedMeta
+    optionBuyerIntelligence?: DashboardFeedMeta
+    orderFlow?: DashboardFeedMeta
+    marketInfo?: DashboardFeedMeta
+  }
   oracleMeta?: DashboardFeedMeta
   missionRuntime: OracleMissionRuntime
 }
@@ -745,12 +757,12 @@ function MissionHub({
       <div className={`${styles.hubCore} ${styles[`hubTone_${decisionTone}`]}`} data-oracle-hub-core>
         <div className={styles.hubMark}><Sparkles size={18} strokeWidth={1.5} /></div>
         <span className={styles.hubKicker}>{missionState} · {stage}</span>
-        <h1 data-oracle-field="contract" title={contract}>{contractDisplay}</h1>
+        <h1  title={contract}>{contractDisplay}</h1>
         <span className={styles.hubPremium}>{priceDisplay}</span>
-        <strong className={styles.hubSide} data-oracle-field="bias">{marketSide}</strong>
-        <div className={styles.hubAction} data-oracle-field="signal">{actionLabel}</div>
+        <strong className={styles.hubSide} >{marketSide}</strong>
+        <div className={styles.hubAction} >{actionLabel}</div>
         <div className={styles.hubSymbol}>
-          <span data-oracle-field="symbol">{identity.technicalFooter}</span>
+          <span >{identity.technicalFooter}</span>
           <i aria-hidden="true" />
           <span>{identity.chartFreshness}</span>
         </div>
@@ -807,17 +819,17 @@ function MissionHub({
           )}
         </StatusPill>
         <dl className={styles.hubMetrics}>
-          <div><dt>Entry band</dt><dd data-oracle-field="entry-band" title={entry}>{entry}</dd></div>
-          <div><dt>Structural SL</dt><dd data-oracle-field="structural-sl">{money(stop)}</dd></div>
-          <div><dt>Natural targets</dt><dd data-oracle-field="natural-targets" title={targets}>{targets}</dd></div>
-          <div><dt>RR after costs</dt><dd data-oracle-field="resulting-rr">{rr}</dd></div>
-          <div><dt>Setup quality</dt><dd data-oracle-field="confidence">{display(liveDecision?.setup_quality)} · NOT PROBABILITY</dd></div>
-          <div><dt>Costs</dt><dd data-oracle-field="costs">{money(liveDecision?.costs)}</dd></div>
+          <div><dt>Entry band</dt><dd  title={entry}>{entry}</dd></div>
+          <div><dt>Structural SL</dt><dd >{money(stop)}</dd></div>
+          <div><dt>Natural targets</dt><dd  title={targets}>{targets}</dd></div>
+          <div><dt>RR after costs</dt><dd >{rr}</dd></div>
+          <div><dt>Setup quality</dt><dd >{display(liveDecision?.setup_quality)} · NOT PROBABILITY</dd></div>
+          <div><dt>Costs</dt><dd >{money(liveDecision?.costs)}</dd></div>
         </dl>
         <div className={styles.hubKnowledge}><b>KNOWLEDGE</b><span>{knowledgeSentence}</span></div>
         <div className={styles.hubConflict} title={String(conflict)}><b>MAIN BLOCKER</b><span>{compact(conflict)}</span></div>
         <div className={styles.hubFreshness}>CHART {live?.chart_state?.freshness ?? 'NOT REPORTED'} · DECISION {liveDecision?.freshness ?? 'NOT REPORTED'} · PREMIUM {exactOption?.freshness ?? 'NOT REPORTED'} · MISSING {liveDecision?.missing_evidence?.length ?? 0}</div>
-        <span className={styles.hubAuthority} data-oracle-field="execution-authority">ADVISORY ONLY · NO ORDER SENT · EXECUTION AUTHORITY FALSE</span>
+        <span className={styles.hubAuthority} >ADVISORY ONLY · NO ORDER SENT · EXECUTION AUTHORITY FALSE</span>
       </div>
     </section>
   )
@@ -1141,6 +1153,12 @@ export function OracleWorkspacePanel({
   eyeOracleProjection,
   futuresChart,
   optionsStructure: optionsStructureFeed,
+  vobReversal: vobReversalFeed,
+  orderFlow,
+  optionBuyerIntelligence,
+  marketInfo,
+  dashboardRevision,
+  sensorFeedMeta,
   oracleMeta,
   missionRuntime,
 }: OracleWorkspacePanelProps) {
@@ -1189,6 +1207,10 @@ export function OracleWorkspacePanel({
   const exactOptionData = record(exactOption)
   const exactQuote = record(exactOptionData.quote)
   const liveChart = live?.chart_state
+  const tradingViewContextStatus = liveChart?.availability === 'AVAILABLE'
+    ? (liveChart.freshness === 'FRESH' ? 'LIVE' : liveChart.freshness)
+    : (live?.sync_state ?? 'DETECTING')
+  const tradingViewContextAge = live?.health.state_age_seconds ?? oracleMeta?.freshness_age_seconds
   const livePhase5 = live?.phase5
   const secondBrain = record(live?.personal_oracle?.second_brain)
   const discipline = record(secondBrain.discipline)
@@ -1225,7 +1247,7 @@ export function OracleWorkspacePanel({
     : []
   const labStatus = record(lab.status)
   const execution = record(lab.execution)
-  const vob = record(execution.nifty_vob)
+  const vob = canonicalNiftyVobPresentation(vobReversalFeed?.data, execution.nifty_vob)
   const vobSync = record(vob.source_1m_sync)
   const vobTimeframes = record(vob.timeframes)
   const vob3m = record(vobTimeframes['3m'])
@@ -1557,7 +1579,7 @@ export function OracleWorkspacePanel({
             { label: 'WHY', value: argusProvider.canonicalWhy },
           ] },
           { title: 'Truth lineage', rows: [
-            { label: 'Authority', value: 'ARGUS existing rank + canonical Dhan quote · tactical edge + canonical Dhan chain' },
+            { label: 'Authority', value: 'ARGUS existing rank + canonical Upstox quote · tactical edge + canonical Upstox chain' },
             { label: 'Instrument / security ID', value: `${argusProvider.underlying} / ${argusProvider.securityId}` },
             { label: 'Expiry / timeframe', value: `${argusProvider.expiry} / ${argusProvider.chainTimeframe}` },
             { label: 'Provider event time', value: formatTime(argusProvider.sourceEventTime) },
@@ -1584,7 +1606,11 @@ export function OracleWorkspacePanel({
             ? 'VOB CALL ALIGNED'
             : vobVote === 'SUPPORTS PUT'
               ? 'VOB PUT ALIGNED'
-              : vobVote === 'NEUTRAL' || vobVote === 'CONFLICTS' ? 'VOB SIDEWAYS' : 'VOB NOT REPORTED', vobState),
+              : vobVote === 'NEUTRAL' || vobVote === 'CONFLICTS'
+                ? 'VOB SIDEWAYS'
+                : (Object.keys(vobSupport).length || Object.keys(vobResistance).length)
+                  ? 'VOB STRUCTURE REPORTED'
+                  : 'VOB NOT REPORTED', vobState),
         metrics: [
           { label: 'Resistance', value: `${zone(vobResistance)} · ↑${display(vobResistance.distance_points)} pts` },
           { label: 'Price', value: vobLocation },
@@ -1860,7 +1886,7 @@ export function OracleWorkspacePanel({
         appearance="oracle"
         title="CITADEL OS"
         instrument={`${liveChart?.option?.trading_symbol ?? liveChart?.symbol.normalized_symbol ?? assessment?.symbol ?? 'NIFTY'} · ORACLE`}
-        marketStatus={live?.sync_state ?? assessment?.data_status ?? 'STATUS UNAVAILABLE'}
+        marketStatus={tradingViewContextStatus ?? assessment?.data_status ?? 'STATUS UNAVAILABLE'}
       />
       <header className={styles.oracleHeader}>
         <span className={styles.cornerTop} aria-hidden="true" />
@@ -1879,13 +1905,13 @@ export function OracleWorkspacePanel({
         </div>
       </header>
 
-      <div className={styles.runtimeStrip} data-tradingview-sync data-supported-states="DETECTING LOADING_CONTEXT BUY WAIT NO_TRADE WATCHING REVALIDATING PAPER_ORDER MANAGE EXIT EXITED UNAVAILABLE AMBIGUOUS" data-frontend-performance={JSON.stringify(frontendPerformance)}>
-        <span><b>TRADINGVIEW</b><strong data-oracle-field="data-status">{live?.sync_state ?? 'DETECTING'}</strong></span>
+      <div className={styles.runtimeStrip} data-tradingview-sync data-supported-states="LIVE STALE DETECTING LOADING_CONTEXT BUY WAIT NO_TRADE WATCHING REVALIDATING PAPER_ORDER MANAGE EXIT EXITED UNAVAILABLE AMBIGUOUS" data-frontend-performance={JSON.stringify(frontendPerformance)}>
+        <span><b>TRADINGVIEW</b><strong >{tradingViewContextStatus}</strong></span>
         <span><b>ACTIVE INSTRUMENT</b><strong>{liveChart?.symbol.normalized_symbol ?? assessment?.symbol ?? 'DETECTING'}</strong></span>
         <span><b>EXACT IDENTITY</b><strong>{liveChart?.option ? `${liveChart.option.trading_symbol} · ${liveChart.option.security_id ?? 'UNMAPPED'}` : liveChart?.instrument.underlying ?? 'UNAVAILABLE'}</strong></span>
         <span><b>TYPE · TIMEFRAME</b><strong>{liveChart ? `${liveChart.instrument.route} · ${liveChart.timeframe}` : 'UNAVAILABLE'}</strong></span>
         <span><b>EXPIRY · SIDE</b><strong>{liveChart?.option ? `${liveChart.option.expiry} · ${liveChart.option.option_side}` : 'NOT APPLICABLE'}</strong></span>
-        <span><b>CHART / MARKET SOURCE</b><strong data-oracle-field="market-data-as-of">{liveChart ? `${canonicalOracleFreshness} · ${formatAge(oracleMeta?.freshness_age_seconds)} OLD` : 'UNAVAILABLE'}</strong></span>
+        <span><b>CHART / MARKET SOURCE</b><strong >{liveChart ? `${tradingViewContextStatus} · ${formatAge(tradingViewContextAge)} OLD` : 'UNAVAILABLE'}</strong></span>
         <span><b>CONDITION · GUARDIAN</b><strong>{livePhase5 ? `${livePhase5.condition_state ?? 'NONE'} · ${livePhase5.guardian_action ?? 'IDLE'}` : 'NONE · IDLE'}</strong></span>
       </div>
       <div className={styles.strategyAuthorityStrip} aria-label="System and execution health">
@@ -1896,7 +1922,7 @@ export function OracleWorkspacePanel({
             <div><dt>RAW / NORMALIZED</dt><dd>{liveChart ? `${liveChart.symbol.raw_symbol} / ${liveChart.symbol.normalized_symbol}` : 'DETECTING'}</dd></div>
             <div><dt>CHART READY / SOURCE AGE / TRANSPORT</dt><dd>{display(liveChart?.availability)} · {formatAge(oracleMeta?.freshness_age_seconds)} · {display(live?.frontend_transport?.transport)}</dd></div>
             <div><dt>PAPER ORDER / GUARDIAN</dt><dd>{display(livePhase5?.paper_order_state)} · {display(livePhase5?.guardian_action)}</dd></div>
-            <div><dt>Dhan mapping/data</dt><dd>{display(liveChart?.instrument.mapping_status)} · {display(exactQuote.availability)}</dd></div>
+            <div><dt>Upstox mapping/data</dt><dd>{display(liveChart?.instrument.mapping_status)} · {display(exactQuote.availability)}</dd></div>
             <div><dt>OpenAlgo diagnostic</dt><dd>{display(missionRuntime.guardian?.health ?? 'NOT CHECKED')} · ZERO ANALYSIS VOTE</dd></div>
             <div><dt>Backend / frontend</dt><dd>{display(live?.health.worker_alive)} / {display(live?.frontend_transport?.transport)}</dd></div>
             <div><dt>SSE / recovery</dt><dd>{display(live?.frontend_transport?.delivery_mode)} · {display(live?.health.backoff_active)}</dd></div>
@@ -1933,7 +1959,16 @@ export function OracleWorkspacePanel({
 
       <OracleFuturesVwapChart feed={futuresChart} />
 
-      <OracleFastLaneStoreBridge />
+      <GeminiMarketBrainSection
+        argusFeed={argus}
+        futuresFeed={futuresChart}
+        optionBuyerFeed={optionBuyerIntelligence}
+        orderFlowFeed={orderFlow}
+        marketInfoFeed={marketInfo}
+        sensorFeedMeta={sensorFeedMeta}
+        dashboardRevision={dashboardRevision}
+      />
+
       {vobUiMode === 'legacy' ? <VobPullbackCommand /> : <NiftyPhotonicMaster />}
 
       <FlowPulseStoreBridge visualFixture={flowFixture} initialLabOpen={flowLabOpen} />
@@ -1952,10 +1987,12 @@ export function OracleWorkspacePanel({
         visualFixture={argus01cFixture}
       />
 
+      <PhotonicOptionBuyerIntelligenceBottom />
+
       <footer className={styles.oracleFooter}>
         <span>Paper only · Live trading disabled · Broker submission disabled · OpenAlgo diagnostic only</span>
         <span>Strategy Lab · {display(labStatus.health)} · {display(labStatus.readiness)}</span>
-        <span data-oracle-field="reasoning">{assessment?.reasoning ?? 'NOT REPORTED'}</span>
+        <span >{assessment?.reasoning ?? 'NOT REPORTED'}</span>
       </footer>
 
       {typeof window !== 'undefined' && window.location.search.includes('test=true') && (
@@ -1979,23 +2016,3 @@ export function OracleWorkspacePanel({
     </div>
   )
 }
-
-/** Keeps the real /oracle VOB surface on the same canonical Fast-Lane feed as preview. */
-const OracleFastLaneStoreBridge = memo(function OracleFastLaneStoreBridge() {
-  useEffect(() => {
-    let active = true
-    const refresh = async () => {
-      try {
-        const response = await fetch(FAST_LANE_URL, { cache: 'no-store' })
-        if (!response.ok || !active) return
-        ingestOracleDashboardSnapshot(await response.json(), new Date().toISOString())
-      } catch {
-        // The existing dashboard owns transport health; preserve its last canonical frame.
-      }
-    }
-    void refresh()
-    const interval = window.setInterval(() => void refresh(), 1000)
-    return () => { active = false; window.clearInterval(interval) }
-  }, [])
-  return null
-})

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import json
 import hashlib
 import math
 import pickle
@@ -64,7 +65,7 @@ EXCHANGE_SEGMENTS = {
 class OrderFlowService:
     """Incremental packet->projection owner with no execution or provider I/O."""
 
-    SCORE_CONFIG = {
+    SCORE_CONFIG: Final[Mapping[str, Any]] = {
         "version": FLOW_FORMULA_VERSION,
         "book_pressure_weight": 0.45,
         "response_quality_weight": 0.35,
@@ -75,6 +76,9 @@ class OrderFlowService:
         "family_aging_seconds": 1.5,
         "instrument_basket_ttl_seconds": 20.0,
     }
+    LIVE_RENDER_VISUAL_EVENTS_MAX: int = 800
+    LIVE_RENDER_DEPTH_SNAPSHOTS_MAX: int = 200
+    LIVE_RENDER_CVD_SERIES_MAX: int = 800
 
     def __init__(
         self,
@@ -109,6 +113,9 @@ class OrderFlowService:
         self._revision = 0
         self._decision_hud_recorded_revision = 0
         self._decision_hud_recorded_display_revision = 0
+        self._visual_events: deque[dict[str, Any]] = deque(maxlen=10_000)
+        self._depth_snapshots: deque[dict[str, Any]] = deque(maxlen=5_000)
+        self._cvd_series: deque[dict[str, Any]] = deque(maxlen=10_000)
         self._seen_events: set[str] = set()
         self._seen_event_order: deque[str] = deque()
         self._lock = threading.RLock()
@@ -168,6 +175,8 @@ class OrderFlowService:
                 self.recorder.read_paper_session(session_id)
             )
             self.recorder.start()
+        if len(self._visual_events) == 0:
+            self.hydrate_visual_history()
         self._start_telemetry()
 
     def stop(self) -> None:
@@ -179,6 +188,46 @@ class OrderFlowService:
         if self.recorder is not None:
             self.recorder.stop()
 
+    def hydrate_visual_history(self, session_date: str | None = None) -> int:
+        """Hydrate visual events, depth snapshots, and CVD series from real recorded packets.
+        
+        CRITICAL SAFETY:
+        Runs in an isolated, read-only manner so that live decision state,
+        MLOFI, VOB, and ARGUS are 100% untouched.
+        """
+        if session_date is None:
+            session_date = self.wall_clock().astimezone(IST).date().isoformat()
+        
+        candidate_roots = []
+        if self.recorder and hasattr(self.recorder, "root"):
+            candidate_roots.append(Path(self.recorder.root))
+        candidate_roots.append(Path(os.environ.get("CITADEL_STATE_ROOT", "/Users/ayushmudgal/Developer/CitadelOS/logs")) / "order_flow" / "evidence")
+        candidate_roots.append(Path("/Users/ayushmudgal/Developer/CitadelOS-Oracle-Post-E9/logs/order_flow/evidence"))
+
+        for evidence_root in candidate_roots:
+            if not evidence_root.exists():
+                continue
+            history_cache_path = evidence_root / f"flow_map_visual_history_{session_date}.json"
+            if history_cache_path.exists():
+                try:
+                    with open(history_cache_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    with self._lock:
+                        for ev in data.get("visual_events", []):
+                            self._visual_events.append(ev)
+                            self._seen_events.add(ev["event_id"])
+                        for ds in data.get("depth_snapshots", []):
+                            self._depth_snapshots.append(ds)
+                        for cv in data.get("cvd_series", []):
+                            self._cvd_series.append(cv)
+                        if data.get("cvd") is not None:
+                            self.profile.cvd = int(data["cvd"])
+                    return len(self._visual_events)
+                except Exception:
+                    pass
+
+        return 0
+
     def register_instruments(self, identities: tuple[InstrumentIdentity, ...]) -> None:
         if not identities:
             return
@@ -188,6 +237,8 @@ class OrderFlowService:
             }
             self._basket_registered_ns = self.clock_ns()
             self.decision_hud.register_instruments(identities)
+            if len(self._visual_events) == 0:
+                self.hydrate_visual_history()
 
     def register_option_delta(self, security_id: str, delta: float, *, receive_ns: int) -> None:
         """Attach already-canonical Greeks; this method performs no fetch."""
@@ -249,27 +300,7 @@ class OrderFlowService:
                     and (received_ist.hour, received_ist.minute) < (15, 30)
                 ):
                     continue
-                depth = tuple(DepthLevel(**dict(item)) for item in payload["depth_5"])
-                event = MarketEvent(
-                    SCHEMA_VERSION,
-                    str(payload["session_id"]), int(payload.get("feed_generation") or 1),
-                    str(payload["event_id"]), str(payload["exchange_segment"]),
-                    str(payload["security_id"]), str(payload["instrument_role"]),
-                    payload.get("expiry"), payload.get("strike"), payload.get("option_type"),
-                    int(payload.get("ltt_normalized_epoch") or payload.get("exchange_ltt") or 0),
-                    str(payload["receive_wall_utc"]),
-                    int(payload["feed_receive_monotonic_ns"]),
-                    int(payload["decode_done_monotonic_ns"]),
-                    float(payload["ltp"]), int(payload["ltq"]),
-                    int(payload["cumulative_volume"]), float(payload["atp"]),
-                    int(payload.get("open_interest", payload.get("oi", 0))),
-                    int(payload.get("high_open_interest", payload.get("high_oi", 0))),
-                    int(payload.get("low_open_interest", payload.get("low_oi", 0))),
-                    int(payload.get("total_buy_quantity", payload.get("total_buy_qty", 0))),
-                    int(payload.get("total_sell_quantity", payload.get("total_sell_qty", 0))), depth,
-                    DataQuality.DEGRADED if int(payload.get("transport_gap_count") or 0) else DataQuality.GOOD,
-                    str(payload["packet_fingerprint"]),
-                )
+                event = self.decode_recorded_market_event(payload)
                 trade = reconciler.reconcile(event)
             except (KeyError, TypeError, ValueError):
                 continue
@@ -616,11 +647,16 @@ class OrderFlowService:
                     self._recovery_buffer_dropped += 1
                 self._recovery_buffer.append(dict(tick))
                 return self._latest
-        state_started = self.clock_ns()
         try:
-            event = self._market_event(tick)
+            event = self.decode_market_event(tick)
         except (KeyError, TypeError, ValueError):
             return None
+        return self.ingest_market_event(event)
+
+    def ingest_market_event(self, event: MarketEvent) -> FlowProjection | None:
+        """Consume one already-decoded canonical event without re-normalizing its packet."""
+        if not isinstance(event, MarketEvent):
+            raise TypeError("event must be a canonical MarketEvent")
         with self._lock:
             if event.event_id in self._seen_events:
                 self.duplicates_suppressed += 1
@@ -645,6 +681,44 @@ class OrderFlowService:
                 self._latest_profile = self.profile.update(
                     event, trade, response_state=self._latest_response.state
                 )
+                # Flow Map V1: Append canonical visual trade event if volume occurred
+                if trade.delta_volume > 0 or trade.observed_trade_qty > 0:
+                    vis_side = "BUY" if trade.classified_buy_qty > trade.classified_sell_qty else (
+                        "SELL" if trade.classified_sell_qty > trade.classified_buy_qty else "UNKNOWN"
+                    )
+                    is_absorbed = self._latest_response.state in {"BUYERS_ABSORBED", "SELLERS_ABSORBED"}
+                    is_failed = self._latest_response.failed_aggression >= 0.45 and is_absorbed
+                    canonical_cvd = int(self.profile.cvd)
+                    self._visual_events.append({
+                        "event_id": event.event_id,
+                        "time": event.exchange_ltt,
+                        "price": round(float(trade.observed_trade_price if trade.observed_trade_price is not None else event.ltp), 4),
+                        "observed_qty": trade.observed_trade_qty or trade.delta_volume,
+                        "classified_buy_qty": trade.classified_buy_qty,
+                        "classified_sell_qty": trade.classified_sell_qty,
+                        "unclassified_qty": trade.unclassified_qty,
+                        "side": vis_side,
+                        "classification_method": trade.signer_method,
+                        "signer_confidence": round(trade.signer_confidence, 4),
+                        "absorption_state": self._latest_response.state,
+                        "is_absorbed": is_absorbed,
+                        "buyer_absorption": round(self._latest_response.buyer_absorption, 4),
+                        "seller_absorption": round(self._latest_response.seller_absorption, 4),
+                        "is_failed_aggression": is_failed,
+                        "failed_aggression": round(self._latest_response.failed_aggression, 4),
+                        "cvd": canonical_cvd,
+                    })
+                    self._cvd_series.append({
+                        "time": event.exchange_ltt,
+                        "cvd": canonical_cvd,
+                    })
+                # Flow Map V1: Append 5-level depth snapshot
+                if event.depth_5:
+                    self._depth_snapshots.append({
+                        "time": event.exchange_ltt,
+                        "bids": [{"p": d.bid_price, "q": d.bid_quantity, "o": d.bid_orders} for d in event.depth_5 if d.bid_price > 0 and d.bid_quantity > 0],
+                        "asks": [{"p": d.ask_price, "q": d.ask_quantity, "o": d.ask_orders} for d in event.depth_5 if d.ask_price > 0 and d.ask_quantity > 0],
+                    })
             elif event.option_type in {"CE", "PE"}:
                 self._latest_option = self.options.update(event, trade, book, now_ns=state_done_ns)
                 self.decision_hud.ingest_option(event, trade, book, now_ns=event.feed_receive_ns)
@@ -742,6 +816,8 @@ class OrderFlowService:
                 }
             published = dict(projection_value)
             published["flow_pulse"] = pulse
+            published["visual_events"] = list(self._visual_events)[-self.LIVE_RENDER_VISUAL_EVENTS_MAX:]
+            published["depth_snapshots"] = list(self._depth_snapshots)[-self.LIVE_RENDER_DEPTH_SNAPSHOTS_MAX:]
             # CPython reference replacement is atomic. Readers never touch the
             # mutable service lock or rebuild the canonical projection.
             self._published_events = tuple(sorted(self._latest_events.items()))
@@ -776,10 +852,18 @@ class OrderFlowService:
                 "reason": "ORDER_FLOW_PROJECTION_NOT_READY",
                 "execution_influence": "ZERO",
                 "authority_20_depth": "DISABLED",
+                "visual_events": list(self._visual_events)[-self.LIVE_RENDER_VISUAL_EVENTS_MAX:],
+                "depth_snapshots": list(self._depth_snapshots)[-self.LIVE_RENDER_DEPTH_SNAPSHOTS_MAX:],
+                "cvd_series": list(self._cvd_series)[-self.LIVE_RENDER_CVD_SERIES_MAX:],
+                "cvd": int(self.profile.cvd),
             }
         # Shallow overlay only: the nested canonical payload is immutable and
         # replaced wholesale by ingest_tick for every source revision.
         value = dict(base)
+        value["visual_events"] = list(self._visual_events)[-self.LIVE_RENDER_VISUAL_EVENTS_MAX:]
+        value["depth_snapshots"] = list(self._depth_snapshots)[-self.LIVE_RENDER_DEPTH_SNAPSHOTS_MAX:]
+        value["cvd_series"] = list(self._cvd_series)[-self.LIVE_RENDER_CVD_SERIES_MAX:]
+        value["cvd"] = int(self.profile.cvd)
         now_ns = self.clock_ns()
         freshness = {
             role: _freshness(event, now_ns, self.SCORE_CONFIG)
@@ -945,6 +1029,45 @@ class OrderFlowService:
         while not self._telemetry_stop.wait(self._telemetry_refresh_seconds):
             self.refresh_telemetry()
 
+    def decode_market_event(self, tick: Mapping[str, Any]) -> MarketEvent:
+        """Decode one Full packet through the existing canonical Order Flow contract."""
+        return self._market_event(tick)
+
+    def decode_recorded_market_event(self, payload: Mapping[str, Any]) -> MarketEvent:
+        """Restore the canonical event already persisted by the Full-packet recorder."""
+
+        depth = tuple(DepthLevel(**dict(item)) for item in payload["depth_5"])
+        return MarketEvent(
+            SCHEMA_VERSION,
+            str(payload["session_id"]),
+            int(payload.get("feed_generation") or 1),
+            str(payload["event_id"]),
+            str(payload["exchange_segment"]),
+            str(payload["security_id"]),
+            str(payload["instrument_role"]),
+            payload.get("expiry"),
+            payload.get("strike"),
+            payload.get("option_type"),
+            int(payload.get("ltt_normalized_epoch") or payload.get("exchange_ltt") or 0),
+            str(payload["receive_wall_utc"]),
+            int(payload["feed_receive_monotonic_ns"]),
+            int(payload["decode_done_monotonic_ns"]),
+            float(payload["ltp"]),
+            int(payload["ltq"]),
+            int(payload["cumulative_volume"]),
+            float(payload["atp"]),
+            int(payload.get("open_interest", payload.get("oi", 0))),
+            int(payload.get("high_open_interest", payload.get("high_oi", 0))),
+            int(payload.get("low_open_interest", payload.get("low_oi", 0))),
+            int(payload.get("total_buy_quantity", payload.get("total_buy_qty", 0))),
+            int(payload.get("total_sell_quantity", payload.get("total_sell_qty", 0))),
+            depth,
+            DataQuality.DEGRADED
+            if int(payload.get("transport_gap_count") or 0)
+            else DataQuality.GOOD,
+            str(payload["packet_fingerprint"]),
+        )
+
     def _market_event(self, tick: Mapping[str, Any]) -> MarketEvent:
         segment_value = tick["exchange_segment"]
         segment = EXCHANGE_SEGMENTS.get(segment_value, str(segment_value)) if isinstance(segment_value, int) else str(segment_value)
@@ -993,12 +1116,12 @@ class OrderFlowService:
             float(tick["ltp"]),
             int(tick["ltq"]),
             cumulative,
-            float(tick["atp"]),
-            int(tick["open_interest"]),
-            int(tick["high_open_interest"]),
-            int(tick["low_open_interest"]),
-            int(tick["total_buy_quantity"]),
-            int(tick["total_sell_quantity"]),
+            float(tick.get("atp") or tick.get("ltp") or 0.0),
+            int(tick.get("open_interest") or tick.get("oi") or 0),
+            int(tick.get("high_open_interest") or tick.get("high_oi") or 0),
+            int(tick.get("low_open_interest") or tick.get("low_oi") or 0),
+            int(tick.get("total_buy_quantity") or tick.get("total_buy_qty") or 0),
+            int(tick.get("total_sell_quantity") or tick.get("total_sell_qty") or 0),
             depth,
             quality,
             fingerprint,

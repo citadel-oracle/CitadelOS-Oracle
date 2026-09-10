@@ -1,8 +1,10 @@
 'use client'
 
+import { useMemo } from 'react'
 import { OracleWorkspacePanel } from '@/components/institutional'
 import {
   feedSelectors,
+  selectFastLaneRevision,
   selectFeedMeta,
   useDashboardSelector,
 } from '@/dashboard'
@@ -25,8 +27,30 @@ export default function OracleWorkspace() {
   const futuresChart = useDashboardSelector(feedSelectors.futuresChart) as DashboardFeedState<unknown>
   const fusionShadow = useDashboardSelector(feedSelectors.fusionShadow) as DashboardFeedState<unknown>
   const optionsStructure = useDashboardSelector(feedSelectors.optionsStructure) as DashboardFeedState<unknown>
+  const vobReversal = useDashboardSelector(feedSelectors.vobReversal) as DashboardFeedState<unknown>
+  const orderFlow = useDashboardSelector(feedSelectors.orderFlow) as DashboardFeedState<unknown>
+  const optionBuyerIntelligence = useDashboardSelector(
+    feedSelectors.optionBuyerIntelligence,
+  ) as DashboardFeedState<unknown>
+  const marketInfo = useDashboardSelector(
+    feedSelectors.marketInfo,
+  ) as DashboardFeedState<unknown>
   const feedMeta = useDashboardSelector(selectFeedMeta)
+  const dashboardRevision = useDashboardSelector(selectFastLaneRevision)
   const missionRuntime = useOracleMissionRuntime(oracle.data?.symbol ?? null)
+  const sensorFeedMeta = useMemo(() => ({
+    argus: feedMeta.argus,
+    futuresChart: feedMeta.futures_chart,
+    optionBuyerIntelligence: feedMeta.option_buyer_intelligence,
+    orderFlow: feedMeta.order_flow,
+    marketInfo: feedMeta.market_info,
+  }), [
+    feedMeta.argus,
+    feedMeta.futures_chart,
+    feedMeta.option_buyer_intelligence,
+    feedMeta.order_flow,
+    feedMeta.market_info,
+  ])
 
   return (
     <main className={styles.workspace} aria-label="CITADEL Oracle Workspace">
@@ -41,7 +65,13 @@ export default function OracleWorkspace() {
         futuresChart={futuresChart}
         fusionShadow={fusionShadow}
         optionsStructure={optionsStructure}
+        vobReversal={vobReversal}
+        orderFlow={orderFlow}
+        optionBuyerIntelligence={optionBuyerIntelligence}
+        marketInfo={marketInfo}
+        dashboardRevision={dashboardRevision}
         oracleMeta={feedMeta.oracle}
+        sensorFeedMeta={sensorFeedMeta}
         missionRuntime={missionRuntime}
       />
     </main>

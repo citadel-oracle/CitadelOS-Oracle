@@ -40,10 +40,15 @@ class BookPressureEngine:
     """Price-level-aware five-level book state; no rank-to-rank aliasing."""
 
     def __init__(self):
-        self._previous: dict[tuple[str, str], MarketEvent] = {}
+        self._previous: dict[tuple[str, int, str, str], MarketEvent] = {}
 
     def update(self, event: MarketEvent, trade: ReconciledTradeState) -> BookMetrics:
-        key = (event.exchange_segment, event.security_id)
+        key = (
+            event.session_id,
+            event.feed_generation,
+            event.exchange_segment,
+            event.security_id,
+        )
         previous = self._previous.get(key)
         self._previous[key] = event
         top = event.depth_5[0]
@@ -136,14 +141,19 @@ class ResponseQualityEngine:
     """Bounded response window linking known aggression to price and refill."""
 
     def __init__(self, window: int = 64):
-        self._windows: dict[tuple[str, str], deque[tuple[float, int, int, BookMetrics]]] = defaultdict(
+        self._windows: dict[tuple[str, int, str, str], deque[tuple[float, int, int, BookMetrics]]] = defaultdict(
             partial(deque, maxlen=window)
         )
 
     def update(
         self, event: MarketEvent, trade: ReconciledTradeState, book: BookMetrics
     ) -> ResponseMetrics:
-        key = (event.exchange_segment, event.security_id)
+        key = (
+            event.session_id,
+            event.feed_generation,
+            event.exchange_segment,
+            event.security_id,
+        )
         values = self._windows[key]
         values.append((event.ltp, trade.classified_buy_qty, trade.classified_sell_qty, book))
         if len(values) < 2:

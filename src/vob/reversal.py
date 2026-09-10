@@ -15,6 +15,7 @@ from time import perf_counter
 from typing import Any, Mapping
 
 from .episodes import VobEpisode, episodes_from_ose, episode_from_ose
+from .horsepower import HorsepowerStateEngine
 from .shadow_ledger import MatchedShadowLedger
 
 
@@ -55,15 +56,21 @@ class VobReversalEngine:
     def __init__(self, *, ledger: MatchedShadowLedger | None = None) -> None:
         self._lock = RLock()
         self._ledger = ledger or MatchedShadowLedger()
+        self._horsepower = HorsepowerStateEngine()
+        self._nifty_horsepower: dict[str, Any] = {}
         self._episodes: dict[str, VobEpisode] = {}
         self._evidence: dict[str, dict[str, EvidenceObservation]] = {}
         self._states: dict[str, VobReversalState] = {}
         self._frozen_option_contracts: dict[str, dict[str, Any]] = {}
+        self._episode_current_itm_ids: dict[str, dict[str, str]] = {}
         self._episodes_active: dict[str, bool] = {}
         self._revision = 0
         self._last_argus_direction: str | None = None
         self._option_contracts: dict[str, dict[str, Any]] = {}
         self._current_itm1_contracts: dict[str, dict[str, Any]] = {}
+        # Exact-security VOBs for the rotating current ITM-1 cards.  These
+        # are deliberately separate from the OSE anchor and frozen episodes.
+        self._current_itm_vobs: dict[str, dict[str, Any]] = {}
         self._canonical_market: dict[str, Any] = {
             "reference_price": None,
             "strike_interval": None,
@@ -92,6 +99,7 @@ class VobReversalEngine:
             self._episodes_active.clear()
             self._states.clear()
             self._frozen_option_contracts.clear()
+            self._episode_current_itm_ids.clear()
         else:
             tf = value.timeframe.lower()
             self._episodes[tf] = value
@@ -150,6 +158,7 @@ class VobReversalEngine:
                     self._states[tf] = VobReversalState.REVERSAL_FAILED
                     self._episodes_active[tf] = False
                     self._frozen_option_contracts.pop(tf, None)
+                    self._episode_current_itm_ids.pop(tf, None)
                     self._revision += 1
 
             if not candidates_by_tf:
@@ -164,6 +173,9 @@ class VobReversalEngine:
                 if existing is None or not is_active:
                     self._episodes[tf] = candidate
                     self._frozen_option_contracts[tf] = _freeze_option_contract_pair(option_contracts, candidate)
+                    current_ids = _contract_pair_ids(self._current_itm1_contracts)
+                    if current_ids:
+                        self._episode_current_itm_ids[tf] = current_ids
                     self._episodes_active[tf] = True
                     self._evidence[tf] = {name: self._unknown("UNOBSERVED") for name in EVIDENCE_FAMILIES}
                     self._states[tf] = VobReversalState.WATCHING
@@ -272,6 +284,19 @@ class VobReversalEngine:
             self._option_quote_timestamp = source_time
             self._canonical_market = canonical_market
             self._current_itm1_contracts = current_itm1_contracts
+            current_ids = _contract_pair_ids(current_itm1_contracts)
+            if current_ids:
+                for timeframe, active in self._episodes_active.items():
+                    if active and timeframe not in self._episode_current_itm_ids:
+                        self._episode_current_itm_ids[timeframe] = current_ids
+            # A resolved contract rollover invalidates old-card VOB state. It
+            # must be recomputed for the new security id, never relabelled.
+            self._current_itm_vobs = {
+                side: value
+                for side, value in self._current_itm_vobs.items()
+                if _text(value.get("security_id"))
+                == _text(_mapping(_mapping(current_itm1_contracts.get(side)).get("contract")).get("security_id"))
+            }
             if not self._episodes:
                 self._last_argus_direction = direction
                 self._record_compute(started)
@@ -297,6 +322,53 @@ class VobReversalEngine:
             self._evaluate_all()
             self._record_compute(started)
 
+    def ingest_current_itm_vobs(self, technicals: Mapping[str, Mapping[str, Any]]) -> None:
+        """Publish exact-current-ITM VOB output without changing OSE anchors.
+
+        ``technicals`` is produced by ``OptionsStructureEngine.contract_technicals``
+        from the canonical Dhan 1m stream.  A result is accepted only when its
+        security id still equals the current ARGUS/Dhan resolved contract.
+        """
+        started = perf_counter()
+        with self._lock:
+            accepted: dict[str, dict[str, Any]] = {}
+            for side in ("CE", "PE"):
+                current = _mapping(self._current_itm1_contracts.get(side))
+                contract = _mapping(current.get("contract"))
+                technical = _mapping(technicals.get(side))
+                security_id = _text(contract.get("security_id"))
+                if (
+                    not security_id
+                    or _text(technical.get("security_id")) != security_id
+                    or str(technical.get("status") or "").upper() != "AVAILABLE"
+                ):
+                    continue
+                accepted[side] = _current_itm_vob_payload(contract, technical)
+                accepted[side]["horsepower"] = self._horsepower.observe(
+                    f"{side}:{security_id}", technical
+                )
+            self._current_itm_vobs = accepted
+            self._revision += 1
+            self._record_compute(started)
+
+    def ingest_nifty_horsepower(self, technical: Mapping[str, Any]) -> None:
+        """Observe prepared NIFTY candles/zones without calculating VOB again."""
+        started = perf_counter()
+        with self._lock:
+            if str(technical.get("status") or "").upper() != "AVAILABLE":
+                self._nifty_horsepower = {
+                    "instrument": "NIFTY",
+                    "status": "UNAVAILABLE",
+                    "reason": technical.get("reason") or "CANONICAL_NIFTY_VOB_UNAVAILABLE",
+                    "advisory_only": True,
+                    "execution_influence": 0,
+                }
+            else:
+                self._nifty_horsepower = self._horsepower.observe("NIFTY", technical)
+                self._nifty_horsepower["quality"] = dict(_mapping(technical.get("quality")))
+            self._revision += 1
+            self._record_compute(started)
+
     def projection(self) -> dict[str, Any]:
         with self._lock:
             episode = self._episode
@@ -306,6 +378,21 @@ class VobReversalEngine:
             compute = sorted(self._compute_ms[-512:])
             frozen_contracts = self._frozen_option_contracts.get(tf, {})
             is_active = self._episodes_active.get(tf, False)
+            frozen_pair_rolled = bool(
+                episode and is_active and frozen_contracts
+                and (
+                    _contract_pair_identity_changed(frozen_contracts, self._option_contracts)
+                    or (
+                        _contract_pair_is_independent(
+                            self._episode_current_itm_ids.get(tf, {}), frozen_contracts
+                        )
+                        and _contract_pair_identity_changed(
+                            self._episode_current_itm_ids.get(tf, {}),
+                            self._current_itm1_contracts,
+                        )
+                    )
+                )
+            )
             state_val = self._states.get(tf, VobReversalState.WATCHING).value if (episode and is_active) else (self._states.get(tf, VobReversalState.REVERSAL_FAILED).value if episode else "UNAVAILABLE")
 
             all_episodes_dict = {k: v.to_dict() for k, v in self._episodes.items()}
@@ -342,21 +429,35 @@ class VobReversalEngine:
                 "states_by_timeframe": all_states_dict,
                 "evidence_by_timeframe": all_evidence_dict,
                 "option_contracts": _option_contract_projection(
-                    self._option_contracts,
+                    frozen_contracts if frozen_pair_rolled else self._option_contracts,
                     self._current_itm1_contracts,
+                    self._current_itm_vobs,
                     self._option_quotes,
                     self._option_quote_timestamp,
+                    frozen=frozen_pair_rolled,
                 ),
-                "frozen_episode_contracts": _freeze_option_contract_pair(self._option_contracts, episode) if episode else {},
+                "frozen_episode_contracts": {
+                    side: {
+                        "contract": dict(_mapping(value.get("contract"))),
+                        "vob": dict(_mapping(value.get("vob"))),
+                        "quality": dict(_mapping(value.get("quality"))),
+                    }
+                    for side, value in frozen_contracts.items()
+                } if episode and frozen_contracts else {},
                 "canonical_market": dict(self._canonical_market),
                 "current_itm1_contracts": {
                     side: {
                         "contract": dict(_mapping(value.get("contract"))),
                         "quote": dict(_mapping(value.get("quote"))),
+                        "vob": dict(_mapping(self._current_itm_vobs.get(side))),
                     }
                     for side, value in self._current_itm1_contracts.items()
                 },
-                "contract_pair_status": "CURRENT_ITM1",
+                "current_itm_vobs": {
+                    side: dict(value) for side, value in self._current_itm_vobs.items()
+                },
+                "nifty_horsepower": dict(self._nifty_horsepower),
+                "contract_pair_status": "FROZEN_EPISODE" if frozen_pair_rolled else "CURRENT_ITM1",
                 "quality": _projection_quality(evidence),
                 "unknown_fields": [name for name, row in evidence.items() if not row["known"]],
                 "performance": _distribution(compute),
@@ -613,8 +714,6 @@ def _extract_current_itm1(
         "reference_price": reference_price,
         "strike_interval": None,
         "atm_strike": atm_strike,
-        "pcr": _number(totals.get("pcr") or live_pcr.get("oi_pcr")),
-        "change_pcr": _number(totals.get("change_pcr") or totals.get("day_change_pcr")),
         "source": "ARGUS_OPTION_CHAIN_RESOLVER",
         "source_timestamp": _text(
             underlying.get("source_event_time")
@@ -622,6 +721,12 @@ def _extract_current_itm1(
             or underlying.get("receipt_timestamp")
         ),
     }
+    pcr = _number(totals.get("pcr") or live_pcr.get("oi_pcr"))
+    change_pcr = _number(totals.get("change_pcr") or totals.get("day_change_pcr"))
+    if pcr is not None:
+        market["pcr"] = pcr
+    if change_pcr is not None:
+        market["change_pcr"] = change_pcr
     if atm_strike is None:
         return market, {}
 
@@ -673,6 +778,26 @@ def _extract_current_itm1(
         change_oi = _number(leg.get("day_change_oi") or leg.get("change_oi") or leg.get("intraday_change_oi"))
         positioning = _text(leg.get("day_positioning") or leg.get("positioning") or leg.get("day_activity") or leg.get("activity"))
 
+        quote = {
+            "security_id": security_id,
+            "strike": strike,
+            "option_type": side,
+            "ltp": ltp,
+            "bid": _number(leg.get("top_bid_price")),
+            "ask": _number(leg.get("top_ask_price")),
+            "source": "ARGUS_DHAN_OPTION_CHAIN",
+            "timestamp": market["source_timestamp"],
+        }
+        for field_name, value in {
+            "day_price_change": day_price_change,
+            "previous_close": previous_close,
+            "day_change_pct": day_change_pct,
+            "oi": oi,
+            "change_oi": change_oi,
+            "positioning": positioning,
+        }.items():
+            if value is not None:
+                quote[field_name] = value
         result[side] = {
             "contract": {
                 "security_id": security_id,
@@ -681,22 +806,7 @@ def _extract_current_itm1(
                 "expiry": expiry,
                 "source": "ARGUS_OPTION_CHAIN_RESOLVER",
             },
-            "quote": {
-                "security_id": security_id,
-                "strike": strike,
-                "option_type": side,
-                "ltp": ltp,
-                "bid": _number(leg.get("top_bid_price")),
-                "ask": _number(leg.get("top_ask_price")),
-                "day_price_change": day_price_change,
-                "previous_close": previous_close,
-                "day_change_pct": day_change_pct,
-                "oi": oi,
-                "change_oi": change_oi,
-                "positioning": positioning,
-                "source": "ARGUS_DHAN_OPTION_CHAIN",
-                "timestamp": market["source_timestamp"],
-            },
+            "quote": quote,
         }
     return market, result
 
@@ -734,25 +844,140 @@ def _freeze_option_contract_pair(
     return result
 
 
+def _contract_pair_identity_changed(
+    frozen: Mapping[str, Mapping[str, Any]],
+    current: Mapping[str, Mapping[str, Any]],
+) -> bool:
+    """An active episode freezes only after its OSE pair has actually rolled."""
+
+    for side in ("CE", "PE"):
+        frozen_id = _contract_security_id(frozen.get(side))
+        current_id = _contract_security_id(current.get(side))
+        if frozen_id and current_id and frozen_id != current_id:
+            return True
+    return False
+
+
+def _contract_pair_ids(
+    contracts: Mapping[str, Mapping[str, Any]],
+) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for side in ("CE", "PE"):
+        security_id = _text(
+            _mapping(_mapping(contracts.get(side)).get("contract")).get("security_id")
+        )
+        if security_id:
+            result[side] = security_id
+    return result
+
+
+def _contract_pair_is_independent(
+    current: Mapping[str, Any], frozen: Mapping[str, Mapping[str, Any]],
+) -> bool:
+    """The OSE anchor may be a distinct episode pair from current ITM cards."""
+
+    pairs = [
+        (_contract_security_id(current.get(side)), _contract_security_id(frozen.get(side)))
+        for side in ("CE", "PE")
+    ]
+    return all(current_id and frozen_id and current_id != frozen_id for current_id, frozen_id in pairs)
+
+
+def _contract_security_id(value: Any) -> str | None:
+    if not isinstance(value, Mapping):
+        return _text(value)
+    mapped = _mapping(value)
+    contract = _mapping(mapped.get("contract"))
+    return _text(contract.get("security_id") or mapped.get("security_id"))
+
+
+def _current_itm_vob_payload(
+    contract: Mapping[str, Any], technical: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Select a display zone from an exact contract's canonical VOB lanes."""
+    structures = _mapping(technical.get("vob_timeframes"))
+    timeframes: dict[str, dict[str, Any]] = {}
+    primary_zone: Mapping[str, Any] = {}
+    primary_timeframe: str | None = None
+    for timeframe in ("1m", "3m", "5m"):
+        structure = _mapping(structures.get(timeframe))
+        demand = _mapping(structure.get("demand"))
+        supply = _mapping(structure.get("supply"))
+        timeframes[timeframe] = {
+            "demand": dict(demand) if demand else None,
+            "supply": dict(supply) if supply else None,
+            "state": structure.get("state"),
+            "evaluated_through": structure.get("evaluated_through"),
+            "completed_bucket": bool(structure.get("completed_bucket")),
+            "latest_finalized_bar": dict(_mapping(structure.get("latest_finalized_bar"))) or None,
+            "zone_ladder": [dict(zone) for zone in structure.get("zone_ladder") or [] if isinstance(zone, Mapping)],
+        }
+    for timeframe in ("5m", "3m", "1m"):
+        zone = _mapping(timeframes[timeframe].get("demand"))
+        if zone and str(zone.get("status") or "").upper() != "BROKEN":
+            primary_zone, primary_timeframe = zone, timeframe
+            break
+    return {
+        "security_id": _text(contract.get("security_id")),
+        "timeframe": primary_timeframe,
+        "zone_bottom": _number(primary_zone.get("zone_low")),
+        "zone_top": _number(primary_zone.get("zone_high")),
+        "state": str(primary_zone.get("status") or "NO_ACTIVE_VOB").upper(),
+        "zone_id": _text(primary_zone.get("zone_id")),
+        "touch_at": _text(
+            primary_zone.get("last_tested_time") or primary_zone.get("first_tested_time")
+        ),
+        "role": _text(primary_zone.get("role")),
+        "evaluated_at": _text(technical.get("source_timestamp")),
+        "source": "CURRENT_ITM_EXACT_SECURITY_ID_CANONICAL_VOB",
+        "primary": True,
+        "timeframes": timeframes,
+    }
+
+
 def _option_contract_projection(
     contracts: Mapping[str, Mapping[str, Any]],
     current_itm1_contracts: Mapping[str, Mapping[str, Any]],
+    current_itm_vobs: Mapping[str, Mapping[str, Any]],
     quotes: Mapping[str, Mapping[str, Any]],
     quote_timestamp: str | None,
+    *,
+    frozen: bool = False,
 ) -> dict[str, dict[str, Any]]:
     result: dict[str, dict[str, Any]] = {}
     for side in ("CE", "PE"):
         current = _mapping(current_itm1_contracts.get(side))
-        contract = dict(_mapping(current.get("contract")))
         selected = _mapping(contracts.get(side))
         selected_contract = _mapping(selected.get("contract"))
+        contract = (
+            dict(selected_contract)
+            if frozen and selected_contract
+            else dict(_mapping(current.get("contract")))
+        )
         same_selected_identity = (
             _text(selected_contract.get("security_id")) is not None
             and _text(selected_contract.get("security_id")) == _text(contract.get("security_id"))
         )
-        vob = dict(_mapping(selected.get("vob"))) if same_selected_identity else {}
+        current_vob = _mapping(current_itm_vobs.get(side))
+        same_current_identity = (
+            _text(current_vob.get("security_id")) is not None
+            and _text(current_vob.get("security_id")) == _text(contract.get("security_id"))
+        )
+        # Current ITM data wins only when it was evaluated for this exact
+        # security. OSE may fill the card only when it already owns that same
+        # contract; an anchor is never relabelled as current ITM.
+        vob = (
+            dict(current_vob)
+            if frozen and same_current_identity
+            else dict(_mapping(selected.get("vob")))
+            if frozen
+            else
+            dict(current_vob)
+            if same_current_identity
+            else dict(_mapping(selected.get("vob"))) if same_selected_identity else {}
+        )
         security_id = _text(contract.get("security_id"))
-        quote = dict(_mapping(current.get("quote")))
+        quote = dict(_mapping(current.get("quote"))) if not frozen else {}
         if not quote and security_id:
             quote = dict(_mapping(quotes.get(security_id)))
         quote["timestamp"] = quote.get("timestamp") or quote_timestamp
@@ -768,7 +993,7 @@ def _option_contract_projection(
         )
         result[side] = {
             "contract": contract,
-            "contract_status": "CURRENT_ITM1" if security_id else "UNKNOWN",
+            "contract_status": "FROZEN_EPISODE" if frozen and security_id else "CURRENT_ITM1" if security_id else "UNKNOWN",
             "quote": quote,
             "vob": vob,
             "distance": distance,

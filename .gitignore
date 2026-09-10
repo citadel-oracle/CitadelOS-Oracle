@@ -19,12 +19,25 @@ models/kronos-alpha/
 
 # Node / Next
 node_modules/
+*/node_modules/
 .next/
+*/.next/
 out/
 
-# Local runtime data
+# Local runtime data & databases
 logs/
 *.log
+*.sqlite3*
+*.duckdb*
+*.parquet
+*.bundle
+reports/
+artifacts/
+
+# Images & Media
+*.png
+*.jpg
+*.jpeg
 
 # macOS / editors
 .DS_Store

@@ -7,6 +7,8 @@ type BackendFeed = { ok: boolean; data: unknown; error: { code?: string; message
 type BackendDashboard = {
   trace_id: string
   generated_at: string
+  revision?: number
+  runtime_instance_id?: string
   symbol?: string
   feeds: Record<string, BackendFeed>
   polling?: { recommended_interval_ms?: number; served_from_cache?: boolean; projection_age_ms?: number }
@@ -29,6 +31,8 @@ type OracleFastLaneEvent = {
   feeds?: Record<string, BackendFeed>
   flow_pulse?: Record<string, unknown>
   full: boolean
+  global_revision?: number
+  runtime_instance_id?: string
 }
 
 export const ORACLE_BACKEND_BASE_URL = process.env.NEXT_PUBLIC_CITADEL_API_URL ?? 'http://127.0.0.1:8000'
@@ -55,6 +59,33 @@ const isoUtc = (value: string | undefined) => {
   return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString()
 }
 
+export interface FastLaneRevisionCursor {
+  activeRuntimeInstanceId: string | null
+  retiredRuntimeInstanceIds: ReadonlySet<string>
+  lastAppliedRevision: number
+}
+
+export function advanceFastLaneRevision(
+  cursor: FastLaneRevisionCursor,
+  runtimeInstanceId?: string,
+  revision?: number,
+): FastLaneRevisionCursor | null {
+  const runtime = runtimeInstanceId || 'LEGACY_RUNTIME'
+  if (!Number.isInteger(revision) || (revision as number) < 0) return null
+  if (cursor.retiredRuntimeInstanceIds.has(runtime)) return null
+  if (cursor.activeRuntimeInstanceId === runtime) {
+    if ((revision as number) <= cursor.lastAppliedRevision) return null
+    return { ...cursor, lastAppliedRevision: revision as number }
+  }
+  const retired = new Set(cursor.retiredRuntimeInstanceIds)
+  if (cursor.activeRuntimeInstanceId) retired.add(cursor.activeRuntimeInstanceId)
+  return {
+    activeRuntimeInstanceId: runtime,
+    retiredRuntimeInstanceIds: retired,
+    lastAppliedRevision: revision as number,
+  }
+}
+
 export class RestDashboardProvider implements DashboardDataProvider {
   readonly kind = 'rest' as const
   private listeners = new Set<(snapshot: DashboardSourceSnapshot) => void>()
@@ -69,6 +100,11 @@ export class RestDashboardProvider implements DashboardDataProvider {
   private lastSnapshot: DashboardSourceSnapshot | null = null
   private lastLiveHash: string | null = null
   private lastSseEventId: string | null = null
+  private fastLaneRevisionCursor: FastLaneRevisionCursor = {
+    activeRuntimeInstanceId: null,
+    retiredRuntimeInstanceIds: new Set<string>(),
+    lastAppliedRevision: -1,
+  }
   private pendingOracleEvent: OracleLiveEvent | null = null
   private pendingFastLaneEvents: OracleFastLaneEvent[] = []
   private sseConnected = false
@@ -128,9 +164,13 @@ export class RestDashboardProvider implements DashboardDataProvider {
       if (!response.ok) throw new Error(`Dashboard projection HTTP ${response.status}`)
       auditBrowser({ event_type: 'FETCH_OK', url: path, status: response.status })
       const backend = await response.json() as BackendDashboard
+      if (this.oracleFastLane && !this.acceptFastLaneRevision(
+        backend.runtime_instance_id,
+        backend.revision,
+      )) return
       this.intervalMs = Math.max(1_000, backend.polling?.recommended_interval_ms ?? MOCK_EMISSION_INTERVAL_MS)
       const generatedAt = isoUtc(backend.generated_at)
-      const feeds = Object.fromEntries(DASHBOARD_FEED_KEYS.map((key) => [key, backend.feeds[key]?.ok ? backend.feeds[key].data : null])) as Record<DashboardFeedKey, unknown>
+      const feeds = Object.fromEntries(DASHBOARD_FEED_KEYS.map((key) => [key, backend.feeds[key]?.data ?? null])) as Record<DashboardFeedKey, unknown>
       const oracle = feeds.oracle
       if (typeof oracle === 'object' && oracle !== null) {
         const live = (oracle as Record<string, unknown>).live_workspace
@@ -163,7 +203,17 @@ export class RestDashboardProvider implements DashboardDataProvider {
           ? { ...meta, health: 'STALE', readiness: 'DEGRADED', stale_reason: `CACHED_PROJECTION_AGE_${Math.round(backend.polling?.projection_age_ms ?? 0)}MS` }
           : meta] as const
       })) as Record<DashboardFeedKey, DashboardFeedMeta>
-      this.lastSnapshot = { schemaVersion: DASHBOARD_SCHEMA_VERSION, provider: this.kind, traceId: backend.trace_id || `rest-${generatedAt}`, generatedAt, selectedSymbol: backend.symbol || this.symbol, feeds, feedMeta }
+      this.lastSnapshot = {
+        schemaVersion: DASHBOARD_SCHEMA_VERSION,
+        provider: this.kind,
+        traceId: backend.trace_id || `rest-${generatedAt}`,
+        generatedAt,
+        sourceRevision: backend.revision,
+        runtimeInstanceId: backend.runtime_instance_id,
+        selectedSymbol: backend.symbol || this.symbol,
+        feeds,
+        feedMeta,
+      }
       this.publish(this.lastSnapshot)
       if (this.pendingOracleEvent) {
         const pending = this.pendingOracleEvent
@@ -296,6 +346,7 @@ export class RestDashboardProvider implements DashboardDataProvider {
       this.applyFlowPulseEvent(event)
       return
     }
+    if (!this.acceptFastLaneRevision(event.runtime_instance_id, event.global_revision)) return
     const feeds = { ...this.lastSnapshot.feeds }
     const feedMeta = { ...this.lastSnapshot.feedMeta }
     const receivedAt = Date.now()
@@ -319,6 +370,8 @@ export class RestDashboardProvider implements DashboardDataProvider {
       ...this.lastSnapshot,
       traceId: event.trace_id,
       generatedAt: isoUtc(event.generated_at),
+      sourceRevision: event.global_revision,
+      runtimeInstanceId: event.runtime_instance_id,
       selectedSymbol: event.symbol || this.symbol,
       feeds,
       feedMeta,
@@ -397,6 +450,12 @@ export class RestDashboardProvider implements DashboardDataProvider {
   private publish(snapshot: DashboardSourceSnapshot) {
     ingestOracleDashboardSnapshot(snapshot)
     this.listeners.forEach((listener) => listener(snapshot))
+  }
+  private acceptFastLaneRevision(runtimeInstanceId?: string, revision?: number) {
+    const next = advanceFastLaneRevision(this.fastLaneRevisionCursor, runtimeInstanceId, revision)
+    if (!next) return false
+    this.fastLaneRevisionCursor = next
+    return true
   }
   private unavailableMeta(timestamp: string): DashboardFeedMeta { return { health: 'OFFLINE', readiness: 'UNAVAILABLE', latency_ms: 0, last_updated: timestamp, source_last_updated: null } }
 }

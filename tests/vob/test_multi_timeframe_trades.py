@@ -165,6 +165,72 @@ def sample_argus(direction: str = "CALL", *, ce_price: float = 101.0, pe_price: 
     }
 
 
+def test_current_itm_vob_requires_exact_security_identity():
+    """A rotating ITM card may never inherit a different OSE anchor zone."""
+    engine = VobReversalEngine()
+    engine.ingest_ose(sample_multi_tf_ose())
+    engine.ingest_argus(sample_argus())
+    def technical(security_id: str, side: str, low: float) -> dict:
+        structures = {
+            timeframe: {
+                "demand": {
+                    "zone_id": f"{security_id}-{timeframe}", "zone_low": low,
+                    "zone_high": low + 2.0, "status": "ACTIVE", "role": "SUPPORT",
+                },
+                "supply": None, "state": "NEUTRAL",
+                "evaluated_through": "2026-08-14T10:05:00+05:30", "completed_bucket": True,
+            }
+            for timeframe in ("1m", "3m", "5m")
+        }
+        return {
+            "status": "AVAILABLE", "security_id": security_id, "side": side,
+            "source_timestamp": "2026-08-14T10:05:00+05:30", "vob_timeframes": structures,
+        }
+    engine.ingest_current_itm_vobs({
+        "CE": technical("101", "CE", 90.0),
+        "PE": technical("104", "PE", 40.0),
+    })
+    projection = engine.projection()
+    assert projection["option_contracts"]["CE"]["contract"]["security_id"] == "101"
+    assert projection["option_contracts"]["CE"]["vob"]["security_id"] == "101"
+    assert projection["option_contracts"]["PE"]["contract"]["security_id"] == "104"
+    assert projection["option_contracts"]["PE"]["vob"]["security_id"] == "104"
+    assert set(projection["option_contracts"]["PE"]["vob"]["timeframes"]) == {"1m", "3m", "5m"}
+    rolled = sample_argus()
+    rolled["data"]["underlying"]["atm_strike"] = 25050.0
+    rolled["data"]["atm_window"] = [
+        {"strike": 25000, "ce": {"security_id": "103", "ltp": 90.0}, "pe": {"security_id": "203", "ltp": 55.0}},
+        {"strike": 25100, "ce": {"security_id": "105", "ltp": 80.0}, "pe": {"security_id": "106", "ltp": 70.0}},
+    ]
+    engine.ingest_argus(rolled)
+    after_roll = engine.projection()
+    assert after_roll["option_contracts"]["CE"]["contract"]["security_id"] == "103"
+    assert after_roll["option_contracts"]["CE"]["vob"] == {}
+
+
+def test_track_a_vob_only_touch_does_not_require_argus_or_flow_confirmation():
+    """Track A is the Pine VOB touch lane; confirmation belongs to Track B."""
+    engine = VobReversalEngine()
+    ose = sample_multi_tf_ose(has_1m=True, has_3m=False, has_5m=False)
+    touch = "2026-08-14T10:05:00+05:30"
+    ose["contracts"]["CE"]["structures"]["1m"]["demand"].update({
+        "status": "TESTED", "source_candle_timestamp": touch,
+        "first_tested_time": touch, "last_tested_time": touch,
+    })
+    engine.ingest_ose(ose)
+    engine.ingest_argus(sample_argus(direction="HOLD"))
+    trades = [
+        trade
+        for variants in engine.projection()["all_shadow_trades"].values()
+        for trade in variants.values()
+    ]
+    track_a = [row for row in trades if row.get("variant") == "VOB_ONLY"]
+    track_b = [row for row in trades if row.get("variant") == "CONFIRMED_REVERSAL"]
+    assert len(track_a) == 1
+    assert track_a[0]["entry_time"] == touch
+    assert len(track_b) == 1 and track_b[0]["entry_time"] is None
+
+
 def test_1_1m_episode_opens():
     """TEST 1: 1M episode opens and is registered in reversal engine."""
     engine = VobReversalEngine()

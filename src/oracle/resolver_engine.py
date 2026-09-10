@@ -33,6 +33,18 @@ def _parse_ts(val: Any) -> datetime | None:
     return None
 
 
+def _flow_direction(value: Any) -> str | None:
+    try:
+        signed = float(value)
+    except (TypeError, ValueError):
+        return None
+    if signed > 0.0:
+        return "BUY"
+    if signed < 0.0:
+        return "SELL"
+    return None
+
+
 class ResolverEngine:
     """Production Resolver R1 state synthesis engine."""
 
@@ -61,6 +73,32 @@ class ResolverEngine:
         self._last_meaningful_event.clear()
         self._session_id = session_id
 
+    @staticmethod
+    def extract_vob_timeframes(horsepower: Mapping[str, Any] | None) -> dict[str, dict[str, Any]]:
+        """Normalize legacy flat and canonical nested Horsepower lanes.
+
+        Canonical Horsepower publishes lanes under ``timeframes``. Its aggregate
+        status can describe several zones, while the Resolver event identity and
+        timestamp belong to ``latest_event``. Legacy flat lanes remain supported
+        for the frozen Resolver contract and tests.
+        """
+        hp = horsepower if isinstance(horsepower, Mapping) else {}
+        nested = hp.get("timeframes")
+        source = nested if isinstance(nested, Mapping) else hp
+        lanes: dict[str, dict[str, Any]] = {}
+        for timeframe in ("1m", "3m", "5m"):
+            raw = source.get(timeframe)
+            lane = dict(raw) if isinstance(raw, Mapping) else {}
+            latest = lane.get("latest_event")
+            if isinstance(nested, Mapping) and isinstance(latest, Mapping):
+                event = str(latest.get("event") or "")
+                if event in {"SUPPORT_GONE", "RESISTANCE_OUT", "SUPPORT_BACK", "BREAKOUT_LOST"}:
+                    lane["status"] = event
+                    lane["event_id"] = latest.get("event_id")
+                    lane["confirmed_candle"] = latest.get("confirmed_candle")
+            lanes[timeframe] = lane
+        return lanes
+
     def ingest_flow_snapshot(
         self,
         flow: Mapping[str, Any] | None,
@@ -82,9 +120,27 @@ class ResolverEngine:
 
         diag = flow.get("diagnostics") if isinstance(flow.get("diagnostics"), Mapping) else {}
         book_pressure = diag.get("book_pressure") if isinstance(diag.get("book_pressure"), Mapping) else {}
+        family_values = flow.get("family_values") if isinstance(flow.get("family_values"), Mapping) else {}
+        canonical_book_pressure = (
+            family_values.get("BOOK_PRESSURE")
+            if isinstance(family_values.get("BOOK_PRESSURE"), Mapping)
+            else {}
+        )
 
-        raw_mlofi = book_pressure.get("mlofi") if book_pressure.get("mlofi") is not None else flow.get("mlofi")
-        raw_l1_ofi = book_pressure.get("l1_ofi") if book_pressure.get("l1_ofi") is not None else flow.get("l1_ofi")
+        raw_mlofi = (
+            book_pressure.get("mlofi")
+            if book_pressure.get("mlofi") is not None
+            else canonical_book_pressure.get("mlofi")
+            if canonical_book_pressure.get("mlofi") is not None
+            else flow.get("mlofi")
+        )
+        raw_l1_ofi = (
+            book_pressure.get("l1_ofi")
+            if book_pressure.get("l1_ofi") is not None
+            else canonical_book_pressure.get("l1_ofi")
+            if canonical_book_pressure.get("l1_ofi") is not None
+            else flow.get("l1_ofi")
+        )
 
         flow_time_str = str(flow.get("source_timestamp") or flow.get("generated_at") or "")
         flow_dt = _parse_ts(flow_time_str) or observed_at
@@ -176,13 +232,17 @@ class ResolverEngine:
             "flow_source": "5L_BOOK_CHANGE_DERIVED_MLOFI",
             "event_flow_timestamp": None,
             "event_mlofi": None,
+            "event_flow_direction": None,
             "event_l1_ofi": None,
             "event_flow_x": None,
+            "event_flow_baseline_sample_count": 0,
             "current_flow_timestamp": None,
             "current_mlofi": None,
             "current_flow_x": None,
             "flow_prior_median": None,
             "flow_prior_mad": None,
+            "flow_baseline_sample_count": 0,
+            "baseline_sample_count": 0,
             "flow_age_ms": None,
             "flow_revision": None,
             "flow_session_rank": None,
@@ -192,14 +252,26 @@ class ResolverEngine:
         if not self._flow_series:
             return default_diag
 
-        # 1. Latest real-time current flow sample (relative to observed_at)
-        curr_matched = self._flow_series[-1]
+        # 1. Latest real-time current flow sample, strictly as-of observed_at.
+        # The Flow transport can advance between option-chain observations;
+        # retain those samples for the next observation without consuming a
+        # sample whose source timestamp is still in the future for this one.
+        eval_curr_time = observed_at or datetime.now(IST)
+        eval_curr_epoch = eval_curr_time.timestamp()
+        curr_idx: int | None = None
+        for idx in range(len(self._flow_series) - 1, -1, -1):
+            if self._flow_series[idx][0] <= eval_curr_epoch:
+                curr_idx = idx
+                break
+        if curr_idx is None:
+            return default_diag
+
+        curr_matched = self._flow_series[curr_idx]
         curr_epoch, curr_mlofi_val, _, curr_iso, curr_rev = curr_matched
         default_diag["current_flow_timestamp"] = curr_iso
         default_diag["current_mlofi"] = round(curr_mlofi_val, 4)
         default_diag["flow_revision"] = curr_rev
 
-        eval_curr_time = observed_at or datetime.now(IST)
         curr_age_ms = round((eval_curr_time.timestamp() - curr_epoch) * 1000.0, 1)
         default_diag["flow_age_ms"] = curr_age_ms
 
@@ -212,7 +284,9 @@ class ResolverEngine:
         default_diag["flow_freshness_state"] = curr_freshness
 
         # Compute prior baseline for CURRENT flow sample
-        prior_curr_samples = [abs(item[1]) for item in list(self._flow_series)[:-1]]
+        prior_curr_samples = [abs(item[1]) for item in list(self._flow_series)[:curr_idx]]
+        default_diag["flow_baseline_sample_count"] = len(prior_curr_samples)
+        default_diag["baseline_sample_count"] = len(prior_curr_samples)
         if prior_curr_samples:
             prior_median = round(float(median(prior_curr_samples)), 4)
             prior_mad = round(float(median([abs(x - prior_median) for x in prior_curr_samples])), 4)
@@ -243,18 +317,23 @@ class ResolverEngine:
                 if event_age_ms <= FLOW_TTL_MS:
                     default_diag["event_flow_timestamp"] = flow_iso
                     default_diag["event_mlofi"] = round(mlofi, 4)
+                    default_diag["event_flow_direction"] = _flow_direction(mlofi)
                     default_diag["event_l1_ofi"] = round(l1_ofi, 4)
                     prior_event_samples = [abs(item[1]) for item in list(self._flow_series)[:best_idx]]
+                    default_diag["event_flow_baseline_sample_count"] = len(prior_event_samples)
                     if prior_event_samples:
                         event_prior_median = round(float(median(prior_event_samples)), 4)
                         default_diag["event_flow_x"] = round(abs(mlofi) / event_prior_median, 1) if event_prior_median > 0 else None
+                        default_diag["baseline_sample_count"] = len(prior_event_samples)
         else:
             # Synchronous evaluation without separate event target: event flow mirrors current if fresh/aging
             if curr_freshness != "STALE":
                 default_diag["event_flow_timestamp"] = curr_iso
                 default_diag["event_mlofi"] = round(curr_mlofi_val, 4)
+                default_diag["event_flow_direction"] = _flow_direction(curr_mlofi_val)
                 default_diag["event_l1_ofi"] = round(curr_matched[2], 4)
                 default_diag["event_flow_x"] = default_diag.get("current_flow_x")
+                default_diag["event_flow_baseline_sample_count"] = len(prior_curr_samples)
 
         return default_diag
 
@@ -282,10 +361,11 @@ class ResolverEngine:
             self.reset_session(current_session)
 
         # 1. Structure Authority from exact contract VOB Horsepower
-        hp = vob.get("horsepower") if isinstance(vob.get("horsepower"), Mapping) else {}
-        hp_1m = hp.get("1m") if isinstance(hp.get("1m"), Mapping) else {}
-        hp_3m = hp.get("3m") if isinstance(hp.get("3m"), Mapping) else {}
-        hp_5m = hp.get("5m") if isinstance(hp.get("5m"), Mapping) else {}
+        raw_hp = vob.get("horsepower") if isinstance(vob.get("horsepower"), Mapping) else {}
+        hp = self.extract_vob_timeframes(raw_hp)
+        hp_1m = hp["1m"]
+        hp_3m = hp["3m"]
+        hp_5m = hp["5m"]
 
         status_1m = str(hp_1m.get("status") or "")
         status_3m = str(hp_3m.get("status") or "")
@@ -392,19 +472,33 @@ class ResolverEngine:
         held = self._held_state.get(security_id)
         final_label: str
         flow_upgrade_occurred = False
+        pill_flow_x: float | None = None
+        pill_mlofi: float | None = None
+        pill_flow_direction: str | None = None
 
         if vob_label is not None:
             if event_flow_x is not None and flow_extreme:
-                final_label = f"{vob_label} · FLOW {event_flow_x}X"
+                pill_flow_x = event_flow_x
+                pill_mlofi = event_mlofi
+                pill_flow_direction = _flow_direction(event_mlofi)
+                direction_text = f"{pill_flow_direction} " if pill_flow_direction else ""
+                final_label = f"{vob_label} · {direction_text}FLOW {event_flow_x}X"
             elif current_flow_x is not None and flow_extreme:
                 # Later CURRENT Flow shock upgrades existing structural state
-                final_label = f"{vob_label} · FLOW {current_flow_x}X"
+                pill_flow_x = current_flow_x
+                pill_mlofi = current_mlofi
+                pill_flow_direction = _flow_direction(current_mlofi)
+                direction_text = f"{pill_flow_direction} " if pill_flow_direction else ""
+                final_label = f"{vob_label} · {direction_text}FLOW {current_flow_x}X"
                 flow_upgrade_occurred = True
             elif oi_x is not None and oi_extreme:
                 final_label = f"{vob_label} · OI {oi_x}X"
             elif held and vob_event_id and held.get("vob_event_id") == vob_event_id and held.get("label"):
                 # Retain historical shock label while the driving VOB event remains active
                 final_label = held["label"]
+                pill_flow_x = held.get("event_flow_x")
+                pill_mlofi = held.get("event_mlofi")
+                pill_flow_direction = held.get("event_flow_direction")
             else:
                 final_label = vob_label
         elif oi_structure and oi_structure != "FLAT / NEUTRAL":
@@ -474,7 +568,9 @@ class ResolverEngine:
                 "pulse_key": pulse_key,
                 "source_event_time": source_event_time,
                 "vob_event_id": vob_event_id,
-                "event_flow_x": event_flow_x,
+                "event_flow_x": pill_flow_x,
+                "event_mlofi": pill_mlofi,
+                "event_flow_direction": pill_flow_direction,
                 "event_oi_x": oi_x,
             }
             if security_id:
@@ -503,23 +599,27 @@ class ResolverEngine:
                 and previous_meaningful.get("_event_identity") == event_identity
                 and previous_meaningful.get("event_timestamp")
             ):
+                # The same historical event is immutable: do not pair its held
+                # label/timestamp with later OI, flow, price, or OI evidence.
                 event_timestamp = previous_meaningful["event_timestamp"]
-            self._last_meaningful_event[side.upper()] = {
-                "_event_identity": event_identity,
-                "security_id": security_id,
-                "strike": strike_str,
-                "side": side.upper(),
-                "label": final_label,
-                "oi_x": oi_x,
-                "flow_x": current_flow_x or event_flow_x,
-                "variant": variant,
-                "confluence_state": confluence_state,
-                "event_timestamp": event_timestamp,
-                "event_price": contract_payload.get("quote", {}).get("ltp") if isinstance(contract_payload.get("quote"), Mapping) else None,
-                "event_oi": contract_payload.get("quote", {}).get("oi") if isinstance(contract_payload.get("quote"), Mapping) else None,
-                "reason": "VOB_FLOW_OI_SYNTHESIS",
-                "is_previous_contract": False,
-            }
+            else:
+                self._last_meaningful_event[side.upper()] = {
+                    "_event_identity": event_identity,
+                    "security_id": security_id,
+                    "strike": strike_str,
+                    "side": side.upper(),
+                    "label": final_label,
+                    "oi_x": oi_x,
+                    "flow_x": pill_flow_x,
+                    "flow_direction": pill_flow_direction,
+                    "variant": variant,
+                    "confluence_state": confluence_state,
+                    "event_timestamp": event_timestamp,
+                    "event_price": contract_payload.get("quote", {}).get("ltp") if isinstance(contract_payload.get("quote"), Mapping) else None,
+                    "event_oi": contract_payload.get("quote", {}).get("oi") if isinstance(contract_payload.get("quote"), Mapping) else None,
+                    "reason": "VOB_FLOW_OI_SYNTHESIS",
+                    "is_previous_contract": False,
+                }
 
         last_meaningful_raw = self._last_meaningful_event.get(side.upper())
         last_meaningful_event = None
@@ -563,7 +663,11 @@ class ResolverEngine:
             **oi_diag,
             **flow_diag,
             "flowpulse_pressure": flowpulse_pressure,
-            "event_flow_x": held.get("event_flow_x") if held else event_flow_x,
+            "event_flow_direction": flow_diag.get("event_flow_direction") or _flow_direction(event_mlofi),
+            "baseline_sample_count": flow_diag.get("flow_baseline_sample_count", 0),
+            "pill_mlofi": pill_mlofi,
+            "pill_flow_direction": pill_flow_direction,
+            "pill_flow_x": pill_flow_x,
             "current_flow_x": current_flow_x,
             "held_previous": held_previous,
             "last_meaningful_event": last_meaningful_event,
